@@ -106,4 +106,12 @@ export class AuthService {
       throw error;
     }
   }
+
+  async login(consultant: Consultant): Promise<{ accessToken: string; expiresIn: string }> {
+    const accessToken = await this.generateJwt(consultant);
+    return {
+      accessToken,
+      expiresIn: '7d',
+    };
+  }
 }
