@@ -150,9 +150,9 @@ export default function SettingsScreen() {
   };
 
   const handleDeleteAccount = () => {
-    Alert.prompt(
+    Alert.alert(
       'Delete Account',
-      'This will permanently delete your account and all data. This action cannot be undone.\n\nType DELETE to confirm:',
+      'Are you absolutely sure you want to permanently delete your account? This action cannot be undone and will delete all your data.',
       [
         {
           text: 'Cancel',
@@ -161,18 +161,13 @@ export default function SettingsScreen() {
         {
           text: 'Delete Account',
           style: 'destructive',
-          onPress: (inputValue) => {
-            if (inputValue === 'DELETE') {
-              // TODO: Send delete request to backend
-              console.log('Delete account confirmed');
-              Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
-            } else {
-              Alert.alert('Cancelled', 'Text did not match. Account not deleted.');
-            }
+          onPress: () => {
+            // TODO: Send delete request to backend
+            console.log('Delete account confirmed');
+            Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
           },
         },
-      ],
-      'plain-text'
+      ]
     );
   };
 
