@@ -4,7 +4,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthResolver } from './health.resolver';
-import { PrismaModule } from './prisma.module';
+import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth.module';
 import { TimesheetModule } from './timesheet.module';
 
