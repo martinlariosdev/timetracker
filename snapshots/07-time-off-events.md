@@ -1,0 +1,64 @@
+- generic [active] [ref=e1]:
+  - banner:
+    - navigation [ref=e2]:
+      - generic [ref=e3]:
+        - img "TimeTrack" [ref=e6]
+        - list [ref=e9]:
+          - listitem [ref=e10]:
+            - link "home Home" [ref=e11] [cursor=pointer]:
+              - /url: /v2/LegacyTimeTrack/Home
+              - generic [ref=e12]: home
+              - text: Home
+          - listitem [ref=e13]:
+            - button "timer My" [ref=e14] [cursor=pointer]:
+              - generic [ref=e15]: timer
+              - text: My
+          - listitem [ref=e16]:
+            - button "pie_chart Reports" [ref=e17] [cursor=pointer]:
+              - generic [ref=e18]: pie_chart
+              - text: Reports
+          - listitem [ref=e19]:
+            - button "person Martin" [ref=e20] [cursor=pointer]:
+              - generic [ref=e21]: person
+              - text: Martin
+  - main [ref=e23]:
+    - generic [ref=e28]:
+      - heading "Time Off Events" [level=3] [ref=e30]
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - generic [ref=e34]: "Consultant:"
+          - combobox "Consultant:" [ref=e35]:
+            - option "Martin Larios" [selected]
+        - button "View" [ref=e37] [cursor=pointer]
+        - button "add_circle Add Time Off" [ref=e39] [cursor=pointer]:
+          - generic [ref=e40]: add_circle
+          - text: Add Time Off
+      - generic [ref=e41]:
+        - generic [ref=e43]:
+          - text: Show
+          - combobox "Show entries" [ref=e44]:
+            - option "10" [selected]
+            - option "25"
+            - option "50"
+            - option "100"
+          - text: entries
+        - generic [ref=e67]:
+          - searchbox "search" [ref=e68]
+          - generic [ref=e69] [cursor=pointer]: search
+        - grid [ref=e48]:
+          - rowgroup [ref=e49]:
+            - 'row "Consultant: activate to sort column ascending Period Range: activate to sort column ascending Reason: activate to sort column ascending Client Aware?: activate to sort column ascending Actions: activate to sort column ascending" [ref=e50]':
+              - 'columnheader "Consultant: activate to sort column ascending" [ref=e51] [cursor=pointer]': Consultant ▲ ▼
+              - 'columnheader "Period Range: activate to sort column ascending" [ref=e52] [cursor=pointer]': Period Range ▲ ▼
+              - 'columnheader "Reason: activate to sort column ascending" [ref=e53] [cursor=pointer]': Reason ▲ ▼
+              - 'columnheader "Client Aware?: activate to sort column ascending" [ref=e54] [cursor=pointer]': Client Aware? ▲ ▼
+              - 'columnheader "Actions: activate to sort column ascending" [ref=e55] [cursor=pointer]': Actions ▲ ▼
+          - rowgroup [ref=e56]:
+            - row "No data available in table" [ref=e70]:
+              - gridcell "No data available in table" [ref=e71]
+        - status [ref=e59]: Showing 0 to 0 of 0 entries
+        - generic [ref=e60]:
+          - generic [ref=e73] [cursor=pointer]: chevron_left
+          - generic [ref=e75] [cursor=pointer]: chevron_right
+  - contentinfo [ref=e65]:
+    - generic [ref=e66]: © 2026 - Software Mind

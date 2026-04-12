@@ -1,0 +1,426 @@
+- generic [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link "TimeTrack" [ref=e5] [cursor=pointer]:
+        - /url: Default.aspx
+        - img "TimeTrack" [ref=e6]
+      - list [ref=e8]:
+        - listitem [ref=e9]:
+          - link "home Home" [ref=e10] [cursor=pointer]:
+            - /url: Default.aspx
+            - generic [ref=e11]: home
+            - text: Home
+        - listitem [ref=e12]:
+          - link "timer My" [ref=e13] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e14]: timer
+            - text: My
+        - listitem [ref=e16]:
+          - link "pie_chart Reports" [ref=e17] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e18]: pie_chart
+            - text: Reports
+        - listitem [ref=e20]:
+          - link "person Martin" [ref=e21] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=e22]: person
+            - text: Martin
+  - generic [ref=e27]:
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - heading "Timecard Entry" [level=3] [ref=e31]
+        - generic [ref=e32]:
+          - generic [ref=e33]:
+            - generic [ref=e35]:
+              - generic [ref=e37]: today
+              - generic [ref=e38]:
+                - generic: Period
+                - combobox [ref=e39]:
+                  - option "03/01/2026 - 03/15/2026"
+                  - option "03/16/2026 - 03/31/2026"
+                  - option "04/01/2026 - 04/15/2026" [selected]
+              - generic "If you wish to view previous periods from the ones appearing in the dropdown, go to Reports > Timesheet Details." [ref=e41]: info
+            - generic [ref=e43]:
+              - generic [ref=e45]: account_box
+              - generic [ref=e46]:
+                - generic: User
+                - combobox [disabled] [ref=e47]:
+                  - option "Martin Larios" [selected]
+          - link "search View" [ref=e50] [cursor=pointer]:
+            - /url: javascript:__doPostBack('ctl00$body$btnChange','')
+            - generic [ref=e51]: search
+            - text: View
+      - generic [ref=e52]:
+        - heading "Team Lead:" [level=4] [ref=e54]
+        - generic [ref=e55]:
+          - strong [ref=e57]: Alessandro Silveira
+          - strong [ref=e59]: alessandro.silveira@softwaremind.com
+        - generic "Your Organization" [ref=e62] [cursor=pointer]: device_hub
+      - generic [ref=e272]:
+        - heading "Timesheet Timeliness:" [level=4] [ref=e274]
+        - generic [ref=e276]:
+          - heading "Metric" [level=6] [ref=e277]
+          - strong [ref=e278]:
+            - link "2.83 days" [ref=e279] [cursor=pointer]:
+              - /url: https://timetrack.number8.com/v2/Reports/TimelinessTrends?consultantId=24563
+    - separator [ref=e71]
+    - generic [ref=e72]:
+      - heading "Martin Larios 04/01/2026 - 04/15/2026" [level=4] [ref=e75]
+      - generic [ref=e77]:
+        - toolbar "Time entry actions" [ref=e82]:
+          - group "First group" [ref=e83]:
+            - link "add" [ref=e84] [cursor=pointer]:
+              - /url: javascript:__doPostBack('ctl00$body$btnAddUp','')
+              - generic [ref=e85]: add
+            - link "upload_file" [ref=e86] [cursor=pointer]:
+              - /url: javascript:__doPostBack('ctl00$body$btnImportTimesheet','')
+              - generic [ref=e87]: upload_file
+            - link "assignment_turned_in" [ref=e88] [cursor=pointer]:
+              - /url: javascript:__doPostBack('ctl00$body$btnPostUp','')
+              - generic [ref=e89]: assignment_turned_in
+            - link "attach_money" [ref=e90] [cursor=pointer]:
+              - /url: javascript:__doPostBack('ctl00$body$btnExpenses','')
+              - generic [ref=e91]: attach_money
+            - link "file_upload" [ref=e92] [cursor=pointer]:
+              - /url: javascript:__doPostBack('ctl00$body$btnUpload','')
+              - generic [ref=e93]: file_upload
+            - link "print" [ref=e94] [cursor=pointer]:
+              - /url: javascript:__doPostBack('ctl00$body$btnPrintableUP','')
+              - generic [ref=e95]: print
+        - generic [ref=e96]:
+          - generic [ref=e97]:
+            - heading "Total Regular Time" [level=6] [ref=e98]
+            - heading "56.00 hours" [level=4] [ref=e99]
+          - generic [ref=e100]:
+            - heading "Converted ETO Time" [level=6] [ref=e101]
+            - generic [ref=e104]: "0.00"
+          - generic [ref=e105]:
+            - heading "Used ETO Time" [level=6] [ref=e106]
+            - generic [ref=e109]: "0.00"
+          - generic [ref=e110]:
+            - heading "Total Time" [level=6] [ref=e111]
+            - heading "56.00 hours" [level=4] [ref=e112]
+          - generic [ref=e113]:
+            - heading "ETO Hours Remaining" [level=6] [ref=e114]
+            - heading "33.92 + 0.00 hours" [level=4] [ref=e115]
+          - generic [ref=e116]:
+            - heading "Pending Days" [level=6] [ref=e117]
+            - heading "4 days" [level=4] [ref=e118]
+      - generic [ref=e281]:
+        - table [ref=e282]:
+          - rowgroup [ref=e283]:
+            - 'row "Date Project/Task # Client Description In Out In Out Total (h)" [ref=e284]':
+              - cell "Date" [ref=e285]
+              - 'cell "Project/Task #" [ref=e286]'
+              - cell "Client" [ref=e287]
+              - cell "Description" [ref=e288]
+              - cell "In" [ref=e289]
+              - cell "Out" [ref=e290]
+              - cell "In" [ref=e291]
+              - cell "Out" [ref=e292]
+              - cell "Total (h)" [ref=e293]
+              - cell [ref=e294]
+            - 'row "04/01/2026 04/08/2026 10:08 EST Aderant Worked on: PR #239, #189, Review PR #9, #54, #261 08:00 12:00 13:00 17:00 8.00 edit file_copy" [ref=e295]':
+              - cell "04/01/2026 04/08/2026 10:08 EST" [ref=e296]:
+                - generic "Time entry date." [ref=e297]:
+                  - text: 04/01/2026
+                  - heading "04/08/2026 10:08 EST" [level=6] [ref=e298]
+              - cell [ref=e299]
+              - cell "Aderant" [ref=e300]
+              - 'cell "Worked on: PR #239, #189, Review PR #9, #54, #261" [ref=e301]'
+              - cell "08:00" [ref=e302]
+              - cell "12:00" [ref=e303]
+              - cell "13:00" [ref=e304]
+              - cell "17:00" [ref=e305]
+              - cell "8.00" [ref=e306]
+              - cell "edit file_copy" [ref=e307]:
+                - generic [ref=e308]:
+                  - link "edit" [ref=e309] [cursor=pointer]:
+                    - /url: javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$body$datagrid1$ctl02$lnkEdit", "", true, "", "", false, true))
+                    - generic [ref=e310]: edit
+                  - link "file_copy" [ref=e311] [cursor=pointer]:
+                    - /url: javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$body$datagrid1$ctl02$lnkDuplicate", "", true, "", "", false, true))
+                    - generic [ref=e312]: file_copy
+            - 'row "04/02/2026 04/08/2026 10:09 EST Aderant Worked on: PR #239, #189, Review PR #9, #54, #261 08:00 12:00 13:00 17:00 8.00 edit file_copy" [ref=e313]':
+              - cell "04/02/2026 04/08/2026 10:09 EST" [ref=e314]:
+                - generic "Time entry date." [ref=e315]:
+                  - text: 04/02/2026
+                  - heading "04/08/2026 10:09 EST" [level=6] [ref=e316]
+              - cell [ref=e317]
+              - cell "Aderant" [ref=e318]
+              - 'cell "Worked on: PR #239, #189, Review PR #9, #54, #261" [ref=e319]'
+              - cell "08:00" [ref=e320]
+              - cell "12:00" [ref=e321]
+              - cell "13:00" [ref=e322]
+              - cell "17:00" [ref=e323]
+              - cell "8.00" [ref=e324]
+              - cell "edit file_copy" [ref=e325]:
+                - generic [ref=e326]:
+                  - link "edit" [ref=e327] [cursor=pointer]:
+                    - /url: javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$body$datagrid1$ctl03$lnkEdit", "", true, "", "", false, true))
+                    - generic [ref=e328]: edit
+                  - link "file_copy" [ref=e329] [cursor=pointer]:
+                    - /url: javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$body$datagrid1$ctl03$lnkDuplicate", "", true, "", "", false, true))
+                    - generic [ref=e330]: file_copy
+            - 'row "04/03/2026 04/08/2026 10:09 EST Aderant Worked on: PR #239, #189, Review PR #9, #54, #261 08:00 12:00 13:00 17:00 8.00 edit file_copy" [ref=e331]':
+              - cell "04/03/2026 04/08/2026 10:09 EST" [ref=e332]:
+                - generic "Time entry date." [ref=e333]:
+                  - text: 04/03/2026
+                  - heading "04/08/2026 10:09 EST" [level=6] [ref=e334]
+              - cell [ref=e335]
+              - cell "Aderant" [ref=e336]
+              - 'cell "Worked on: PR #239, #189, Review PR #9, #54, #261" [ref=e337]'
+              - cell "08:00" [ref=e338]
+              - cell "12:00" [ref=e339]
+              - cell "13:00" [ref=e340]
+              - cell "17:00" [ref=e341]
+              - cell "8.00" [ref=e342]
+              - cell "edit file_copy" [ref=e343]:
+                - generic [ref=e344]:
+                  - link "edit" [ref=e345] [cursor=pointer]:
+                    - /url: javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$body$datagrid1$ctl04$lnkEdit", "", true, "", "", false, true))
+                    - generic [ref=e346]: edit
+                  - link "file_copy" [ref=e347] [cursor=pointer]:
+                    - /url: javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$body$datagrid1$ctl04$lnkDuplicate", "", true, "", "", false, true))
+                    - generic [ref=e348]: file_copy
+            - 'row "04/06/2026 04/08/2026 10:09 EST Aderant Worked on: PR #239, #189, Review PR #9, #54, #261 08:00 12:00 13:00 17:00 8.00 edit file_copy" [ref=e349]':
+              - cell "04/06/2026 04/08/2026 10:09 EST" [ref=e350]:
+                - generic "Time entry date." [ref=e351]:
+                  - text: 04/06/2026
+                  - heading "04/08/2026 10:09 EST" [level=6] [ref=e352]
+              - cell [ref=e353]
+              - cell "Aderant" [ref=e354]
+              - 'cell "Worked on: PR #239, #189, Review PR #9, #54, #261" [ref=e355]'
+              - cell "08:00" [ref=e356]
+              - cell "12:00" [ref=e357]
+              - cell "13:00" [ref=e358]
+              - cell "17:00" [ref=e359]
+              - cell "8.00" [ref=e360]
+              - cell "edit file_copy" [ref=e361]:
+                - generic [ref=e362]:
+                  - link "edit" [ref=e363] [cursor=pointer]:
+                    - /url: javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$body$datagrid1$ctl05$lnkEdit", "", true, "", "", false, true))
+                    - generic [ref=e364]: edit
+                  - link "file_copy" [ref=e365] [cursor=pointer]:
+                    - /url: javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$body$datagrid1$ctl05$lnkDuplicate", "", true, "", "", false, true))
+                    - generic [ref=e366]: file_copy
+            - 'row "04/07/2026 04/08/2026 10:10 EST Aderant Worked on: PR #239, #189, Review PR #9, #54, #261 08:00 12:00 13:00 17:00 8.00 edit file_copy" [ref=e367]':
+              - cell "04/07/2026 04/08/2026 10:10 EST" [ref=e368]:
+                - generic "Time entry date." [ref=e369]:
+                  - text: 04/07/2026
+                  - heading "04/08/2026 10:10 EST" [level=6] [ref=e370]
+              - cell [ref=e371]
+              - cell "Aderant" [ref=e372]
+              - 'cell "Worked on: PR #239, #189, Review PR #9, #54, #261" [ref=e373]'
+              - cell "08:00" [ref=e374]
+              - cell "12:00" [ref=e375]
+              - cell "13:00" [ref=e376]
+              - cell "17:00" [ref=e377]
+              - cell "8.00" [ref=e378]
+              - cell "edit file_copy" [ref=e379]:
+                - generic [ref=e380]:
+                  - link "edit" [ref=e381] [cursor=pointer]:
+                    - /url: javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$body$datagrid1$ctl06$lnkEdit", "", true, "", "", false, true))
+                    - generic [ref=e382]: edit
+                  - link "file_copy" [ref=e383] [cursor=pointer]:
+                    - /url: javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$body$datagrid1$ctl06$lnkDuplicate", "", true, "", "", false, true))
+                    - generic [ref=e384]: file_copy
+            - 'row "04/08/2026 04/08/2026 10:10 EST Aderant Worked on: PR #239, #189, Review PR #9, #54, #261 08:00 12:00 13:00 17:00 8.00 edit file_copy" [ref=e385]':
+              - cell "04/08/2026 04/08/2026 10:10 EST" [ref=e386]:
+                - generic "Time entry date." [ref=e387]:
+                  - text: 04/08/2026
+                  - heading "04/08/2026 10:10 EST" [level=6] [ref=e388]
+              - cell [ref=e389]
+              - cell "Aderant" [ref=e390]
+              - 'cell "Worked on: PR #239, #189, Review PR #9, #54, #261" [ref=e391]'
+              - cell "08:00" [ref=e392]
+              - cell "12:00" [ref=e393]
+              - cell "13:00" [ref=e394]
+              - cell "17:00" [ref=e395]
+              - cell "8.00" [ref=e396]
+              - cell "edit file_copy" [ref=e397]:
+                - generic [ref=e398]:
+                  - link "edit" [ref=e399] [cursor=pointer]:
+                    - /url: javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$body$datagrid1$ctl07$lnkEdit", "", true, "", "", false, true))
+                    - generic [ref=e400]: edit
+                  - link "file_copy" [ref=e401] [cursor=pointer]:
+                    - /url: javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$body$datagrid1$ctl07$lnkDuplicate", "", true, "", "", false, true))
+                    - generic [ref=e402]: file_copy
+            - 'row "04/09/2026 04/10/2026 08:30 EST Aderant Worked on: PR #239, #189, Review PR #9, #54, #261 08:00 12:00 13:00 17:00 8.00 edit file_copy" [ref=e403]':
+              - cell "04/09/2026 04/10/2026 08:30 EST" [ref=e404]:
+                - generic "Time entry date." [ref=e405]:
+                  - text: 04/09/2026
+                  - heading "04/10/2026 08:30 EST" [level=6] [ref=e406]
+              - cell [ref=e407]
+              - cell "Aderant" [ref=e408]
+              - 'cell "Worked on: PR #239, #189, Review PR #9, #54, #261" [ref=e409]'
+              - cell "08:00" [ref=e410]
+              - cell "12:00" [ref=e411]
+              - cell "13:00" [ref=e412]
+              - cell "17:00" [ref=e413]
+              - cell "8.00" [ref=e414]
+              - cell "edit file_copy" [ref=e415]:
+                - generic [ref=e416]:
+                  - link "edit" [ref=e417] [cursor=pointer]:
+                    - /url: javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$body$datagrid1$ctl08$lnkEdit", "", true, "", "", false, true))
+                    - generic [ref=e418]: edit
+                  - link "file_copy" [ref=e419] [cursor=pointer]:
+                    - /url: javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$body$datagrid1$ctl08$lnkDuplicate", "", true, "", "", false, true))
+                    - generic [ref=e420]: file_copy
+            - row "04/10/2026  Previous Month April 2026 Toggle Date and Time Screens  Next Month Su Mo Tu We Th Fr Sa 29 30 31 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 1 2 3 4 5 6 7 8 9 Toggle Date and Time Screens - Select - 8:00 8:00 8:00 8:00 0.00 check_circle delete cancel" [ref=e421]:
+              - cell "04/10/2026  Previous Month April 2026 Toggle Date and Time Screens  Next Month Su Mo Tu We Th Fr Sa 29 30 31 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 1 2 3 4 5 6 7 8 9 Toggle Date and Time Screens" [ref=e422]:
+                - generic [ref=e423]:
+                  - textbox [active] [ref=e424]: 04/10/2026
+                  - list [ref=e426]:
+                    - listitem [ref=e427]:
+                      - generic [ref=e428]:
+                        - table [ref=e430]:
+                          - rowgroup [ref=e431]:
+                            - row " Previous Month April 2026 Toggle Date and Time Screens  Next Month" [ref=e432]:
+                              - columnheader " Previous Month" [ref=e433] [cursor=pointer]:
+                                - generic "Previous Month" [ref=e434]: 
+                                - text: Previous Month
+                              - columnheader "April 2026 Toggle Date and Time Screens" [ref=e435] [cursor=pointer]
+                              - columnheader " Next Month" [ref=e436] [cursor=pointer]:
+                                - generic "Next Month" [ref=e437]: 
+                                - text: Next Month
+                            - row "Su Mo Tu We Th Fr Sa" [ref=e438]:
+                              - columnheader "Su" [ref=e439] [cursor=pointer]
+                              - columnheader "Mo" [ref=e440] [cursor=pointer]
+                              - columnheader "Tu" [ref=e441] [cursor=pointer]
+                              - columnheader "We" [ref=e442] [cursor=pointer]
+                              - columnheader "Th" [ref=e443] [cursor=pointer]
+                              - columnheader "Fr" [ref=e444] [cursor=pointer]
+                              - columnheader "Sa" [ref=e445] [cursor=pointer]
+                          - rowgroup [ref=e446]:
+                            - row "29 30 31 1 2 3 4" [ref=e447]:
+                              - cell "29" [ref=e448] [cursor=pointer]:
+                                - generic [ref=e449]: "29"
+                              - cell "30" [ref=e450] [cursor=pointer]:
+                                - generic [ref=e451]: "30"
+                              - cell "31" [ref=e452] [cursor=pointer]:
+                                - generic [ref=e453]: "31"
+                              - cell "1" [ref=e454] [cursor=pointer]:
+                                - generic [ref=e455]: "1"
+                              - cell "2" [ref=e456] [cursor=pointer]:
+                                - generic [ref=e457]: "2"
+                              - cell "3" [ref=e458] [cursor=pointer]:
+                                - generic [ref=e459]: "3"
+                              - cell "4" [ref=e460] [cursor=pointer]:
+                                - generic [ref=e461]: "4"
+                            - row "5 6 7 8 9 10 11" [ref=e462]:
+                              - cell "5" [ref=e463] [cursor=pointer]:
+                                - generic [ref=e464]: "5"
+                              - cell "6" [ref=e465] [cursor=pointer]:
+                                - generic [ref=e466]: "6"
+                              - cell "7" [ref=e467] [cursor=pointer]:
+                                - generic [ref=e468]: "7"
+                              - cell "8" [ref=e469] [cursor=pointer]:
+                                - generic [ref=e470]: "8"
+                              - cell "9" [ref=e471] [cursor=pointer]:
+                                - generic [ref=e472]: "9"
+                              - cell "10" [ref=e473] [cursor=pointer]:
+                                - generic [ref=e474]: "10"
+                              - cell "11" [ref=e475] [cursor=pointer]:
+                                - generic [ref=e476]: "11"
+                            - row "12 13 14 15 16 17 18" [ref=e477]:
+                              - cell "12" [ref=e478] [cursor=pointer]:
+                                - generic [ref=e479]: "12"
+                              - cell "13" [ref=e480] [cursor=pointer]:
+                                - generic [ref=e481]: "13"
+                              - cell "14" [ref=e482] [cursor=pointer]:
+                                - generic [ref=e483]: "14"
+                              - cell "15" [ref=e484] [cursor=pointer]:
+                                - generic [ref=e485]: "15"
+                              - cell "16" [ref=e486] [cursor=pointer]:
+                                - generic [ref=e487]: "16"
+                              - cell "17" [ref=e488] [cursor=pointer]:
+                                - generic [ref=e489]: "17"
+                              - cell "18" [ref=e490] [cursor=pointer]:
+                                - generic [ref=e491]: "18"
+                            - row "19 20 21 22 23 24 25" [ref=e492]:
+                              - cell "19" [ref=e493] [cursor=pointer]:
+                                - generic [ref=e494]: "19"
+                              - cell "20" [ref=e495] [cursor=pointer]:
+                                - generic [ref=e496]: "20"
+                              - cell "21" [ref=e497] [cursor=pointer]:
+                                - generic [ref=e498]: "21"
+                              - cell "22" [ref=e499] [cursor=pointer]:
+                                - generic [ref=e500]: "22"
+                              - cell "23" [ref=e501] [cursor=pointer]:
+                                - generic [ref=e502]: "23"
+                              - cell "24" [ref=e503] [cursor=pointer]:
+                                - generic [ref=e504]: "24"
+                              - cell "25" [ref=e505] [cursor=pointer]:
+                                - generic [ref=e506]: "25"
+                            - row "26 27 28 29 30 1 2" [ref=e507]:
+                              - cell "26" [ref=e508] [cursor=pointer]:
+                                - generic [ref=e509]: "26"
+                              - cell "27" [ref=e510] [cursor=pointer]:
+                                - generic [ref=e511]: "27"
+                              - cell "28" [ref=e512] [cursor=pointer]:
+                                - generic [ref=e513]: "28"
+                              - cell "29" [ref=e514] [cursor=pointer]:
+                                - generic [ref=e515]: "29"
+                              - cell "30" [ref=e516] [cursor=pointer]:
+                                - generic [ref=e517]: "30"
+                              - cell "1" [ref=e518] [cursor=pointer]:
+                                - generic [ref=e519]: "1"
+                              - cell "2" [ref=e520] [cursor=pointer]:
+                                - generic [ref=e521]: "2"
+                            - row "3 4 5 6 7 8 9" [ref=e522]:
+                              - cell "3" [ref=e523] [cursor=pointer]:
+                                - generic [ref=e524]: "3"
+                              - cell "4" [ref=e525] [cursor=pointer]:
+                                - generic [ref=e526]: "4"
+                              - cell "5" [ref=e527] [cursor=pointer]:
+                                - generic [ref=e528]: "5"
+                              - cell "6" [ref=e529] [cursor=pointer]:
+                                - generic [ref=e530]: "6"
+                              - cell "7" [ref=e531] [cursor=pointer]:
+                                - generic [ref=e532]: "7"
+                              - cell "8" [ref=e533] [cursor=pointer]:
+                                - generic [ref=e534]: "8"
+                              - cell "9" [ref=e535] [cursor=pointer]:
+                                - generic [ref=e536]: "9"
+                        - text:  Previous Month Toggle Date and Time Screens  Next Month  Previous Month Toggle Date and Time Screens  Next Month  Previous Month Toggle Date and Time Screens  Next Month
+                    - listitem:
+                      - table:
+                        - rowgroup:
+                          - row
+                      - text: Toggle Date and Time Screens
+              - cell [ref=e538]:
+                - textbox [ref=e540]
+              - cell "- Select -" [ref=e541]:
+                - combobox [ref=e543]:
+                  - option "- Select -" [selected]
+                  - option "Aderant"
+                  - option "Earned Time Off (ETO)"
+              - cell [ref=e545]:
+                - textbox [ref=e547]
+              - cell "8:00" [ref=e548]:
+                - textbox [ref=e550]: 8:00
+              - cell "8:00" [ref=e552]:
+                - textbox [ref=e554]: 8:00
+              - cell "8:00" [ref=e556]:
+                - textbox [ref=e558]: 8:00
+              - cell "8:00" [ref=e560]:
+                - textbox [ref=e562]: 8:00
+              - cell "0.00" [ref=e564]:
+                - textbox [ref=e566]: "0.00"
+              - cell "check_circle delete cancel" [ref=e567]:
+                - generic [ref=e568]:
+                  - link "check_circle" [ref=e569] [cursor=pointer]:
+                    - /url: javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$body$datagrid1$ctl09$lnkSuccess", "", true, "", "", false, true))
+                    - generic [ref=e570]: check_circle
+                  - link "delete" [ref=e571] [cursor=pointer]:
+                    - /url: javascript:__doPostBack('ctl00$body$datagrid1$ctl09$lnkDelete','')
+                    - generic [ref=e572]: delete
+                  - link "cancel" [ref=e573] [cursor=pointer]:
+                    - /url: javascript:__doPostBack('ctl00$body$datagrid1$ctl09$lnkCancel','')
+                    - generic [ref=e574]: cancel
+        - link "add" [ref=e577] [cursor=pointer]:
+          - /url: javascript:WebForm_DoPostBackWithOptions(new WebForm_PostBackOptions("ctl00$body$btnAddFloating", "", true, "", "", false, true))
+          - generic [ref=e578]: add
+  - contentinfo [ref=e270]:
+    - generic [ref=e271]: © 2026 - Software Mind

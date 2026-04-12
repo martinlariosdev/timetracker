@@ -1,0 +1,96 @@
+[POST] https://www.google-analytics.com/g/collect?v=2&tid=G-QVCT0RTT0Z&gtm=45je6481v9105637661za20g&_p=1775824976129&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=EAAI&are=1&cid=65558022.1775824977&frm=0&ir=1&pscdl=noapi&rcb=18&sr=1512x982&uaa=arm&uab=64&uafvl=Chromium%3B146.0.7680.178%7CNot-A.Brand%3B24.0.0.0%7CGoogle%2520Chrome%3B146.0.7680.178&uam=&uamb=0&uap=macOS&uapv=26.2.0&uaw=0&ul=en-us&_s=1&tag_exp=0~115616985~115938465~115938469~117884344&sid=1775824976&sct=1&seg=0&dl=https%3A%2F%2Ftimetrack.number8.com%2FLogin.aspx%3FReturnUrl%3D%252fDefault.aspx&dt=Timetrack%20-%20Number8&en=page_view&_fv=1&_nsi=1&_ss=1&tfd=1967 => [204] 
+  Request headers:
+    sec-ch-ua-platform: "macOS"
+    referer: https://timetrack.number8.com/
+    user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36
+    sec-ch-ua: "Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"
+    sec-ch-ua-mobile: ?0
+[POST] https://www.google-analytics.com/g/collect?v=2&tid=G-QVCT0RTT0Z&gtm=45je6481v9105637661za20g&_p=1775824976129&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=EAAI&are=1&cid=65558022.1775824977&frm=0&ir=1&pscdl=noapi&rcb=18&sr=1512x982&uaa=arm&uab=64&uafvl=Chromium%3B146.0.7680.178%7CNot-A.Brand%3B24.0.0.0%7CGoogle%2520Chrome%3B146.0.7680.178&uam=&uamb=0&uap=macOS&uapv=26.2.0&uaw=0&ul=en-us&_s=1&tag_exp=0~115616985~115938465~115938469~117884344&sid=1775824976&sct=1&seg=0&dl=https%3A%2F%2Ftimetrack.number8.com%2FLogin.aspx%3FReturnUrl%3D%252fDefault.aspx&dt=Timetrack%20-%20Number8&en=page_view&_fv=1&_nsi=1&_ss=1&tfd=1967 => [204] 
+  Request headers:
+    sec-ch-ua-platform: "macOS"
+    referer: https://timetrack.number8.com/
+    user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36
+    sec-ch-ua: "Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"
+    sec-ch-ua-mobile: ?0
+[POST] https://number8.okta.com/api/v1/internal/device/nonce => [200] 
+  Request headers:
+    sec-ch-ua-platform: "macOS"
+    referer: https://number8.okta.com/auth/services/devicefingerprint
+    sec-ch-ua: "Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"
+    sec-ch-ua-mobile: ?0
+    x-requested-with: XMLHttpRequest
+    user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36
+    accept: */*
+    sec-ch-ua-platform-version: "26.2.0"
+[GET] https://number8.okta.com/login/getimage?username=martin.larios%40softwaremind.com => [200] 
+  Request headers:
+    sec-ch-ua-platform: "macOS"
+    referer: https://number8.okta.com/login/login.htm?fromURI=%2Foauth2%2Fv1%2Fauthorize%2Fredirect%3Fokta_key%3DsV0ENvVc4SF41bE4MdAIPDpmU2pdumXC8FK2U6FQ7Sc
+    sec-ch-ua: "Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"
+    x-device-fingerprint: sQNPPfXk6mjMoYlrdX-uuG4POmhzcniG|e627581f312c3b2ba9a57081dbebbcfbf1a0c4fc351f0bd74e9a31029bdcaae1|6f2bd9d608bc5dff45ec5936a716710a
+    sec-ch-ua-mobile: ?0
+    x-okta-xsrftoken: 
+    x-requested-with: XMLHttpRequest
+    user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36
+    accept: application/json, text/javascript, */*; q=0.01
+    sec-ch-ua-platform-version: "26.2.0"
+[POST] https://number8.okta.com/api/v1/internal/device/nonce => [200] 
+  Request headers:
+    sec-ch-ua-platform: "macOS"
+    referer: https://number8.okta.com/auth/services/devicefingerprint
+    sec-ch-ua: "Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"
+    sec-ch-ua-mobile: ?0
+    x-requested-with: XMLHttpRequest
+    user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36
+    accept: */*
+    sec-ch-ua-platform-version: "26.2.0"
+[POST] https://number8.okta.com/api/v1/authn => [200] 
+  Request headers:
+    sec-ch-ua-platform: "macOS"
+    referer: https://number8.okta.com/login/login.htm?fromURI=%2Foauth2%2Fv1%2Fauthorize%2Fredirect%3Fokta_key%3DsV0ENvVc4SF41bE4MdAIPDpmU2pdumXC8FK2U6FQ7Sc
+    accept-language: en
+    sec-ch-ua: "Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"
+    x-device-fingerprint: 1KoN62w0wCCF32xMw5NNSulC6W-mwWJY|e3effa8da93b1e556abc879d34d3d09e7653fc8c98c04df04382c0cd5c5329cb|6f2bd9d608bc5dff45ec5936a716710a
+    sec-ch-ua-mobile: ?0
+    x-okta-user-agent-extended: okta-auth-js/7.14.0 okta-signin-widget-7.44.1
+    user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36
+    accept: application/json
+    content-type: application/json
+    sec-ch-ua-platform-version: "26.2.0"
+  Request body: {"password":"IvonneSebastian2025!","username":"martin.larios@softwaremind.com","options":{"warnBeforePasswordExpired":true,"multiOptionalFactorEnroll":true}}
+[POST] https://o101443.ingest.sentry.io/api/4507506066849792/envelope/?sentry_key=728f6bd7e621314e88a26d7337d3fd61&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.80.0 => [FAILED] net::ERR_ABORTED
+  Request headers:
+    sec-ch-ua-platform: "macOS"
+    referer: https://number8.okta.com/
+    user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36
+    sec-ch-ua: "Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"
+    content-type: text/plain;charset=UTF-8
+    sec-ch-ua-mobile: ?0
+  Request body: {}
+{"type":"client_report"}
+{"timestamp":1775825089.595,"discarded_events":[{"reason":"sample_rate","category":"transaction","quantity":1}]}
+[POST] https://o101443.ingest.sentry.io/api/4507506066849792/envelope/?sentry_key=728f6bd7e621314e88a26d7337d3fd61&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.80.0 => [FAILED] net::ERR_ABORTED
+  Request headers:
+    sec-ch-ua-platform: "macOS"
+    referer: https://number8.okta.com/
+    user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36
+    sec-ch-ua: "Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"
+    content-type: text/plain;charset=UTF-8
+    sec-ch-ua-mobile: ?0
+  Request body: {}
+{"type":"client_report"}
+{"timestamp":1775825089.595,"discarded_events":[{"reason":"sample_rate","category":"transaction","quantity":1}]}
+[POST] https://www.google-analytics.com/g/collect?v=2&tid=G-QVCT0RTT0Z&gtm=45je6481v9105637661za20g&_p=1775825092514&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=EAAIAAQ&are=1&cid=65558022.1775824977&frm=0&ir=1&pscdl=noapi&rcb=19&sr=1512x982&uaa=arm&uab=64&uafvl=Chromium%3B146.0.7680.178%7CNot-A.Brand%3B24.0.0.0%7CGoogle%2520Chrome%3B146.0.7680.178&uam=&uamb=0&uap=macOS&uapv=26.2.0&uaw=0&ul=en-us&_s=1&tag_exp=0~115938465~115938469~117384405&sid=1775824976&sct=1&seg=1&dl=https%3A%2F%2Ftimetrack.number8.com%2FDefault.aspx&dt=Timetrack%20-%20Number8&en=page_view&tfd=7960 => [204] 
+  Request headers:
+    sec-ch-ua-platform: "macOS"
+    referer: https://timetrack.number8.com/
+    user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36
+    sec-ch-ua: "Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"
+    sec-ch-ua-mobile: ?0
+[POST] https://www.google-analytics.com/g/collect?v=2&tid=G-QVCT0RTT0Z&gtm=45je6481v9105637661za20g&_p=1775825092514&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=EAAIAAQ&are=1&cid=65558022.1775824977&frm=0&ir=1&pscdl=noapi&rcb=19&sr=1512x982&uaa=arm&uab=64&uafvl=Chromium%3B146.0.7680.178%7CNot-A.Brand%3B24.0.0.0%7CGoogle%2520Chrome%3B146.0.7680.178&uam=&uamb=0&uap=macOS&uapv=26.2.0&uaw=0&ul=en-us&_s=1&tag_exp=0~115938465~115938469~117384405&sid=1775824976&sct=1&seg=1&dl=https%3A%2F%2Ftimetrack.number8.com%2FDefault.aspx&dt=Timetrack%20-%20Number8&en=page_view&tfd=7960 => [204] 
+  Request headers:
+    sec-ch-ua-platform: "macOS"
+    referer: https://timetrack.number8.com/
+    user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36
+    sec-ch-ua: "Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"
+    sec-ch-ua-mobile: ?0

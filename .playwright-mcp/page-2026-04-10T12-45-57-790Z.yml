@@ -1,0 +1,207 @@
+- generic [active] [ref=e1]:
+  - banner:
+    - navigation [ref=e2]:
+      - generic [ref=e3]:
+        - img "TimeTrack" [ref=e6]
+        - list [ref=e9]:
+          - listitem [ref=e10]:
+            - link "home Home" [ref=e11] [cursor=pointer]:
+              - /url: /v2/LegacyTimeTrack/Home
+              - generic [ref=e12]: home
+              - text: Home
+          - listitem [ref=e13]:
+            - button "timer My" [ref=e14] [cursor=pointer]:
+              - generic [ref=e15]: timer
+              - text: My
+          - listitem [ref=e16]:
+            - button "pie_chart Reports" [ref=e17] [cursor=pointer]:
+              - generic [ref=e18]: pie_chart
+              - text: Reports
+          - listitem [ref=e19]:
+            - button "person Martin" [ref=e20] [cursor=pointer]:
+              - generic [ref=e21]: person
+              - text: Martin
+  - main [ref=e23]:
+    - generic [ref=e28]:
+      - heading "Earned Time Off" [level=3] [ref=e30]
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - generic [ref=e34]: "Consultant:"
+          - combobox "Consultant:" [ref=e35]:
+            - option "Martin Larios" [selected]
+        - button "View" [ref=e37] [cursor=pointer]
+      - generic [ref=e39]:
+        - generic [ref=e40]:
+          - text: • • • •
+          - generic [ref=e41]:
+            - text: "Current Balance:"
+            - generic [ref=e42]: 33.92 hrs
+        - generic [ref=e44]:
+          - button "help_outline" [ref=e45] [cursor=pointer]:
+            - generic [ref=e46]: help_outline
+          - button "remove_circle Use ETO" [ref=e47] [cursor=pointer]:
+            - generic [ref=e48]: remove_circle
+            - text: Use ETO
+      - generic [ref=e49]:
+        - generic [ref=e51]:
+          - text: Show
+          - combobox "Show entries" [ref=e52]:
+            - option "10" [selected]
+            - option "25"
+            - option "50"
+            - option "100"
+          - text: entries
+        - generic [ref=e55]:
+          - searchbox "search" [ref=e56]
+          - generic [ref=e57] [cursor=pointer]: search
+        - grid [ref=e59]:
+          - rowgroup [ref=e60]:
+            - row "Date Period Category Description ETO Running Balance Created By Actions" [ref=e61]:
+              - columnheader "Date" [ref=e62]
+              - columnheader "Period" [ref=e63]
+              - columnheader "Category" [ref=e64]
+              - columnheader "Description" [ref=e65]
+              - columnheader "ETO" [ref=e66]
+              - columnheader "Running Balance" [ref=e67]
+              - columnheader "Created By" [ref=e68]
+              - columnheader "Actions" [ref=e69]
+          - rowgroup [ref=e70]:
+            - row "03/31/2026 03/16/2026 - 03/31/2026 ETO Post ETO Accrual for Martin Larios on period 03/16/2026 - 03/31/2026 for 96.00 hours. 3.84 hrs 33.92 hrs TimeTrack System edit delete" [ref=e71]:
+              - gridcell "03/31/2026" [ref=e72]
+              - gridcell "03/16/2026 - 03/31/2026" [ref=e73]
+              - gridcell "ETO" [ref=e74]
+              - gridcell "Post ETO Accrual for Martin Larios on period 03/16/2026 - 03/31/2026 for 96.00 hours." [ref=e75]
+              - gridcell "3.84 hrs" [ref=e76]
+              - gridcell "33.92 hrs" [ref=e77]
+              - gridcell "TimeTrack System" [ref=e78]
+              - gridcell "edit delete" [ref=e79]:
+                - button "edit" [disabled] [ref=e80]:
+                  - generic [ref=e81]: edit
+                - button "delete" [disabled] [ref=e82]:
+                  - generic [ref=e83]: delete
+            - row "03/16/2026 03/01/2026 - 03/15/2026 ETO Post ETO Accrual for Martin Larios on period 03/01/2026 - 03/15/2026 for 80.00 hours. 3.20 hrs 30.08 hrs TimeTrack System edit delete" [ref=e84]:
+              - gridcell "03/16/2026" [ref=e85]
+              - gridcell "03/01/2026 - 03/15/2026" [ref=e86]
+              - gridcell "ETO" [ref=e87]
+              - gridcell "Post ETO Accrual for Martin Larios on period 03/01/2026 - 03/15/2026 for 80.00 hours." [ref=e88]
+              - gridcell "3.20 hrs" [ref=e89]
+              - gridcell "30.08 hrs" [ref=e90]
+              - gridcell "TimeTrack System" [ref=e91]
+              - gridcell "edit delete" [ref=e92]:
+                - button "edit" [disabled] [ref=e93]:
+                  - generic [ref=e94]: edit
+                - button "delete" [disabled] [ref=e95]:
+                  - generic [ref=e96]: delete
+            - row "02/27/2026 02/16/2026 - 02/28/2026 ETO Post ETO Accrual for Martin Larios on period 02/16/2026 - 02/28/2026 for 80.00 hours. 3.20 hrs 26.88 hrs TimeTrack System edit delete" [ref=e97]:
+              - gridcell "02/27/2026" [ref=e98]
+              - gridcell "02/16/2026 - 02/28/2026" [ref=e99]
+              - gridcell "ETO" [ref=e100]
+              - gridcell "Post ETO Accrual for Martin Larios on period 02/16/2026 - 02/28/2026 for 80.00 hours." [ref=e101]
+              - gridcell "3.20 hrs" [ref=e102]
+              - gridcell "26.88 hrs" [ref=e103]
+              - gridcell "TimeTrack System" [ref=e104]
+              - gridcell "edit delete" [ref=e105]:
+                - button "edit" [disabled] [ref=e106]:
+                  - generic [ref=e107]: edit
+                - button "delete" [disabled] [ref=e108]:
+                  - generic [ref=e109]: delete
+            - row "02/16/2026 02/01/2026 - 02/15/2026 ETO Post ETO Accrual for Martin Larios on period 02/01/2026 - 02/15/2026 for 80.00 hours. 3.20 hrs 23.68 hrs TimeTrack System edit delete" [ref=e110]:
+              - gridcell "02/16/2026" [ref=e111]
+              - gridcell "02/01/2026 - 02/15/2026" [ref=e112]
+              - gridcell "ETO" [ref=e113]
+              - gridcell "Post ETO Accrual for Martin Larios on period 02/01/2026 - 02/15/2026 for 80.00 hours." [ref=e114]
+              - gridcell "3.20 hrs" [ref=e115]
+              - gridcell "23.68 hrs" [ref=e116]
+              - gridcell "TimeTrack System" [ref=e117]
+              - gridcell "edit delete" [ref=e118]:
+                - button "edit" [disabled] [ref=e119]:
+                  - generic [ref=e120]: edit
+                - button "delete" [disabled] [ref=e121]:
+                  - generic [ref=e122]: delete
+            - row "01/30/2026 01/16/2026 - 01/31/2026 ETO Post ETO Accrual for Martin Larios on period 01/16/2026 - 01/31/2026 for 88.00 hours. 3.52 hrs 20.48 hrs TimeTrack System edit delete" [ref=e123]:
+              - gridcell "01/30/2026" [ref=e124]
+              - gridcell "01/16/2026 - 01/31/2026" [ref=e125]
+              - gridcell "ETO" [ref=e126]
+              - gridcell "Post ETO Accrual for Martin Larios on period 01/16/2026 - 01/31/2026 for 88.00 hours." [ref=e127]
+              - gridcell "3.52 hrs" [ref=e128]
+              - gridcell "20.48 hrs" [ref=e129]
+              - gridcell "TimeTrack System" [ref=e130]
+              - gridcell "edit delete" [ref=e131]:
+                - button "edit" [disabled] [ref=e132]:
+                  - generic [ref=e133]: edit
+                - button "delete" [disabled] [ref=e134]:
+                  - generic [ref=e135]: delete
+            - row "01/16/2026 01/01/2026 - 01/15/2026 ETO Post ETO Accrual for Martin Larios on period 01/01/2026 - 01/15/2026 for 88.00 hours. 3.52 hrs 16.96 hrs TimeTrack System edit delete" [ref=e136]:
+              - gridcell "01/16/2026" [ref=e137]
+              - gridcell "01/01/2026 - 01/15/2026" [ref=e138]
+              - gridcell "ETO" [ref=e139]
+              - gridcell "Post ETO Accrual for Martin Larios on period 01/01/2026 - 01/15/2026 for 88.00 hours." [ref=e140]
+              - gridcell "3.52 hrs" [ref=e141]
+              - gridcell "16.96 hrs" [ref=e142]
+              - gridcell "TimeTrack System" [ref=e143]
+              - gridcell "edit delete" [ref=e144]:
+                - button "edit" [disabled] [ref=e145]:
+                  - generic [ref=e146]: edit
+                - button "delete" [disabled] [ref=e147]:
+                  - generic [ref=e148]: delete
+            - row "12/31/2025 12/16/2025 - 12/31/2025 ETO Post ETO Accrual for Martin Larios on period 12/16/2025 - 12/31/2025 for 120.00 hours. 4.80 hrs 13.44 hrs TimeTrack System edit delete" [ref=e149]:
+              - gridcell "12/31/2025" [ref=e150]
+              - gridcell "12/16/2025 - 12/31/2025" [ref=e151]
+              - gridcell "ETO" [ref=e152]
+              - gridcell "Post ETO Accrual for Martin Larios on period 12/16/2025 - 12/31/2025 for 120.00 hours." [ref=e153]
+              - gridcell "4.80 hrs" [ref=e154]
+              - gridcell "13.44 hrs" [ref=e155]
+              - gridcell "TimeTrack System" [ref=e156]
+              - gridcell "edit delete" [ref=e157]:
+                - button "edit" [disabled] [ref=e158]:
+                  - generic [ref=e159]: edit
+                - button "delete" [disabled] [ref=e160]:
+                  - generic [ref=e161]: delete
+            - row "12/16/2025 12/01/2025 - 12/15/2025 ETO Post ETO Accrual for Martin Larios on period 12/01/2025 - 12/15/2025 for 56.00 hours. 2.24 hrs 8.64 hrs TimeTrack System edit delete" [ref=e162]:
+              - gridcell "12/16/2025" [ref=e163]
+              - gridcell "12/01/2025 - 12/15/2025" [ref=e164]
+              - gridcell "ETO" [ref=e165]
+              - gridcell "Post ETO Accrual for Martin Larios on period 12/01/2025 - 12/15/2025 for 56.00 hours." [ref=e166]
+              - gridcell "2.24 hrs" [ref=e167]
+              - gridcell "8.64 hrs" [ref=e168]
+              - gridcell "TimeTrack System" [ref=e169]
+              - gridcell "edit delete" [ref=e170]:
+                - button "edit" [disabled] [ref=e171]:
+                  - generic [ref=e172]: edit
+                - button "delete" [disabled] [ref=e173]:
+                  - generic [ref=e174]: delete
+            - row "12/05/2025 12/01/2025 - 12/15/2025 ETO ETO - Vacation -8.00 hrs 6.40 hrs Martin Larios edit delete" [ref=e175]:
+              - gridcell "12/05/2025" [ref=e176]
+              - gridcell "12/01/2025 - 12/15/2025" [ref=e177]
+              - gridcell "ETO" [ref=e178]
+              - gridcell "ETO - Vacation" [ref=e179]
+              - gridcell "-8.00 hrs" [ref=e180]
+              - gridcell "6.40 hrs" [ref=e181]
+              - gridcell "Martin Larios" [ref=e182]
+              - gridcell "edit delete" [ref=e183]:
+                - button "edit" [disabled] [ref=e184]:
+                  - generic [ref=e185]: edit
+                - button "delete" [disabled] [ref=e186]:
+                  - generic [ref=e187]: delete
+            - row "11/28/2025 11/16/2025 - 11/30/2025 ETO Post ETO Accrual for Martin Larios on period 11/16/2025 - 11/30/2025 for 80.00 hours. 3.20 hrs 14.40 hrs TimeTrack System edit delete" [ref=e188]:
+              - gridcell "11/28/2025" [ref=e189]
+              - gridcell "11/16/2025 - 11/30/2025" [ref=e190]
+              - gridcell "ETO" [ref=e191]
+              - gridcell "Post ETO Accrual for Martin Larios on period 11/16/2025 - 11/30/2025 for 80.00 hours." [ref=e192]
+              - gridcell "3.20 hrs" [ref=e193]
+              - gridcell "14.40 hrs" [ref=e194]
+              - gridcell "TimeTrack System" [ref=e195]
+              - gridcell "edit delete" [ref=e196]:
+                - button "edit" [disabled] [ref=e197]:
+                  - generic [ref=e198]: edit
+                - button "delete" [disabled] [ref=e199]:
+                  - generic [ref=e200]: delete
+        - status [ref=e201]: Showing 1 to 10 of 14 entries
+        - generic [ref=e202]:
+          - generic [ref=e204] [cursor=pointer]: chevron_left
+          - generic [ref=e205]:
+            - generic [ref=e206] [cursor=pointer]: "1"
+            - generic [ref=e207] [cursor=pointer]: "2"
+          - generic [ref=e209] [cursor=pointer]: chevron_right
+  - contentinfo [ref=e210]:
+    - generic [ref=e211]: © 2026 - Software Mind

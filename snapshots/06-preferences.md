@@ -1,0 +1,57 @@
+- generic [active] [ref=e1]:
+  - banner:
+    - navigation [ref=e2]:
+      - generic [ref=e3]:
+        - img "TimeTrack" [ref=e6]
+        - list [ref=e9]:
+          - listitem [ref=e10]:
+            - link "home Home" [ref=e11] [cursor=pointer]:
+              - /url: /v2/LegacyTimeTrack/Home
+              - generic [ref=e12]: home
+              - text: Home
+          - listitem [ref=e13]:
+            - button "timer My" [ref=e14] [cursor=pointer]:
+              - generic [ref=e15]: timer
+              - text: My
+          - listitem [ref=e16]:
+            - button "pie_chart Reports" [ref=e17] [cursor=pointer]:
+              - generic [ref=e18]: pie_chart
+              - text: Reports
+          - listitem [ref=e19]:
+            - button "person Martin" [ref=e20] [cursor=pointer]:
+              - generic [ref=e21]: person
+              - text: Martin
+  - main [ref=e23]:
+    - group "User Preferences" [ref=e28]:
+      - generic [ref=e32]:
+        - heading "TimeTrack Preferences" [level=3] [ref=e34]
+        - list [ref=e35]:
+          - listitem [ref=e36]:
+            - link "Time Off Reminders" [ref=e37] [cursor=pointer]:
+              - /url: "#timeOffRemindersSection"
+        - table [ref=e40]:
+          - rowgroup [ref=e41]:
+            - row "Setting Description" [ref=e42]:
+              - columnheader "Setting" [ref=e43]
+              - columnheader "Description" [ref=e44]
+          - rowgroup [ref=e45]:
+            - row "Send Time Off reminder 1 business day before Get a reminder email one business day before any scheduled time-off events" [ref=e46]:
+              - cell "Send Time Off reminder 1 business day before" [ref=e47]:
+                - generic [ref=e48]:
+                  - checkbox [ref=e49]
+                  - generic [ref=e50]: Send Time Off reminder 1 business day before
+              - cell "Get a reminder email one business day before any scheduled time-off events" [ref=e51]
+            - row "Send Time Off reminder 3 business days before Receive an email reminder three business days before any scheduled time-off events" [ref=e52]:
+              - cell "Send Time Off reminder 3 business days before" [ref=e53]:
+                - generic [ref=e54]:
+                  - checkbox [ref=e55]
+                  - generic [ref=e56]: Send Time Off reminder 3 business days before
+              - cell "Receive an email reminder three business days before any scheduled time-off events" [ref=e57]
+            - row "Send Time Off reminder every 3 business days Get recurring email reminders every three business days for upcoming time-off events" [ref=e58]:
+              - cell "Send Time Off reminder every 3 business days" [ref=e59]:
+                - generic [ref=e60]:
+                  - checkbox [ref=e61]
+                  - generic [ref=e62]: Send Time Off reminder every 3 business days
+              - cell "Get recurring email reminders every three business days for upcoming time-off events" [ref=e63]
+  - contentinfo [ref=e64]:
+    - generic [ref=e65]: © 2026 - Software Mind

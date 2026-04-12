@@ -1,0 +1,33 @@
+- generic [ref=e1]:
+  - main [ref=e5]:
+    - generic [ref=e6]:
+      - heading "Number8 logo logo" [level=1] [ref=e7]:
+        - img "Number8 logo logo" [ref=e8]
+      - img [ref=e14]
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - heading "Sign In" [level=2] [ref=e20]
+          - generic [ref=e21]:
+            - generic [ref=e22]:
+              - generic [ref=e23]: Username
+              - textbox "Username" [active] [ref=e26]:
+                - /placeholder: ""
+            - generic [ref=e27]:
+              - generic [ref=e28]: Password
+              - textbox "Password" [ref=e31]:
+                - /placeholder: ""
+            - generic [ref=e35]:
+              - checkbox "Remember me" [ref=e36]
+              - generic [ref=e37] [cursor=pointer]: Remember me
+        - button "Sign In" [ref=e39]
+      - link "Need help signing in?" [ref=e41] [cursor=pointer]:
+        - /url: "#"
+  - generic [ref=e43]:
+    - paragraph [ref=e44]:
+      - text: Powered by
+      - link "Okta" [ref=e45] [cursor=pointer]:
+        - /url: https://www.okta.com/?internal_link=wic_login
+    - paragraph [ref=e46]:
+      - link "Privacy Policy" [ref=e47] [cursor=pointer]:
+        - /url: /privacy

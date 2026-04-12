@@ -1,0 +1,19 @@
+- generic [ref=e2]:
+  - img "Software Mind" [ref=e6]
+  - generic [ref=e11]:
+    - heading "Time Track Login" [level=4] [ref=e13]
+    - link "Sign In with Okta" [ref=e15] [cursor=pointer]:
+      - /url: javascript:__doPostBack('ctl00$body$LnkOkta','')
+      - img [ref=e16]
+      - text: Sign In with Okta
+    - paragraph [ref=e17]: "- or -"
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e21]: person
+        - textbox [active] [ref=e23]
+      - generic [ref=e24]:
+        - generic [ref=e26]: lock_outline
+        - textbox [ref=e28]
+    - link "Forgot Password?" [ref=e30] [cursor=pointer]:
+      - /url: javascript:__doPostBack('ctl00$body$btnForgotPassword','')
+    - button "Get Started" [ref=e32] [cursor=pointer]
