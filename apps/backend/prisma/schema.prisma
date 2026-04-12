@@ -20,14 +20,16 @@ model Consultant {
   teamLeadName            String?
   teamLeadEmail           String?
   etoBalance              Float    @default(0)
-  workingHoursPerPeriod   Float
-  paymentType             String   // "Hourly", "Fixed", "Hybrid"
+  workingHoursPerPeriod   Float    @default(88)
+  paymentType             String   @default("Hourly")  // "Hourly", "Fixed", "Hybrid"
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 
   timeEntries             TimeEntry[]
   etoTransactions         ETOTransaction[]
   timesheetSubmissions    TimesheetSubmission[]
+
+  @@map("consultants")
 }
 
 // PayPeriod model representing a billing period
@@ -45,6 +47,7 @@ model PayPeriod {
 
   @@unique([startDate, endDate])
   @@index([isCurrent])
+  @@map("pay_periods")
 }
 
 // TimeEntry model representing a single day's time entry
@@ -61,17 +64,17 @@ model TimeEntry {
   inTime2             DateTime?
   outTime2            DateTime?
   totalHours          Float    @default(0)
-  synced              Boolean  @default(false)
+  synced              Boolean  @default(true)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
   consultant          Consultant @relation(fields: [consultantId], references: [id], onDelete: Cascade)
   payPeriod           PayPeriod   @relation(fields: [payPeriodId], references: [id], onDelete: Cascade)
 
-  @@index([consultantId])
-  @@index([payPeriodId])
+  @@index([consultantId, payPeriodId])
   @@index([date])
   @@index([synced])
+  @@map("time_entries")
 }
 
 // ETOTransaction model representing ETO (time off) transactions
@@ -83,7 +86,7 @@ model ETOTransaction {
   transactionType     String   // "Accrual", "Usage", "Adjustment"
   description         String?
   projectName         String?
-  synced              Boolean  @default(false)
+  synced              Boolean  @default(true)
   createdAt           DateTime @default(now())
 
   consultant          Consultant @relation(fields: [consultantId], references: [id], onDelete: Cascade)
@@ -91,6 +94,7 @@ model ETOTransaction {
   @@index([consultantId])
   @@index([date])
   @@index([synced])
+  @@map("eto_transactions")
 }
 
 // TimesheetSubmission model tracking timesheet approval workflow
@@ -99,7 +103,7 @@ model TimesheetSubmission {
   consultantId        String   @db.ObjectId
   payPeriodId         String   @db.ObjectId
   status              String   @default("draft")  // "draft", "submitted", "approved", "rejected"
-  submittedAt         DateTime?
+  submittedAt         DateTime? @default(now())
   approvedAt          DateTime?
   approvedBy          String?
   rejectedAt          DateTime?
@@ -114,6 +118,7 @@ model TimesheetSubmission {
   @@unique([consultantId, payPeriodId])
   @@index([status])
   @@index([submittedAt])
+  @@map("timesheet_submissions")
 }
 
 // SyncLog model for tracking synchronization operations
@@ -128,7 +133,8 @@ model SyncLog {
   success             Boolean  @default(true)
   error               String?
 
-  @@index([userId, deviceId])
+  @@index([userId, syncedAt])
   @@index([syncedAt])
   @@index([success])
+  @@map("sync_logs")
 }
