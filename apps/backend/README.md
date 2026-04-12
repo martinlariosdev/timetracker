@@ -1,98 +1,267 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# TimeTrack Backend API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS GraphQL API for the TimeTrack mobile time tracking application.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tech Stack
 
-## Description
+- **Framework**: NestJS
+- **API**: GraphQL with Apollo Server
+- **Database**: MongoDB with Prisma ORM
+- **Authentication**: Okta OIDC + JWT (Passport)
+- **Validation**: Zod schemas
+- **Testing**: Jest
+- **Language**: TypeScript
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Features
 
-## Project setup
+- ✅ Okta SSO authentication with JWT tokens
+- ✅ GraphQL API with type-safe resolvers
+- ✅ MongoDB database with Prisma ORM
+- ✅ JWT guards and decorators for authorization
+- ✅ Zod validation for all entities
+- ✅ Comprehensive test coverage
+- 🚧 Timesheet management (in progress)
+- 🚧 ETO tracking (in progress)
+- 🚧 Offline sync (planned)
 
-```bash
-$ pnpm install
-```
+## Prerequisites
 
-## Compile and run the project
+- Node.js >= 18.0.0
+- pnpm >= 8.0.0
+- MongoDB instance (local or cloud)
+- Okta developer account
 
-```bash
-# development
-$ pnpm run start
+## Environment Variables
 
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
-```
-
-## Run tests
+Create a `.env` file in the `apps/backend` directory:
 
 ```bash
-# unit tests
-$ pnpm run test
+# Database
+DATABASE_URL="mongodb://localhost:27017/timetrack"
 
-# e2e tests
-$ pnpm run test:e2e
+# JWT Authentication
+JWT_SECRET="your-super-secret-jwt-key"
+JWT_EXPIRES_IN="7d"
 
-# test coverage
-$ pnpm run test:cov
+# Okta Configuration
+OKTA_ISSUER="https://number8.okta.com"
+OKTA_CLIENT_ID="your-okta-client-id"
+OKTA_CLIENT_SECRET="your-okta-client-secret"
+
+# Server
+PORT=3000
 ```
 
-## Deployment
+**⚠️ Important**: `JWT_SECRET` is required - the app will fail to start without it.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Installation
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+From the monorepo root:
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+# Install dependencies
+pnpm install
+
+# Generate Prisma client
+cd apps/backend
+npx prisma generate
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Database Setup
 
-## Resources
+```bash
+# Push schema to MongoDB (development)
+npx prisma db push
 
-Check out a few resources that may come in handy when working with NestJS:
+# Generate Prisma client after schema changes
+npx prisma generate
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## Running the App
 
-## Support
+```bash
+# Development mode with hot reload
+pnpm run start:dev
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Production mode
+pnpm run start:prod
 
-## Stay in touch
+# Debug mode
+pnpm run start:debug
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+The GraphQL playground will be available at: http://localhost:3000/graphql
+
+## Testing
+
+```bash
+# Run all tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Test coverage
+pnpm test:cov
+
+# E2E tests
+pnpm test:e2e
+```
+
+## Project Structure
+
+```
+apps/backend/
+├── src/
+│   ├── auth/               # Authentication module
+│   │   ├── decorators/     # @CurrentUser(), @Public()
+│   │   ├── guards/         # JwtAuthGuard
+│   │   ├── strategies/     # JWT strategy
+│   │   ├── auth.service.ts # Auth logic
+│   │   └── auth.module.ts
+│   ├── prisma/             # Prisma service
+│   ├── generated/          # Generated Prisma client
+│   ├── app.module.ts       # Root module
+│   └── main.ts             # Entry point
+├── prisma/
+│   └── schema.prisma       # Database schema
+├── test/                   # E2E tests
+└── .env                    # Environment variables
+```
+
+## GraphQL API
+
+### Accessing the API
+
+1. **Health Check** (Public):
+   ```graphql
+   query {
+     health
+   }
+   ```
+
+2. **Protected Endpoints**:
+   - Require JWT token in Authorization header
+   - Format: `Authorization: Bearer <token>`
+
+### Authentication Flow
+
+1. User authenticates via Okta (mobile app)
+2. Backend validates Okta profile → creates/finds consultant
+3. Backend generates JWT token with consultant's externalId
+4. Client includes JWT in all subsequent requests
+5. JwtAuthGuard validates token and attaches user to context
+6. Resolvers access user via @CurrentUser() decorator
+
+### Using Guards and Decorators
+
+```typescript
+import { UseGuards } from '@nestjs/common';
+import { Query, Resolver } from '@nestjs/graphql';
+import { JwtAuthGuard } from './auth/guards';
+import { CurrentUser } from './auth/decorators';
+import { Consultant } from '@prisma/client';
+
+@Resolver()
+@UseGuards(JwtAuthGuard) // Protect all resolver methods
+export class MyResolver {
+  @Query(() => String)
+  async getProfile(@CurrentUser() user: Consultant) {
+    return `Hello, ${user.name}`;
+  }
+
+  @Query(() => String)
+  @Public() // Mark as public endpoint
+  async publicData() {
+    return 'This is public';
+  }
+}
+```
+
+## Database Models
+
+### Consultant
+User accounts from Okta with ETO balance and work settings.
+
+### PayPeriod
+Bi-weekly pay periods (e.g., 04/01-04/15).
+
+### TimeEntry
+Daily time entries with in/out times and project info.
+
+### ETOTransaction
+Earned Time Off accruals and usage.
+
+### TimesheetSubmission
+Timesheet approval workflow.
+
+### SyncLog
+Offline sync tracking for mobile app.
+
+## Development
+
+### Adding a New Feature
+
+1. Create feature module: `nest g module features/my-feature`
+2. Create service: `nest g service features/my-feature`
+3. Create resolver: `nest g resolver features/my-feature`
+4. Add tests: `my-feature.service.spec.ts`
+5. Import module in `app.module.ts`
+
+### Running Prisma Studio
+
+```bash
+npx prisma studio
+```
+
+Browse your database at: http://localhost:5555
+
+## Common Issues
+
+### JWT_SECRET not set
+**Error**: `JWT_SECRET environment variable is required`
+**Fix**: Add JWT_SECRET to your .env file
+
+### Prisma client out of sync
+**Error**: `PrismaClient is unable to be run in the browser`
+**Fix**: Run `npx prisma generate`
+
+### MongoDB connection failed
+**Error**: `Error connecting to MongoDB`
+**Fix**: Check DATABASE_URL and ensure MongoDB is running
+
+## Architecture Decisions
+
+- **externalId**: Used as the primary identifier for consultants (maps to Okta user ID)
+- **JWT Payload**: Contains externalId in `sub` claim for secure user lookup
+- **Global Guard**: JwtAuthGuard can be set as global (use @Public() for exceptions)
+- **GraphQL Context**: Request object passed through GraphQL context for auth
+
+## Scripts
+
+```bash
+# Generate NestJS resources
+pnpm run nest -- generate resource features/my-feature
+
+# Format code
+pnpm run format
+
+# Lint code
+pnpm run lint
+
+# Build for production
+pnpm run build
+```
+
+## Contributing
+
+1. Create feature branch from `main`
+2. Make changes with tests
+3. Run `pnpm test` to verify
+4. Run `pnpm run lint` to check style
+5. Commit with pattern: `[module-name] description`
+6. Push and create pull request
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Proprietary - TimeTrack Mobile App
