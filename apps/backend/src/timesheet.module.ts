@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from './prisma/prisma.module';
+import { TimesheetService } from './timesheet/timesheet.service';
 
 /**
  * Timesheet Module
@@ -8,5 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
  */
 @Module({
   imports: [PrismaModule],
+  providers: [TimesheetService],
+  exports: [TimesheetService],
 })
 export class TimesheetModule {}

@@ -86,7 +86,11 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^src/generated/(.*)$": "<rootDir>/generated/$1"
-    }
+      "^src/generated/(.*)$": "<rootDir>/generated/$1",
+      "^../generated$": "<rootDir>/__mocks__/prisma-client.ts"
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!(@prisma)/)"
+    ]
   }
 }
