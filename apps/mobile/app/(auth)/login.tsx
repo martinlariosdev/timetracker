@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  Image,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 
@@ -38,27 +39,49 @@ export default function LoginScreen() {
             <View className="absolute bottom-[35%] -left-[30%] w-[180px] h-[180px] rounded-full bg-white/8" />
             <View className="absolute top-[50%] left-[85%] w-[120px] h-[120px] rounded-full bg-white/12" />
 
-            {/* Software Mind Logo Placeholder */}
+            {/* Software Mind Logo */}
             <View className="mb-12">
-              <View className="w-[180px] h-12 bg-white/90 rounded-lg items-center justify-center">
-                <Text className="text-blue-600 font-bold text-lg">
-                  Software Mind
-                </Text>
-              </View>
+              {/* TODO: Replace with actual Software Mind logo from assets */}
+              <Image
+                source={{ uri: 'https://placeholder.com/180x48' }}
+                style={{
+                  width: 180,
+                  height: 48,
+                  tintColor: 'white',
+                }}
+                resizeMode="contain"
+              />
             </View>
 
             {/* Main Login Card */}
-            <View className="bg-white rounded-3xl shadow-2xl p-8 w-[88%] max-w-[380px]">
+            <View
+              className="bg-white rounded-3xl p-8 w-[88%] max-w-[380px]"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 20 },
+                shadowOpacity: 0.15,
+                shadowRadius: 25,
+                elevation: 10,
+              }}
+            >
               {/* Icon Container with Gradient */}
               <LinearGradient
                 colors={['#2563EB', '#0EA5E9']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                className="w-20 h-20 rounded-2xl shadow-md items-center justify-center mx-auto mb-6"
+                className="w-20 h-20 items-center justify-center mx-auto mb-6"
+                style={{
+                  borderRadius: 20,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 6,
+                  elevation: 4,
+                }}
               >
-                {/* Clock Icon Placeholder */}
+                {/* TODO: Replace with @expo/vector-icons or react-native-vector-icons */}
                 <View className="w-12 h-12 items-center justify-center">
-                  <Text className="text-white text-3xl">⏱️</Text>
+                  <Text className="text-white text-2xl font-bold">TT</Text>
                 </View>
               </LinearGradient>
 
@@ -85,8 +108,9 @@ export default function LoginScreen() {
                   colors={['#2563EB', '#1E40AF']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  className="rounded-2xl h-[58px] items-center justify-center shadow-lg flex-row"
+                  className="h-[58px] items-center justify-center flex-row"
                   style={{
+                    borderRadius: 14,
                     shadowColor: '#2563EB',
                     shadowOffset: { width: 0, height: 4 },
                     shadowOpacity: 0.3,
@@ -94,9 +118,9 @@ export default function LoginScreen() {
                     elevation: 8,
                   }}
                 >
-                  {/* Lock/Shield Icon Placeholder */}
+                  {/* TODO: Replace with @expo/vector-icons or react-native-vector-icons */}
                   <View className="mr-3">
-                    <Text className="text-white text-xl">🔒</Text>
+                    <Text className="text-white text-base font-bold">LOCK</Text>
                   </View>
                   <Text className="text-lg font-semibold text-white">
                     Sign in with Okta
@@ -114,10 +138,11 @@ export default function LoginScreen() {
               </View>
 
               {/* Feature Pills */}
+              {/* TODO: Replace with @expo/vector-icons or react-native-vector-icons */}
               <View className="flex-row flex-wrap gap-2 justify-center">
                 {/* Quick Entry Pill */}
                 <View className="bg-gray-100 rounded-full px-3 py-1.5 flex-row items-center gap-1.5">
-                  <Text className="text-blue-600 text-base">⚡</Text>
+                  <Text className="text-blue-600 text-xs font-bold">FAST</Text>
                   <Text className="text-xs font-medium text-gray-600">
                     Quick Entry
                   </Text>
@@ -125,7 +150,7 @@ export default function LoginScreen() {
 
                 {/* Reports Pill */}
                 <View className="bg-gray-100 rounded-full px-3 py-1.5 flex-row items-center gap-1.5">
-                  <Text className="text-blue-600 text-base">📊</Text>
+                  <Text className="text-blue-600 text-xs font-bold">DATA</Text>
                   <Text className="text-xs font-medium text-gray-600">
                     Reports
                   </Text>
@@ -133,7 +158,7 @@ export default function LoginScreen() {
 
                 {/* Secure Pill */}
                 <View className="bg-gray-100 rounded-full px-3 py-1.5 flex-row items-center gap-1.5">
-                  <Text className="text-blue-600 text-base">🛡️</Text>
+                  <Text className="text-blue-600 text-xs font-bold">SAFE</Text>
                   <Text className="text-xs font-medium text-gray-600">
                     Secure
                   </Text>
