@@ -1,4 +1,18 @@
-// Placeholder for validation schemas
-// Will be populated in Task 10
+// Re-export Zod for convenience
+export { z } from 'zod';
 
-export {};
+// Time Entry schemas
+export {
+  createTimeEntrySchema,
+  updateTimeEntrySchema,
+  timeEntrySchema,
+  patchTimeEntrySchema,
+} from './time-entry.schema';
+
+// Consultant schemas
+export {
+  consultantSchema,
+  createConsultantSchema,
+  updateConsultantSchema,
+  teamLeadSchema,
+} from './consultant.schema';
