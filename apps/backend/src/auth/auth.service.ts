@@ -58,9 +58,12 @@ export class AuthService {
     }
   }
 
-  async generateJwt(userId: string): Promise<string> {
+  async generateJwt(consultant: any): Promise<string> {
     const payload = {
-      sub: userId,
+      sub: consultant.externalId,
+      email: consultant.email,
+      name: consultant.name,
+      consultantId: consultant.id,
     };
 
     try {
@@ -68,7 +71,7 @@ export class AuthService {
       return token;
     } catch (error) {
       this.logger.error(
-        `Error generating JWT for user ${userId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Error generating JWT for consultant ${consultant.id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
       throw error;
     }
@@ -82,7 +85,7 @@ export class AuthService {
 
     try {
       const consultant = await this.prisma.consultant.findUnique({
-        where: { id: payload.sub },
+        where: { externalId: payload.sub },
       });
 
       if (!consultant) {

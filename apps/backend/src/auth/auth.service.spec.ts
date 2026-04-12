@@ -129,15 +129,18 @@ describe('AuthService', () => {
   });
 
   describe('generateJwt', () => {
-    it('should generate a valid JWT token', async () => {
+    it('should generate a valid JWT token with externalId in sub claim', async () => {
       const mockToken =
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LWNvbnN1bHRhbnQtaWQiLCJpYXQiOjE1MTYyMzkwMjJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJva3RhLXVzZXItMTIzIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
       (jwtService.sign as jest.Mock).mockReturnValue(mockToken);
 
-      const result = await service.generateJwt('test-consultant-id');
+      const result = await service.generateJwt(mockConsultant);
 
       expect(jwtService.sign).toHaveBeenCalledWith({
-        sub: 'test-consultant-id',
+        sub: 'okta-user-123',
+        email: 'test@example.com',
+        name: 'Test User',
+        consultantId: 'test-consultant-id',
       });
       expect(result).toEqual(mockToken);
     });
@@ -147,23 +150,23 @@ describe('AuthService', () => {
         throw new Error('JWT signing failed');
       });
 
-      await expect(service.generateJwt('test-consultant-id')).rejects.toThrow(
+      await expect(service.generateJwt(mockConsultant)).rejects.toThrow(
         'JWT signing failed',
       );
     });
   });
 
   describe('validateJwtPayload', () => {
-    it('should validate JWT payload and return consultant', async () => {
+    it('should validate JWT payload and return consultant by externalId', async () => {
       (prismaService.consultant.findUnique as jest.Mock).mockResolvedValue(
         mockConsultant,
       );
 
-      const payload = { sub: 'test-consultant-id' };
+      const payload = { sub: 'okta-user-123' };
       const result = await service.validateJwtPayload(payload);
 
       expect(prismaService.consultant.findUnique).toHaveBeenCalledWith({
-        where: { id: 'test-consultant-id' },
+        where: { externalId: 'okta-user-123' },
       });
       expect(result).toEqual(mockConsultant);
     });
@@ -173,7 +176,7 @@ describe('AuthService', () => {
         null,
       );
 
-      const payload = { sub: 'non-existent-id' };
+      const payload = { sub: 'non-existent-external-id' };
       await expect(service.validateJwtPayload(payload)).rejects.toThrow(
         'Consultant not found',
       );
