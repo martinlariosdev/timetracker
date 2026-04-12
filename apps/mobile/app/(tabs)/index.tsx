@@ -7,7 +7,10 @@ import {
   SafeAreaView,
   Dimensions,
   FlatList,
+  Platform,
+  StatusBar,
 } from 'react-native';
+// TODO: LinearGradient could be replaced with NativeWind gradients in future for consistency
 import LinearGradient from 'react-native-linear-gradient';
 
 // Types for our data structures
@@ -48,6 +51,7 @@ interface Metric {
 export default function TimesheetListScreen() {
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
   const [currentWeekStart, setCurrentWeekStart] = useState(0);
+  const [currentPeriod, setCurrentPeriod] = useState('04/01 - 04/15');
 
   // Mock data - Replace with API calls
   const metrics: Metric[] = [
@@ -271,6 +275,16 @@ export default function TimesheetListScreen() {
     console.log('Filter pressed');
   };
 
+  const handlePreviousPeriod = () => {
+    // TODO: Navigate to previous period
+    console.log('Previous period');
+  };
+
+  const handleNextPeriod = () => {
+    // TODO: Navigate to next period
+    console.log('Next period');
+  };
+
   const screenWidth = Dimensions.get('window').width;
   const dateChipWidth = (screenWidth - 16) / 7.2;
 
@@ -446,12 +460,17 @@ export default function TimesheetListScreen() {
     </View>
   );
 
+  // Calculate safe area top padding
+  const safeAreaTop = Platform.OS === 'ios' ? (StatusBar.currentHeight || 44) : 0;
+
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* Top Navigation Bar */}
       <View
-        className="bg-primary h-14 flex-row items-center justify-between px-4"
+        className="bg-primary flex-row items-center justify-between px-4"
         style={{
+          height: 56,
+          paddingTop: safeAreaTop,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 1 },
           shadowOpacity: 0.1,
@@ -493,12 +512,12 @@ export default function TimesheetListScreen() {
         </View>
       </View>
 
-      {/* Metrics Banner - Horizontally Scrollable */}
+      {/* Period Selector & Metrics Banner */}
       <LinearGradient
         colors={['#2563EB', '#1E40AF']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
-        className="h-22 px-3 py-4"
+        className="px-3 py-3"
         style={{
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 1 },
@@ -507,6 +526,30 @@ export default function TimesheetListScreen() {
           elevation: 2,
         }}
       >
+        {/* Period Selector */}
+        <View className="flex-row items-center justify-center mb-3">
+          <TouchableOpacity
+            onPress={handlePreviousPeriod}
+            className="w-9 h-9 items-center justify-center"
+            activeOpacity={0.7}
+          >
+            <Text className="text-white text-xl font-bold">‹</Text>
+          </TouchableOpacity>
+          <View className="flex-1 items-center">
+            <Text className="text-white text-base font-semibold">
+              {currentPeriod}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={handleNextPeriod}
+            className="w-9 h-9 items-center justify-center"
+            activeOpacity={0.7}
+          >
+            <Text className="text-white text-xl font-bold">›</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Metrics Banner - Horizontally Scrollable */}
         <FlatList
           data={metrics}
           renderItem={renderMetricCard}
@@ -515,19 +558,6 @@ export default function TimesheetListScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 0 }}
         />
-
-        {/* Pagination dots */}
-        <View className="flex-row items-center justify-center mt-2">
-          {metrics.map((_, index) => (
-            <View
-              key={index}
-              className="w-1.5 h-1.5 rounded-full mx-1"
-              style={{
-                backgroundColor: index === 0 ? '#FFFFFF' : 'rgba(255,255,255,0.4)',
-              }}
-            />
-          ))}
-        </View>
       </LinearGradient>
 
       {/* Week Date Header - Horizontally Scrollable */}
