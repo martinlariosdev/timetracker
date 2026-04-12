@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { Consultant } from '../generated';
 
 interface OktaProfile {
   id: string;
@@ -18,10 +19,10 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateOktaUser(profile: OktaProfile) {
+  async validateOktaUser(profile: OktaProfile): Promise<Consultant> {
     if (!profile || !profile.id) {
       this.logger.error('Invalid Okta profile provided');
-      throw new Error('Invalid Okta profile');
+      throw new BadRequestException('Invalid Okta profile');
     }
 
     const externalId = profile.id;
@@ -58,7 +59,11 @@ export class AuthService {
     }
   }
 
-  async generateJwt(consultant: any): Promise<string> {
+  async generateJwt(consultant: Consultant): Promise<string> {
+    if (!consultant || !consultant.externalId) {
+      throw new BadRequestException('Invalid consultant: externalId required');
+    }
+
     const payload = {
       sub: consultant.externalId,
       email: consultant.email,
@@ -77,10 +82,10 @@ export class AuthService {
     }
   }
 
-  async validateJwtPayload(payload: any) {
+  async validateJwtPayload(payload: any): Promise<Consultant> {
     if (!payload || !payload.sub) {
       this.logger.warn('Invalid JWT payload');
-      throw new Error('Invalid JWT payload');
+      throw new UnauthorizedException('Invalid JWT payload');
     }
 
     try {
@@ -90,7 +95,7 @@ export class AuthService {
 
       if (!consultant) {
         this.logger.warn(`Consultant not found for JWT payload: ${payload.sub}`);
-        throw new Error('Consultant not found');
+        throw new UnauthorizedException('Consultant not found');
       }
 
       return consultant;

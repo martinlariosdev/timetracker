@@ -145,6 +145,13 @@ describe('AuthService', () => {
       expect(result).toEqual(mockToken);
     });
 
+    it('should throw error for consultant without externalId', async () => {
+      const invalidConsultant = { ...mockConsultant, externalId: '' };
+      await expect(service.generateJwt(invalidConsultant as any)).rejects.toThrow(
+        'Invalid consultant: externalId required',
+      );
+    });
+
     it('should throw error if jwt signing fails', async () => {
       (jwtService.sign as jest.Mock).mockImplementation(() => {
         throw new Error('JWT signing failed');
