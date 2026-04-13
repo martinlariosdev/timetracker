@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { TimeEntry } from '../generated';
 
 /**
  * SubmissionService
@@ -257,7 +258,7 @@ export class SubmissionService {
    * @throws BadRequestException if validation fails
    */
   private async validateTimeEntries(
-    timeEntries: any[],
+    timeEntries: TimeEntry[],
     periodStart: Date,
     periodEnd: Date,
   ): Promise<void> {
