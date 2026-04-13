@@ -31,55 +31,15 @@ import {
 } from '@/lib/graphql/mutations';
 import { TIME_ENTRY_QUERY } from '@/lib/graphql/queries';
 import { TimeEntryPairData, FormErrors } from '@/types/add-entry';
-
-// --- Constants ---
-
-const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const FULL_DAY_NAMES = [
-  'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-];
-const MONTH_NAMES = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
-const DEFAULT_IN_TIME = '08:00';
-const DEFAULT_OUT_TIME = '17:00';
-
-// Mock last-used client for smart defaults
-// TODO: Fetch from user's recent entries when backend is connected
-const MOCK_LAST_CLIENT = {
-  name: 'Advent',
-  lastUsed: 'Last used today',
-};
-
-// Mock yesterday's entry for "Duplicate Yesterday"
-// TODO: Fetch from backend when connected
-const MOCK_YESTERDAY_ENTRY = {
-  client: 'Advent',
-  description: 'Worked on PR #239, code review',
-  projectTask: 'PR #239',
-  timeEntries: [
-    { id: '1', inTime: '08:00', outTime: '12:00' },
-    { id: '2', inTime: '13:00', outTime: '17:00' },
-  ],
-};
+import {
+  DAY_NAMES,
+  FULL_DAY_NAMES,
+  MONTH_NAMES,
+  DEFAULT_IN_TIME,
+  DEFAULT_OUT_TIME,
+  MOCK_LAST_CLIENT,
+  MOCK_YESTERDAY_ENTRY,
+} from '@/constants/add-entry';
 
 // --- Utilities ---
 
