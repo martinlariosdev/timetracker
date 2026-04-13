@@ -1,9 +1,10 @@
-import { useMutation } from '@apollo/client/react';
+import { useMutation, type MutationResult, type MutationTuple } from '@apollo/client/react';
 import type {
   DocumentNode,
   OperationVariables,
   TypedDocumentNode,
 } from '@apollo/client';
+import type { GraphQLError } from 'graphql';
 import { useState } from 'react';
 
 /**
@@ -56,46 +57,54 @@ export function useAuthenticatedMutation<
   TVariables extends OperationVariables = OperationVariables,
 >(
   mutation: DocumentNode | TypedDocumentNode<TData, TVariables>,
-  options?: any,
-) {
+  options?: Record<string, unknown>,
+): readonly [
+  MutationTuple<TData, TVariables>[0],
+  MutationTuple<TData, TVariables>[1] & { isOfflineQueued: boolean }
+] {
   const [isOfflineQueued, setIsOfflineQueued] = useState(false);
 
+  // Type assertion needed here because Apollo's useMutation has complex conditional types
+  // for the options parameter that are difficult to satisfy when wrapping the hook
   const [mutate, result] = useMutation<TData, TVariables>(mutation, {
     ...options,
     // Ensure errors are returned along with data
     errorPolicy: 'all',
-    onError: (error: any, ...args: any[]) => {
+    onError: (error: Record<string, unknown>, ...args: unknown[]) => {
       // Check if it's a network error (offline)
-      if (error.networkError) {
+      if ('networkError' in error && error.networkError) {
         console.log('Network error - queueing mutation for offline sync');
         setIsOfflineQueued(true);
         // TODO: Queue mutation for offline sync in Task 28
       }
 
       // Check for authentication errors
-      const authError = error.graphQLErrors?.find(
-        (err: any) => err.extensions?.code === 'UNAUTHENTICATED',
-      );
+      if ('graphQLErrors' in error) {
+        const graphQLErrors = error.graphQLErrors as readonly GraphQLError[];
+        const authError = graphQLErrors?.find(
+          (err: GraphQLError) => err.extensions?.code === 'UNAUTHENTICATED',
+        );
 
-      if (authError) {
-        console.warn('Authentication required - redirecting to login');
-        // TODO: Navigate to login screen
+        if (authError) {
+          console.warn('Authentication required - redirecting to login');
+          // TODO: Navigate to login screen
+        }
       }
 
       // Call original onError handler if provided
-      if (options?.onError) {
-        options.onError(error, ...args);
+      if (options?.onError && typeof options.onError === 'function') {
+        (options.onError as (...params: unknown[]) => void)(error, ...args);
       }
     },
-    onCompleted: (data: TData, ...args: any[]) => {
+    onCompleted: (data: TData, ...args: unknown[]) => {
       setIsOfflineQueued(false);
 
       // Call original onCompleted handler if provided
-      if (options?.onCompleted) {
-        options.onCompleted(data, ...args);
+      if (options?.onCompleted && typeof options.onCompleted === 'function') {
+        (options.onCompleted as (...params: unknown[]) => void)(data, ...args);
       }
     },
-  });
+  } as never);
 
   return [
     mutate,
