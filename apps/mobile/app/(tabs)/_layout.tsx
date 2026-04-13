@@ -34,7 +34,7 @@ export default function TabsLayout() {
         name="eto"
         options={{
           title: 'ETO',
-          headerTitle: 'ETO Balance',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="time-outline" size={size} color={color} />
           ),

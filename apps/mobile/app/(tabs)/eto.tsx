@@ -1,62 +1,559 @@
-import { View, Text, FlatList } from 'react-native';
+import React, { useState, useMemo, useCallback } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  ActivityIndicator,
+  Platform,
+} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Card, Heading, BodyText, Caption } from '@/components/BentoBox';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
+import { ME_QUERY, ETO_REQUESTS_QUERY } from '@/lib/graphql/queries';
+import ETOBalanceDetailModal from '@/components/ETOBalanceDetailModal';
+import UseETOModal from '@/components/UseETOModal';
+import ETOStatsModal from '@/components/ETOStatsModal';
+import ETOTransactionDetailModal from '@/components/ETOTransactionDetailModal';
 
-// Placeholder data
-const MOCK_ETO_DATA = {
-  balance: 120.5,
-  accrualRate: 8.0,
-};
+// --- Types ---
 
-const MOCK_TRANSACTIONS = [
-  { id: '1', date: '2026-04-01', type: 'Accrual', hours: 8.0 },
-  { id: '2', date: '2026-03-25', type: 'Used', hours: -8.0 },
-  { id: '3', date: '2026-03-01', type: 'Accrual', hours: 8.0 },
+interface ETOTransaction {
+  id: string;
+  date: string;
+  hours: number;
+  transactionType: string;
+  description: string;
+  periodStart?: string;
+  periodEnd?: string;
+  runningBalance?: number;
+}
+
+// --- Mock Data ---
+// Used when backend queries are not yet returning data
+
+const MOCK_BALANCE = 33.92;
+const MOCK_RECENT_CHANGE = 3.84;
+
+const MOCK_TRANSACTIONS: ETOTransaction[] = [
+  {
+    id: '1',
+    date: '2026-03-31',
+    hours: 3.84,
+    transactionType: 'Post ETO Accrual',
+    description: 'Post ETO Accrual for period 03/16 - 03/31',
+    periodStart: '03/16',
+    periodEnd: '03/31',
+    runningBalance: 33.92,
+  },
+  {
+    id: '2',
+    date: '2026-03-16',
+    hours: 3.2,
+    transactionType: 'Post ETO Accrual',
+    description: 'Post ETO Accrual for period 03/01 - 03/15',
+    periodStart: '03/01',
+    periodEnd: '03/15',
+    runningBalance: 30.08,
+  },
+  {
+    id: '3',
+    date: '2026-02-27',
+    hours: 3.2,
+    transactionType: 'Post ETO Accrual',
+    description: 'Post ETO Accrual for period 02/16 - 02/28',
+    periodStart: '02/16',
+    periodEnd: '02/28',
+    runningBalance: 26.88,
+  },
+  {
+    id: '4',
+    date: '2025-12-05',
+    hours: -8.0,
+    transactionType: 'ETO - Vacation',
+    description: 'Used for vacation day',
+    runningBalance: 8.64,
+  },
+  {
+    id: '5',
+    date: '2025-11-28',
+    hours: 3.2,
+    transactionType: 'Post ETO Accrual',
+    description: 'Post ETO Accrual for period 11/16 - 11/28',
+    periodStart: '11/16',
+    periodEnd: '11/28',
+    runningBalance: 16.64,
+  },
 ];
 
+// --- Date Formatting ---
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+function formatTransactionDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  const month = MONTH_NAMES[date.getMonth()];
+  const day = date.getDate();
+  const year = date.getFullYear();
+  const currentYear = new Date().getFullYear();
+  if (year === currentYear) {
+    return `${month.slice(0, 3)} ${day}`;
+  }
+  return `${month.slice(0, 3)} ${day}, ${year}`;
+}
+
+// --- Sub-Components ---
+
+function TopBar({
+  onMorePress,
+  topInset,
+}: {
+  onMorePress: () => void;
+  topInset: number;
+}) {
+  return (
+    <View
+      className="bg-white shadow-level-1"
+      style={{ paddingTop: topInset }}
+    >
+      <View
+        className="flex-row items-center justify-between px-4"
+        style={{ height: 56 }}
+      >
+        <View style={{ width: 44, height: 44 }} />
+        <Text
+          className="text-h3 font-semibold text-gray-800"
+          accessibilityRole="header"
+        >
+          ETO
+        </Text>
+        <TouchableOpacity
+          onPress={onMorePress}
+          className="items-center justify-center"
+          style={{ width: 44, height: 44 }}
+          accessibilityLabel="More options"
+          accessibilityRole="button"
+        >
+          <Ionicons name="ellipsis-vertical" size={24} color="#4B5563" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+function BalanceCard({
+  balance,
+  recentChange,
+  onPress,
+}: {
+  balance: number;
+  recentChange: number;
+  onPress: () => void;
+}) {
+  const isPositiveChange = recentChange >= 0;
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.9}
+      className="bg-white shadow-level-2 mx-md mt-md"
+      style={{
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: '#2563EB',
+        padding: 28,
+      }}
+      accessibilityLabel={`ETO Balance: ${balance.toFixed(2)} hours. ${isPositiveChange ? 'Plus' : 'Minus'} ${Math.abs(recentChange).toFixed(2)} accrued this period. Tap for details.`}
+      accessibilityRole="button"
+    >
+      <View className="flex-row items-center" style={{ gap: 8 }}>
+        <Text style={{ fontSize: 32 }}>💰</Text>
+        <Text className="text-body text-gray-600">ETO Balance</Text>
+      </View>
+
+      <Text
+        className="font-bold text-center"
+        style={{
+          fontSize: 56,
+          lineHeight: 64,
+          color: '#2563EB',
+          marginTop: 16,
+          marginBottom: 16,
+        }}
+      >
+        {balance.toFixed(2)}
+      </Text>
+
+      <View className="flex-row items-center justify-center" style={{ gap: 4 }}>
+        <Ionicons
+          name={isPositiveChange ? 'arrow-up' : 'arrow-down'}
+          size={14}
+          color={isPositiveChange ? '#10B981' : '#EF4444'}
+        />
+        <Text className="text-body-small text-gray-600">
+          {isPositiveChange ? '+' : ''}{recentChange.toFixed(2)} accrued this period
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+function QuickActions({
+  onUseETO,
+  onStats,
+}: {
+  onUseETO: () => void;
+  onStats: () => void;
+}) {
+  return (
+    <View
+      className="flex-row mx-md"
+      style={{ gap: 12, marginTop: 16 }}
+    >
+      <TouchableOpacity
+        onPress={onUseETO}
+        activeOpacity={0.8}
+        className="bg-primary shadow-level-2 flex-row items-center justify-center"
+        style={{
+          flex: 7,
+          height: 64,
+          borderRadius: 16,
+        }}
+        accessibilityLabel="Use ETO hours"
+        accessibilityRole="button"
+      >
+        <Text style={{ fontSize: 24 }}>💸</Text>
+        <Text className="text-body font-bold text-white ml-2">Use ETO</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={onStats}
+        activeOpacity={0.8}
+        className="items-center justify-center"
+        style={{
+          flex: 3,
+          height: 64,
+          borderRadius: 16,
+          backgroundColor: '#FFFFFF',
+          borderWidth: 2,
+          borderColor: '#E5E7EB',
+        }}
+        accessibilityLabel="View ETO statistics"
+        accessibilityRole="button"
+      >
+        <Text style={{ fontSize: 24 }}>📊</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function SectionHeader({
+  onViewAll,
+}: {
+  onViewAll: () => void;
+}) {
+  return (
+    <View
+      className="flex-row items-center justify-between"
+      style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 12 }}
+    >
+      <Text className="text-h4 font-bold text-gray-800">Recent Activity</Text>
+      <TouchableOpacity
+        onPress={onViewAll}
+        accessibilityLabel="View all transactions"
+        accessibilityRole="button"
+      >
+        <Text className="text-body-small font-semibold text-primary">
+          View All →
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function TransactionCard({
+  transaction,
+  onPress,
+}: {
+  transaction: ETOTransaction;
+  onPress: () => void;
+}) {
+  const isPositive = transaction.hours >= 0;
+  const amountColor = isPositive ? '#10B981' : '#EF4444';
+  const formattedDate = formatTransactionDate(transaction.date);
+  const periodText = transaction.periodStart && transaction.periodEnd
+    ? `Period: ${transaction.periodStart} - ${transaction.periodEnd}`
+    : transaction.description;
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.95}
+      className="bg-white shadow-level-1"
+      style={{
+        borderRadius: 16,
+        padding: 20,
+        marginHorizontal: 16,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+      }}
+      accessibilityLabel={`${transaction.transactionType}, ${formattedDate}, ${isPositive ? 'plus' : 'minus'} ${Math.abs(transaction.hours).toFixed(2)} hours`}
+      accessibilityRole="button"
+    >
+      {/* Card Header */}
+      <View className="flex-row items-center" style={{ gap: 8, marginBottom: 12 }}>
+        <Text style={{ fontSize: 20 }}>📅</Text>
+        <Text className="text-body font-semibold text-gray-800">
+          {formattedDate}
+        </Text>
+      </View>
+
+      {/* Transaction Type */}
+      <Text
+        className="text-body font-semibold text-gray-800"
+        numberOfLines={1}
+        style={{ marginBottom: 4 }}
+      >
+        {transaction.transactionType}
+      </Text>
+
+      {/* Period/Description */}
+      <Text
+        className="text-caption text-gray-600"
+        numberOfLines={1}
+        style={{ marginBottom: 16 }}
+      >
+        {periodText}
+      </Text>
+
+      {/* Amount & Balance Row */}
+      <View
+        className="flex-row items-center justify-between"
+        style={{
+          borderTopWidth: 1,
+          borderTopColor: '#E5E7EB',
+          paddingTop: 16,
+        }}
+      >
+        <Text
+          className="text-body-large font-bold"
+          style={{ color: amountColor }}
+        >
+          {isPositive ? '+' : ''}{transaction.hours.toFixed(2)} hrs
+        </Text>
+        {transaction.runningBalance !== undefined && (
+          <Text className="text-body text-gray-600">
+            → {transaction.runningBalance.toFixed(2)} hrs
+          </Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+// --- Main Screen ---
+
 export default function ETOScreen() {
+  const insets = useSafeAreaInsets();
+
+  // --- Modal State ---
+  const [balanceDetailVisible, setBalanceDetailVisible] = useState(false);
+  const [useETOVisible, setUseETOVisible] = useState(false);
+  const [statsVisible, setStatsVisible] = useState(false);
+  const [transactionDetailVisible, setTransactionDetailVisible] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<ETOTransaction | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // --- GraphQL Queries ---
+  const {
+    data: meData,
+    loading: meLoading,
+    error: meError,
+    refetch: refetchMe,
+  } = useAuthenticatedQuery(ME_QUERY);
+
+  const {
+    data: transactionsData,
+    loading: transactionsLoading,
+    error: transactionsError,
+    refetch: refetchTransactions,
+  } = useAuthenticatedQuery(ETO_REQUESTS_QUERY, {
+    variables: { filters: {} },
+  });
+
+  // --- Derived Data ---
+  const balance = useMemo(() => {
+    if (meData?.me?.etoBalance != null) {
+      return meData.me.etoBalance;
+    }
+    return MOCK_BALANCE;
+  }, [meData]);
+
+  const transactions: ETOTransaction[] = useMemo(() => {
+    if (transactionsData?.etoRequests?.length > 0) {
+      return transactionsData.etoRequests.map((req: any) => ({
+        id: req.id,
+        date: req.startDate || req.requestDate,
+        hours: req.status === 'approved' ? -req.hours : req.hours,
+        transactionType: req.reason || 'ETO Request',
+        description: req.comments || req.reason || '',
+        runningBalance: undefined,
+      }));
+    }
+    return MOCK_TRANSACTIONS;
+  }, [transactionsData]);
+
+  const recentTransactions = useMemo(
+    () => transactions.slice(0, 5),
+    [transactions],
+  );
+
+  const loading = meLoading || transactionsLoading;
+  const error = meError || transactionsError;
+
+  // --- Handlers ---
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([refetchMe(), refetchTransactions()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchMe, refetchTransactions]);
+
+  const handleMorePress = useCallback(() => {
+    // TODO: Show action sheet with more options
+  }, []);
+
+  const handleBalancePress = useCallback(() => {
+    setBalanceDetailVisible(true);
+  }, []);
+
+  const handleUseETO = useCallback(() => {
+    setUseETOVisible(true);
+  }, []);
+
+  const handleStats = useCallback(() => {
+    setStatsVisible(true);
+  }, []);
+
+  const handleViewAll = useCallback(() => {
+    // TODO: Navigate to full transaction list
+  }, []);
+
+  const handleTransactionPress = useCallback((transaction: ETOTransaction) => {
+    setSelectedTransaction(transaction);
+    setTransactionDetailVisible(true);
+  }, []);
+
+  const handleETORequestSuccess = useCallback(async () => {
+    setUseETOVisible(false);
+    await Promise.all([refetchMe(), refetchTransactions()]);
+  }, [refetchMe, refetchTransactions]);
+
+  // --- Render ---
+
   return (
     <View className="flex-1 bg-gray-50">
-      <StatusBar style="auto" />
+      <StatusBar style="dark" />
 
-      <View className="bg-primary p-lg m-md rounded-lg items-center">
-        <Text className="text-body text-white opacity-90 mb-2">
-          Current Balance
-        </Text>
-        <Text className="text-[40px] font-bold text-white mb-2">
-          {MOCK_ETO_DATA.balance} hours
-        </Text>
-        <Caption className="text-white opacity-80">
-          Accrual rate: {MOCK_ETO_DATA.accrualRate} hours/month
-        </Caption>
-      </View>
+      {/* Top Bar */}
+      <TopBar onMorePress={handleMorePress} topInset={insets.top} />
 
-      <View className="p-md">
-        <Heading level={3} className="mb-3">
-          Recent Transactions
-        </Heading>
-        <FlatList
-          data={MOCK_TRANSACTIONS}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <Card shadow="level-1" className="mb-2 flex-row justify-between items-center">
-              <View className="gap-1">
-                <Caption className="text-gray-600">{item.date}</Caption>
-                <BodyText className="font-medium">{item.type}</BodyText>
-              </View>
-              <Text
-                className={`text-body font-semibold ${
-                  item.hours < 0 ? 'text-error' : 'text-success'
-                }`}
-              >
-                {item.hours > 0 ? '+' : ''}
-                {item.hours} hrs
-              </Text>
-            </Card>
-          )}
-          scrollEnabled={false}
-        />
-      </View>
+      {/* Content */}
+      {loading && !transactions.length ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#2563EB" />
+          <Text className="text-sm text-gray-500 mt-3">Loading ETO data...</Text>
+        </View>
+      ) : error && !transactions.length ? (
+        <View className="flex-1 items-center justify-center p-4">
+          <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+          <Text className="text-base font-semibold text-gray-800 mt-3">
+            Failed to load ETO data
+          </Text>
+          <Text className="text-sm text-gray-500 mt-1 text-center">
+            {error.message}
+          </Text>
+          <TouchableOpacity
+            onPress={handleRefresh}
+            className="bg-primary rounded-lg px-4 py-2 mt-4"
+            accessibilityLabel="Retry loading ETO data"
+            accessibilityRole="button"
+          >
+            <Text className="text-white font-semibold">Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="#2563EB"
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Balance Card */}
+          <BalanceCard
+            balance={balance}
+            recentChange={MOCK_RECENT_CHANGE}
+            onPress={handleBalancePress}
+          />
+
+          {/* Quick Actions */}
+          <QuickActions onUseETO={handleUseETO} onStats={handleStats} />
+
+          {/* Section Header */}
+          <SectionHeader onViewAll={handleViewAll} />
+
+          {/* Transaction Cards */}
+          {recentTransactions.map((transaction) => (
+            <TransactionCard
+              key={transaction.id}
+              transaction={transaction}
+              onPress={() => handleTransactionPress(transaction)}
+            />
+          ))}
+        </ScrollView>
+      )}
+
+      {/* Modals */}
+      <ETOBalanceDetailModal
+        visible={balanceDetailVisible}
+        onClose={() => setBalanceDetailVisible(false)}
+        balance={balance}
+      />
+
+      <UseETOModal
+        visible={useETOVisible}
+        onClose={() => setUseETOVisible(false)}
+        balance={balance}
+        onSuccess={handleETORequestSuccess}
+      />
+
+      <ETOStatsModal
+        visible={statsVisible}
+        onClose={() => setStatsVisible(false)}
+        balance={balance}
+      />
+
+      <ETOTransactionDetailModal
+        visible={transactionDetailVisible}
+        onClose={() => setTransactionDetailVisible(false)}
+        transaction={selectedTransaction}
+      />
     </View>
   );
 }
