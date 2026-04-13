@@ -137,6 +137,27 @@ export const TIMESHEET_METRICS_QUERY = gql`
 `;
 
 /**
+ * Get timesheet submission status for a pay period - requires authentication
+ */
+export const TIMESHEET_SUBMISSION_QUERY = gql`
+  query TimesheetSubmission($payPeriodId: String!) {
+    timesheetSubmission(payPeriodId: $payPeriodId) {
+      id
+      consultantId
+      payPeriodId
+      status
+      submittedAt
+      approvedAt
+      approvedBy
+      rejectedAt
+      rejectedBy
+      comments
+      totalHours
+    }
+  }
+`;
+
+/**
  * Get pending sync items - requires authentication
  */
 export const PENDING_SYNC_QUERY = gql`

@@ -7,6 +7,9 @@ import {
   RefreshControl,
   useWindowDimensions,
   ActivityIndicator,
+  Modal,
+  Alert,
+  Platform,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,7 +17,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
-import { WEEK_TIME_ENTRIES_QUERY } from '@/lib/graphql/queries';
+import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
+import { WEEK_TIME_ENTRIES_QUERY, TIMESHEET_SUBMISSION_QUERY } from '@/lib/graphql/queries';
+import { SUBMIT_TIMESHEET_MUTATION } from '@/lib/graphql/mutations';
 
 // --- Types ---
 
@@ -38,6 +43,22 @@ interface DayData {
   monthName: string;
   fullLabel: string;
   entries: TimeEntry[];
+  totalHours: number;
+}
+
+type SubmissionStatus = 'draft' | 'submitted' | 'approved' | 'rejected';
+
+interface TimesheetSubmission {
+  id: string;
+  consultantId: string;
+  payPeriodId: string;
+  status: SubmissionStatus;
+  submittedAt: string | null;
+  approvedAt: string | null;
+  approvedBy: string | null;
+  rejectedAt: string | null;
+  rejectedBy: string | null;
+  comments: string | null;
   totalHours: number;
 }
 
@@ -417,6 +438,229 @@ function DayCard({
   );
 }
 
+function SubmissionStatusBadge({
+  submission,
+  onViewDetails,
+}: {
+  submission: TimesheetSubmission;
+  onViewDetails: () => void;
+}) {
+  const statusConfig: Record<
+    SubmissionStatus,
+    { label: string; color: string; bgColor: string; icon: keyof typeof Ionicons.glyphMap }
+  > = {
+    draft: {
+      label: 'Not submitted',
+      color: '#6B7280',
+      bgColor: '#F3F4F6',
+      icon: 'document-text-outline',
+    },
+    submitted: {
+      label: `Submitted ${submission.submittedAt ? `on ${new Date(submission.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}`,
+      color: '#2563EB',
+      bgColor: '#EFF6FF',
+      icon: 'checkmark-circle',
+    },
+    approved: {
+      label: 'Approved',
+      color: '#10B981',
+      bgColor: '#ECFDF5',
+      icon: 'checkmark-circle',
+    },
+    rejected: {
+      label: 'Rejected',
+      color: '#EF4444',
+      bgColor: '#FEF2F2',
+      icon: 'information-circle',
+    },
+  };
+
+  const config = statusConfig[submission.status];
+
+  return (
+    <TouchableOpacity
+      onPress={onViewDetails}
+      activeOpacity={0.7}
+      className="flex-row items-center justify-between mx-4 mt-2 rounded-xl px-4"
+      style={{
+        backgroundColor: config.bgColor,
+        height: 48,
+        borderWidth: 1,
+        borderColor: `${config.color}20`,
+      }}
+      accessibilityLabel={`Timesheet status: ${config.label}. Tap to view details.`}
+      accessibilityRole="button"
+    >
+      <View className="flex-row items-center">
+        <Ionicons name={config.icon} size={18} color={config.color} />
+        <Text
+          className="font-semibold ml-2"
+          style={{ fontSize: 14, color: config.color }}
+        >
+          {config.label}
+        </Text>
+      </View>
+      {submission.status !== 'draft' && (
+        <Text style={{ fontSize: 12, color: config.color }}>
+          {submission.totalHours.toFixed(1)} hrs
+        </Text>
+      )}
+    </TouchableOpacity>
+  );
+}
+
+function ConfirmSubmitModal({
+  visible,
+  totalHours,
+  onCancel,
+  onConfirm,
+  isSubmitting,
+}: {
+  visible: boolean;
+  totalHours: number;
+  onCancel: () => void;
+  onConfirm: () => void;
+  isSubmitting: boolean;
+}) {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType={Platform.OS === 'ios' ? 'slide' : 'fade'}
+      onRequestClose={onCancel}
+    >
+      <View
+        className="flex-1 justify-end"
+        style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+      >
+        <TouchableOpacity
+          className="flex-1"
+          activeOpacity={1}
+          onPress={onCancel}
+          accessibilityLabel="Close modal"
+        />
+        <View
+          className="bg-white"
+          style={{
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            paddingHorizontal: 24,
+            paddingTop: 24,
+            paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+          }}
+        >
+          {/* Handle indicator */}
+          <View
+            className="self-center rounded-full mb-4"
+            style={{ width: 40, height: 4, backgroundColor: '#D1D5DB' }}
+          />
+
+          {/* Title */}
+          <Text
+            className="font-bold text-gray-900"
+            style={{ fontSize: 24, lineHeight: 32 }}
+          >
+            Submit Timesheet?
+          </Text>
+
+          {/* Summary */}
+          <View
+            className="flex-row items-center mt-4 rounded-xl px-4"
+            style={{ height: 56, backgroundColor: '#EFF6FF' }}
+          >
+            <Ionicons name="time" size={22} color="#2563EB" />
+            <Text
+              className="font-bold ml-3"
+              style={{ fontSize: 20, color: '#2563EB' }}
+            >
+              {totalHours.toFixed(1)} hours
+            </Text>
+            <Text
+              className="ml-2"
+              style={{ fontSize: 14, color: '#6B7280' }}
+            >
+              total for this period
+            </Text>
+          </View>
+
+          {/* Warning */}
+          <View
+            className="flex-row mt-4 rounded-lg p-3"
+            style={{ backgroundColor: '#FFFBEB' }}
+          >
+            <Ionicons name="warning" size={18} color="#F59E0B" style={{ marginTop: 2 }} />
+            <Text
+              className="flex-1 ml-2"
+              style={{ fontSize: 14, lineHeight: 20, color: '#92400E' }}
+            >
+              Once submitted, entries cannot be edited until approved or rejected.
+            </Text>
+          </View>
+
+          {/* Actions */}
+          <View className="flex-row mt-6" style={{ gap: 12 }}>
+            <TouchableOpacity
+              onPress={onCancel}
+              disabled={isSubmitting}
+              className="flex-1 items-center justify-center rounded-xl"
+              style={{
+                height: 52,
+                borderWidth: 1.5,
+                borderColor: '#D1D5DB',
+                backgroundColor: '#FFFFFF',
+              }}
+              accessibilityLabel="Cancel submission"
+              accessibilityRole="button"
+            >
+              <Text
+                className="font-semibold"
+                style={{ fontSize: 16, color: '#4B5563' }}
+              >
+                Cancel
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={onConfirm}
+              disabled={isSubmitting}
+              className="flex-1 flex-row items-center justify-center rounded-xl"
+              style={{
+                height: 52,
+                backgroundColor: isSubmitting ? '#93C5FD' : '#2563EB',
+              }}
+              accessibilityLabel="Confirm and submit timesheet"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isSubmitting }}
+            >
+              {isSubmitting ? (
+                <>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <Text
+                    className="font-semibold ml-2"
+                    style={{ fontSize: 16, color: '#FFFFFF' }}
+                  >
+                    Submitting...
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="send" size={18} color="#FFFFFF" />
+                  <Text
+                    className="font-semibold ml-2"
+                    style={{ fontSize: 16, color: '#FFFFFF' }}
+                  >
+                    Submit
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 // --- Main Screen ---
 
 export default function TimesheetListScreen() {
@@ -464,6 +708,35 @@ export default function TimesheetListScreen() {
       },
     },
   );
+
+  // Mock pay period ID (TODO: derive from actual pay period when backend is connected)
+  const payPeriodId = useMemo(() => {
+    return `pp-${formatDateParam(weekStart)}`;
+  }, [weekStart]);
+
+  // Submission status query
+  const {
+    data: submissionData,
+    refetch: refetchSubmission,
+  } = useAuthenticatedQuery(TIMESHEET_SUBMISSION_QUERY, {
+    variables: { payPeriodId },
+  });
+
+  const submission: TimesheetSubmission | null = useMemo(() => {
+    return submissionData?.timesheetSubmission ?? null;
+  }, [submissionData]);
+
+  const isSubmitted = submission !== null && submission.status !== 'draft';
+
+  // Submit mutation
+  const [submitTimesheet, { loading: isSubmitting }] = useAuthenticatedMutation(
+    SUBMIT_TIMESHEET_MUTATION,
+    {
+      refetchQueries: ['WeekTimeEntries', 'TimesheetSubmission'],
+    },
+  );
+
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // Use API data if available, fall back to mock data
   const entries: TimeEntry[] = useMemo(() => {
@@ -523,11 +796,11 @@ export default function TimesheetListScreen() {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await refetch();
+      await Promise.all([refetch(), refetchSubmission()]);
     } finally {
       setRefreshing(false);
     }
-  }, [refetch]);
+  }, [refetch, refetchSubmission]);
 
   const handleAddEntry = useCallback(
     (date: string) => {
@@ -549,6 +822,61 @@ export default function TimesheetListScreen() {
     },
     [],
   );
+
+  const handleSubmitPress = useCallback(() => {
+    setShowConfirmModal(true);
+  }, []);
+
+  const handleConfirmSubmit = useCallback(async () => {
+    try {
+      await submitTimesheet({
+        variables: { payPeriodId },
+      });
+      setShowConfirmModal(false);
+      await refetchSubmission();
+      Alert.alert(
+        'Timesheet Submitted',
+        'Your timesheet has been submitted for approval.',
+      );
+    } catch (err) {
+      setShowConfirmModal(false);
+      Alert.alert(
+        'Submission Failed',
+        'Could not submit your timesheet. Please try again.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Retry', onPress: handleSubmitPress },
+        ],
+      );
+    }
+  }, [submitTimesheet, payPeriodId, refetchSubmission, handleSubmitPress]);
+
+  const handleCancelSubmit = useCallback(() => {
+    setShowConfirmModal(false);
+  }, []);
+
+  const handleViewSubmissionDetails = useCallback(() => {
+    if (!submission) return;
+
+    const details: string[] = [];
+    if (submission.submittedAt) {
+      details.push(`Submitted: ${new Date(submission.submittedAt).toLocaleString()}`);
+    }
+    if (submission.approvedAt && submission.approvedBy) {
+      details.push(`Approved: ${new Date(submission.approvedAt).toLocaleString()}`);
+      details.push(`By: ${submission.approvedBy}`);
+    }
+    if (submission.rejectedAt && submission.rejectedBy) {
+      details.push(`Rejected: ${new Date(submission.rejectedAt).toLocaleString()}`);
+      details.push(`By: ${submission.rejectedBy}`);
+    }
+    if (submission.comments) {
+      details.push(`Comments: ${submission.comments}`);
+    }
+    details.push(`Total Hours: ${submission.totalHours.toFixed(1)}`);
+
+    Alert.alert('Submission Details', details.join('\n'));
+  }, [submission]);
 
   const handlePrevWeek = useCallback(() => {
     setWeekOffset((prev) => prev - 1);
@@ -723,6 +1051,14 @@ export default function TimesheetListScreen() {
         </View>
       </View>
 
+      {/* === Submission Status Badge === */}
+      {submission && submission.status !== 'draft' && (
+        <SubmissionStatusBadge
+          submission={submission}
+          onViewDetails={handleViewSubmissionDetails}
+        />
+      )}
+
       {/* === Daily Entry Cards (Vertical Scroll) === */}
       {loading && !entries.length ? (
         <View className="flex-1 items-center justify-center">
@@ -748,7 +1084,7 @@ export default function TimesheetListScreen() {
       ) : (
         <ScrollView
           className="flex-1 px-4 pt-3"
-          contentContainerStyle={{ paddingBottom: 88 }}
+          contentContainerStyle={{ paddingBottom: isSubmitted ? 88 : 160 }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -770,22 +1106,106 @@ export default function TimesheetListScreen() {
         </ScrollView>
       )}
 
+      {/* === Submit Timesheet Footer === */}
+      {!isSubmitted && (
+        <View
+          className="absolute left-0 right-0 bg-white shadow-level-2"
+          style={{
+            bottom: 0,
+            paddingBottom: insets.bottom + 8,
+            paddingTop: 12,
+            paddingHorizontal: 16,
+            borderTopWidth: 1,
+            borderTopColor: '#E5E7EB',
+          }}
+        >
+          <View className="flex-row items-center justify-between mb-2">
+            <Text style={{ fontSize: 12, color: '#6B7280' }}>
+              {submission?.status === 'draft' || !submission
+                ? 'Not submitted'
+                : ''}
+            </Text>
+            <Text style={{ fontSize: 12, color: '#6B7280' }}>
+              {thisWeekHours.toFixed(1)} hrs this week
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={handleSubmitPress}
+            disabled={thisWeekHours === 0}
+            activeOpacity={0.8}
+            className="flex-row items-center justify-center rounded-xl"
+            style={{
+              height: 52,
+              backgroundColor: thisWeekHours === 0 ? '#D1D5DB' : '#2563EB',
+            }}
+            accessibilityLabel="Submit timesheet for approval"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: thisWeekHours === 0 }}
+          >
+            <Ionicons
+              name="send"
+              size={18}
+              color={thisWeekHours === 0 ? '#9CA3AF' : '#FFFFFF'}
+            />
+            <Text
+              className="font-semibold ml-2"
+              style={{
+                fontSize: 16,
+                color: thisWeekHours === 0 ? '#9CA3AF' : '#FFFFFF',
+              }}
+            >
+              Submit Timesheet
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* === Floating Action Button === */}
-      <TouchableOpacity
-        onPress={handleFabPress}
-        className="absolute bg-primary rounded-full shadow-level-3 items-center justify-center"
-        style={{
-          width: 56,
-          height: 56,
-          bottom: 16 + insets.bottom,
-          right: 16,
-        }}
-        activeOpacity={0.8}
-        accessibilityLabel={`Add time entry for ${formatDateParam(selectedDate)}`}
-        accessibilityRole="button"
-      >
-        <Ionicons name="add" size={24} color="#FFFFFF" />
-      </TouchableOpacity>
+      {!isSubmitted ? (
+        <TouchableOpacity
+          onPress={handleFabPress}
+          className="absolute bg-primary rounded-full shadow-level-3 items-center justify-center"
+          style={{
+            width: 56,
+            height: 56,
+            bottom: (isSubmitted ? 16 : 96) + insets.bottom,
+            right: 16,
+          }}
+          activeOpacity={0.8}
+          accessibilityLabel={`Add time entry for ${formatDateParam(selectedDate)}`}
+          accessibilityRole="button"
+        >
+          <Ionicons name="add" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          onPress={handleFabPress}
+          disabled
+          className="absolute rounded-full shadow-level-3 items-center justify-center"
+          style={{
+            width: 56,
+            height: 56,
+            bottom: 16 + insets.bottom,
+            right: 16,
+            backgroundColor: '#D1D5DB',
+          }}
+          activeOpacity={0.8}
+          accessibilityLabel="Cannot add entries to submitted timesheet"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: true }}
+        >
+          <Ionicons name="add" size={24} color="#9CA3AF" />
+        </TouchableOpacity>
+      )}
+
+      {/* === Confirmation Modal === */}
+      <ConfirmSubmitModal
+        visible={showConfirmModal}
+        totalHours={thisWeekHours}
+        onCancel={handleCancelSubmit}
+        onConfirm={handleConfirmSubmit}
+        isSubmitting={isSubmitting}
+      />
     </View>
   );
 }
