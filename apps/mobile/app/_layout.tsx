@@ -1,40 +1,21 @@
 import { Stack, Slot, useRouter, useSegments } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { ApolloProvider } from '../lib/apollo-provider';
 import { useNotifications } from '../hooks/useNotifications';
+import { useAuth } from '../hooks/useAuth';
 import '../global.css';
-
-// This is a placeholder for actual auth context
-// TODO: Replace with proper auth context from Task 29
-function useAuth() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    // Simulate checking auth status
-    // In real implementation, check AsyncStorage for auth token
-    const checkAuth = async () => {
-      // For now, default to not authenticated
-      // TODO: Implement actual auth check
-      setIsAuthenticated(false);
-    };
-
-    checkAuth();
-  }, []);
-
-  return { isAuthenticated };
-}
 
 export default function RootLayout() {
   // Initialize push notifications on app startup
   useNotifications();
 
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    if (isAuthenticated === null) {
+    if (isLoading) {
       // Still loading auth state
       return;
     }
@@ -48,10 +29,10 @@ export default function RootLayout() {
       // Redirect to main app if authenticated
       router.replace('/(tabs)');
     }
-  }, [isAuthenticated, segments]);
+  }, [isAuthenticated, isLoading, segments]);
 
   // Show loading screen while checking auth
-  if (isAuthenticated === null) {
+  if (isLoading) {
     return (
       <ApolloProvider>
         <View className="flex-1 items-center justify-center bg-gray-50">
