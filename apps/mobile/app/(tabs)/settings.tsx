@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { Heading, BodyText, Button } from '@/components/BentoBox';
 
 const SETTINGS_SECTIONS = [
   {
@@ -33,33 +34,37 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView className="flex-1 bg-gray-50">
       <StatusBar style="auto" />
 
-      <View style={styles.profile}>
-        <View style={styles.avatar}>
+      <View className="bg-white p-lg items-center mb-lg">
+        <View className="w-20 h-20 rounded-full bg-primary items-center justify-center mb-3">
           <Ionicons name="person" size={40} color="#fff" />
         </View>
-        <Text style={styles.name}>John Doe</Text>
-        <Text style={styles.email}>john.doe@example.com</Text>
+        <Heading level={3} className="mb-1">
+          John Doe
+        </Heading>
+        <BodyText className="text-gray-600">john.doe@example.com</BodyText>
       </View>
 
       {SETTINGS_SECTIONS.map((section, index) => (
-        <View key={index} style={styles.section}>
-          <Text style={styles.sectionTitle}>{section.title}</Text>
-          <View style={styles.sectionItems}>
+        <View key={index} className="mb-lg">
+          <Text className="text-caption font-semibold text-gray-600 uppercase mb-2 ml-md">
+            {section.title}
+          </Text>
+          <View className="bg-white">
             {section.items.map((item, itemIndex) => (
               <TouchableOpacity
                 key={itemIndex}
-                style={[
-                  styles.settingItem,
-                  itemIndex < section.items.length - 1 && styles.settingItemBorder,
-                ]}
+                className={`flex-row items-center justify-between p-md ${
+                  itemIndex < section.items.length - 1 ? 'border-b border-gray-200' : ''
+                }`}
                 onPress={item.onPress}
+                activeOpacity={0.7}
               >
-                <View style={styles.settingItemLeft}>
-                  <Ionicons name={item.icon as any} size={24} color="#007AFF" />
-                  <Text style={styles.settingItemLabel}>{item.label}</Text>
+                <View className="flex-row items-center gap-3">
+                  <Ionicons name={item.icon as any} size={24} color="#2563EB" />
+                  <BodyText>{item.label}</BodyText>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
               </TouchableOpacity>
@@ -68,85 +73,15 @@ export default function SettingsScreen() {
         </View>
       ))}
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutButtonText}>Log Out</Text>
-      </TouchableOpacity>
+      <View className="px-md pb-xl">
+        <TouchableOpacity
+          className="bg-white p-md items-center rounded-md active:bg-gray-50"
+          onPress={handleLogout}
+          activeOpacity={0.8}
+        >
+          <Text className="text-error text-body font-semibold">Log Out</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  profile: {
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#007AFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  name: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  email: {
-    fontSize: 14,
-    color: '#666',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#666',
-    textTransform: 'uppercase',
-    marginBottom: 8,
-    marginLeft: 16,
-  },
-  sectionItems: {
-    backgroundColor: '#fff',
-  },
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-  },
-  settingItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  settingItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  settingItemLabel: {
-    fontSize: 16,
-  },
-  logoutButton: {
-    backgroundColor: '#fff',
-    padding: 16,
-    alignItems: 'center',
-    marginHorizontal: 16,
-    marginBottom: 32,
-    borderRadius: 8,
-  },
-  logoutButtonText: {
-    color: '#FF3B30',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

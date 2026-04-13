@@ -1,6 +1,7 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
+import { Heading, BodyText, Input, Button } from '@/components/BentoBox';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
@@ -12,16 +13,19 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 bg-white">
       <StatusBar style="auto" />
 
-      <View style={styles.content}>
-        <Text style={styles.title}>TimeTrack</Text>
-        <Text style={styles.subtitle}>Sign in to continue</Text>
+      <View className="flex-1 p-lg justify-center">
+        <Heading level={1} className="mb-2 text-center">
+          TimeTrack
+        </Heading>
+        <BodyText className="mb-xl text-center text-gray-600">
+          Sign in to continue
+        </BodyText>
 
-        <View style={styles.form}>
-          <TextInput
-            style={styles.input}
+        <View className="gap-4">
+          <Input
             placeholder="Username"
             value={username}
             onChangeText={setUsername}
@@ -29,8 +33,7 @@ export default function LoginScreen() {
             autoComplete="username"
           />
 
-          <TextInput
-            style={styles.input}
+          <Input
             placeholder="Password"
             value={password}
             onChangeText={setPassword}
@@ -38,57 +41,11 @@ export default function LoginScreen() {
             autoComplete="password"
           />
 
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Sign In</Text>
-          </TouchableOpacity>
+          <Button variant="primary" onPress={handleLogin} className="mt-2">
+            Sign In
+          </Button>
         </View>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  content: {
-    flex: 1,
-    padding: 24,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 32,
-    textAlign: 'center',
-  },
-  form: {
-    gap: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 16,
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});

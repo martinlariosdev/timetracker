@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, ScrollView, TextInput } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
+import { Input, Button, BodyText } from '@/components/BentoBox';
 
 export default function AddEntryScreen() {
   const [date, setDate] = useState('');
@@ -14,100 +15,52 @@ export default function AddEntryScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView className="flex-1 bg-gray-50">
       <StatusBar style="auto" />
 
-      <View style={styles.content}>
-        <View style={styles.field}>
-          <Text style={styles.label}>Date</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="YYYY-MM-DD"
-            value={date}
-            onChangeText={setDate}
-          />
-        </View>
+      <View className="p-md gap-4">
+        <Input
+          label="Date"
+          placeholder="YYYY-MM-DD"
+          value={date}
+          onChangeText={setDate}
+        />
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Hours</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="8.0"
-            value={hours}
-            onChangeText={setHours}
-            keyboardType="decimal-pad"
-          />
-        </View>
+        <Input
+          label="Hours"
+          placeholder="8.0"
+          value={hours}
+          onChangeText={setHours}
+          keyboardType="decimal-pad"
+        />
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Task Code</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Select task code"
-            value={taskCode}
-            onChangeText={setTaskCode}
-          />
-        </View>
+        <Input
+          label="Task Code"
+          placeholder="Select task code"
+          value={taskCode}
+          onChangeText={setTaskCode}
+        />
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Notes</Text>
+        <View className="mb-4">
+          <BodyText className="text-gray-700 mb-2 text-body-small">
+            Notes
+          </BodyText>
           <TextInput
-            style={[styles.input, styles.textArea]}
+            className="h-24 px-3 rounded-md border border-gray-300 text-body text-gray-800 bg-white"
             placeholder="Add notes (optional)"
             value={notes}
             onChangeText={setNotes}
             multiline
             numberOfLines={4}
+            textAlignVertical="top"
+            placeholderTextColor="#9CA3AF"
           />
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleSave}>
-          <Text style={styles.buttonText}>Save Entry</Text>
-        </TouchableOpacity>
+        <Button variant="primary" onPress={handleSave} className="mt-2">
+          Save Entry
+        </Button>
       </View>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  content: {
-    padding: 16,
-    gap: 16,
-  },
-  field: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
