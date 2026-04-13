@@ -61,7 +61,6 @@ services:
       - timetrack-network
     command: >
       sh -c "npx prisma db push --accept-data-loss &&
-             npx prisma db seed &&
              pnpm run start:dev"
 
   # Backend API (production)
