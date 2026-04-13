@@ -33,6 +33,7 @@
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/client": "^7.7.0",
     "@timetrack/shared": "workspace:*",
+    "expo-server-sdk": "^6.1.0",
     "express": "^5.2.1",
     "graphql": "^16.13.2",
     "graphql-type-json": "^0.3.2",

@@ -10,6 +10,7 @@ import { AuthModule } from './auth.module';
 import { TimesheetModule } from './timesheet.module';
 import { ETOModule } from './eto/eto.module';
 import { SyncModule } from './sync/sync.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { SyncModule } from './sync/sync.module';
     TimesheetModule,
     ETOModule,
     SyncModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService, HealthResolver],

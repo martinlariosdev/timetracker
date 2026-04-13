@@ -22,6 +22,8 @@ model Consultant {
   etoBalance              Float    @default(0)
   workingHoursPerPeriod   Float    @default(88)
   paymentType             String   @default("Hourly")  // "Hourly", "Fixed", "Hybrid"
+  pushToken               String?
+  notificationPreferences Json?    @default("{}")
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 
