@@ -34,6 +34,8 @@
     "@nestjs/schedule": "^6.1.1",
     "@prisma/client": "^7.7.0",
     "@timetrack/shared": "workspace:*",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
     "expo-server-sdk": "^6.1.0",
     "express": "^5.2.1",
     "graphql": "^16.13.2",

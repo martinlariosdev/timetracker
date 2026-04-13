@@ -21,7 +21,6 @@ import {
   SyncOperation,
   SyncOperationType,
 } from './dto';
-import { Prisma } from '../generated';
 
 const DEFAULT_SYNC_LOG_LIMIT = 100;
 

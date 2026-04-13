@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
 interface NotificationPreferences {
+  timesheetReminders?: boolean;
   deadlineReminders?: boolean;
   submissionConfirmations?: boolean;
   approvalNotifications?: boolean;

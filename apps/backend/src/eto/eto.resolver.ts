@@ -52,7 +52,7 @@ export class ETOResolver {
     @Args('consultantId', { type: () => ID }) consultantId: string,
     @Args('limit', { type: () => Int, nullable: true }) limit?: number,
     @Args('offset', { type: () => Int, nullable: true }) offset?: number,
-    @CurrentUser() user: Consultant,
+    @CurrentUser() user?: Consultant,
   ): Promise<ETOTransactionObjectType[]> {
     // TODO: Add authorization check - users should only query their own data OR be admin
     // For now, allow any authenticated user to query any consultant

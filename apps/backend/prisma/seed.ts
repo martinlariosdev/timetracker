@@ -1,4 +1,4 @@
-import { PrismaClient } from '../src/generated';
+import { PrismaClient, TimeEntry, ETOTransaction, TimesheetSubmission, SyncLog } from '../src/generated';
 
 const prisma = new PrismaClient();
 
@@ -174,7 +174,7 @@ async function main() {
 
   // Create time entries
   console.log('⏰ Creating time entries...');
-  const timeEntries = [];
+  const timeEntries: TimeEntry[] = [];
 
   for (const consultant of consultants.slice(0, 3)) {
     // For each of the first 3 consultants
@@ -284,7 +284,7 @@ async function main() {
 
   // Create ETO transactions
   console.log('🏖️  Creating ETO transactions...');
-  const etoTransactions = [];
+  const etoTransactions: ETOTransaction[] = [];
 
   for (const consultant of consultants) {
     // Accrual at start of period
@@ -325,7 +325,7 @@ async function main() {
 
   // Create timesheet submissions
   console.log('📝 Creating timesheet submissions...');
-  const submissions = [];
+  const submissions: TimesheetSubmission[] = [];
 
   // Previous period submissions (all approved)
   for (const consultant of consultants.slice(0, 3)) {
@@ -382,7 +382,7 @@ async function main() {
 
   // Create sync logs
   console.log('🔄 Creating sync logs...');
-  const syncLogs = [];
+  const syncLogs: SyncLog[] = [];
 
   for (const consultant of consultants.slice(0, 2)) {
     // Successful syncs

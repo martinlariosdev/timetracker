@@ -214,12 +214,12 @@ export class TimesheetService {
 
       if (data.consultantId !== undefined) {
         await this.validateConsultantExists(data.consultantId);
-        prismaData.consultantId = data.consultantId;
+        prismaData.consultant = { connect: { id: data.consultantId } };
       }
 
       if (data.payPeriodId !== undefined) {
         await this.validatePayPeriodExists(data.payPeriodId);
-        prismaData.payPeriodId = data.payPeriodId;
+        prismaData.payPeriod = { connect: { id: data.payPeriodId } };
       }
 
       if (data.date !== undefined) {

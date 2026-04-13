@@ -60,7 +60,7 @@ services:
     networks:
       - timetrack-network
     command: >
-      sh -c "npx prisma db push --skip-generate &&
+      sh -c "npx prisma db push --accept-data-loss &&
              npx prisma db seed &&
              pnpm run start:dev"
 
