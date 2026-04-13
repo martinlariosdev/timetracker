@@ -755,8 +755,8 @@ export default function SettingsScreen() {
           }
         } catch {
           // Biometric toggle failed, don't update UI
-          return;
         }
+        return; // Let the useEffect sync from biometricEnabled
       }
       setToggleStates((prev) => ({ ...prev, [settingId]: value }));
     },
