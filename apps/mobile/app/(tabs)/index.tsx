@@ -1168,7 +1168,7 @@ export default function TimesheetListScreen() {
           style={{
             width: 56,
             height: 56,
-            bottom: (isSubmitted ? 16 : 96) + insets.bottom,
+            bottom: 96 + insets.bottom,
             right: 16,
           }}
           activeOpacity={0.8}
