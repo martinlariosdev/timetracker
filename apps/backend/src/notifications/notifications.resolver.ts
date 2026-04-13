@@ -4,7 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { NotificationsService } from './notifications.service';
 import { RegisterPushTokenInput, TestNotificationInput } from './dto';
-import type { Consultant } from '../generated';
+import type { Consultant } from '@prisma/client';
 
 /**
  * NotificationsResolver

@@ -16,7 +16,7 @@ import {
   SyncTimesheetSubmissionInput,
   SyncResult,
 } from './dto';
-import type { Consultant } from '../generated';
+import type { Consultant } from '@prisma/client';
 
 /**
  * SyncResolver

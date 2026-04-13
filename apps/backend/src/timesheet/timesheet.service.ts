@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '../generated';
+import { Prisma } from '@prisma/client';
 import { createTimeEntrySchema, patchTimeEntrySchema } from '@timetrack/shared';
 import { ZodError } from 'zod';
 import { CreateTimeEntryInput } from './dto/create-time-entry.input';

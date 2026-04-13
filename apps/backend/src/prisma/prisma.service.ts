@@ -1,17 +1,9 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { PrismaClient } from '../generated';
+import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
-
-  constructor() {
-    super({
-      log: ['error', 'warn'],
-      // @ts-ignore - Prisma 7 requires this even though we're not using Accelerate
-      accelerateUrl: undefined,
-    });
-  }
 
   async onModuleInit() {
     try {

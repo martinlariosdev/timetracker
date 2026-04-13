@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '../generated';
+import { Prisma } from '@prisma/client';
 import { TimesheetService } from '../timesheet/timesheet.service';
 import { SubmissionService } from '../timesheet/submission.service';
 import { ETOService } from '../eto/eto.service';

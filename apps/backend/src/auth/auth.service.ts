@@ -1,7 +1,7 @@
 import { Injectable, Logger, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
-import { Consultant } from '../generated';
+import { Consultant } from '@prisma/client';
 
 interface OktaProfile {
   id: string;

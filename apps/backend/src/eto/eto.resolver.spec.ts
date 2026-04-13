@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ETOResolver } from './eto.resolver';
 import { ETOService } from './eto.service';
 import { UseETOInput, AdjustETOInput } from './dto';
-import type { Consultant } from '../generated';
+import type { Consultant } from '@prisma/client';
 
 describe('ETOResolver', () => {
   let resolver: ETOResolver;

@@ -9,7 +9,7 @@ import {
   UpdateTimeEntryInput,
   TimeEntryFiltersInput,
 } from './dto';
-import type { Consultant } from '../generated';
+import type { Consultant } from '@prisma/client';
 
 /**
  * TimesheetResolver

@@ -15,7 +15,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { LoginInput, AuthResponse, UserType, TokenResponse, MockLoginInput } from './dto';
-import type { Consultant } from '../generated';
+import type { Consultant } from '@prisma/client';
 
 /**
  * GraphQL resolver for authentication operations.

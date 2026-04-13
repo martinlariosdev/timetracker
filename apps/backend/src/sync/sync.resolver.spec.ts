@@ -13,7 +13,7 @@ import {
   SyncETOTransactionInput,
   SyncTimesheetSubmissionInput,
 } from './dto';
-import type { Consultant } from '../generated';
+import type { Consultant } from '@prisma/client';
 
 describe('SyncResolver', () => {
   let resolver: SyncResolver;

@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { TimesheetResolver } from './timesheet.resolver';
 import { TimesheetService } from './timesheet.service';
-import { Consultant } from '../generated';
+import { Consultant } from '@prisma/client';
 
 describe('TimesheetResolver', () => {
   let resolver: TimesheetResolver;
