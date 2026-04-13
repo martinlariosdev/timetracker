@@ -1,4 +1,4 @@
-import { InputType, Field, ID, PartialType } from '@nestjs/graphql';
+import { InputType, Field, ID } from '@nestjs/graphql';
 import { createZodDto } from 'nestjs-zod';
 import { createTimeEntrySchema } from './create-time-entry.input';
 import { z } from 'zod';
