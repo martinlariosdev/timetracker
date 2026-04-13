@@ -441,8 +441,8 @@ function TimeEntryPairRow({
           <Text className="text-caption text-gray-500 mt-1">Out Time</Text>
         </TouchableOpacity>
       </View>
-      <inTimePicker.TimePickerModal />
-      <outTimePicker.TimePickerModal />
+      {inTimePicker.modal}
+      {outTimePicker.modal}
       {error && (
         <Text className="text-caption text-error mt-1 ml-1">{error}</Text>
       )}
@@ -1065,7 +1065,7 @@ export default function AddEntryScreen() {
           onToggle={() => setIsExpanded((prev) => !prev)}
         />
       </ScrollView>
-      <datePicker.DatePickerModal />
+      {datePicker.modal}
     </View>
   );
 }

@@ -4,12 +4,6 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 
-interface TimePickerProps {
-  value: string; // HH:MM format
-  onChange: (time: string) => void;
-  label?: string;
-}
-
 function timeStringToDate(time: string): Date {
   const [h, m] = time.split(':').map(Number);
   const d = new Date();
@@ -23,145 +17,118 @@ function dateToTimeString(date: Date): string {
   return `${h}:${m}`;
 }
 
-export default function TimePicker({ value, onChange, label }: TimePickerProps) {
-  const [visible, setVisible] = useState(false);
-  const [tempDate, setTempDate] = useState(() => timeStringToDate(value));
+// --- Modal component defined outside hook for stable identity ---
 
-  const open = useCallback(() => {
-    setTempDate(timeStringToDate(value));
-    setVisible(true);
-  }, [value]);
+interface TimePickerModalProps {
+  visible: boolean;
+  tempDate: Date;
+  label: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+  onChange: (event: DateTimePickerEvent, selectedDate?: Date) => void;
+}
 
-  const handleChange = useCallback(
-    (event: DateTimePickerEvent, selectedDate?: Date) => {
-      if (Platform.OS === 'android') {
-        setVisible(false);
-        if (event.type === 'set' && selectedDate) {
-          onChange(dateToTimeString(selectedDate));
-        }
-        return;
-      }
-      // iOS: update temp value, wait for confirm
-      if (selectedDate) {
-        setTempDate(selectedDate);
-      }
-    },
-    [onChange],
-  );
+function TimePickerModalComponent({
+  visible,
+  tempDate,
+  label,
+  onCancel,
+  onConfirm,
+  onChange,
+}: TimePickerModalProps) {
+  if (!visible) return null;
 
-  const handleConfirm = useCallback(() => {
-    onChange(dateToTimeString(tempDate));
-    setVisible(false);
-  }, [onChange, tempDate]);
-
-  const handleCancel = useCallback(() => {
-    setVisible(false);
-  }, []);
-
-  // Android renders inline (no modal needed)
-  if (Platform.OS === 'android' && visible) {
+  if (Platform.OS === 'android') {
     return (
       <DateTimePicker
         value={tempDate}
         mode="time"
         is24Hour={true}
         display="spinner"
-        onChange={handleChange}
+        onChange={onChange}
       />
     );
   }
 
   return (
-    <>
-      {/* Hidden trigger — parent provides its own touchable and calls open */}
-      {/* Expose open via the component being used inline */}
-
-      {/* iOS modal */}
-      {Platform.OS === 'ios' && (
-        <Modal
-          visible={visible}
-          transparent
-          animationType="slide"
-          onRequestClose={handleCancel}
-        >
-          <TouchableOpacity
-            activeOpacity={1}
-            onPress={handleCancel}
-            style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}
-            accessibilityLabel="Close time picker"
-            accessibilityRole="button"
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onCancel}
+    >
+      <TouchableOpacity
+        activeOpacity={1}
+        onPress={onCancel}
+        style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}
+        accessibilityLabel="Close time picker"
+        accessibilityRole="button"
+      >
+        <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+          <View
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              paddingBottom: 32,
+            }}
           >
-            <TouchableOpacity activeOpacity={1} onPress={() => {}}>
-              <View
-                style={{
-                  backgroundColor: '#FFFFFF',
-                  borderTopLeftRadius: 16,
-                  borderTopRightRadius: 16,
-                  paddingBottom: 32,
-                }}
+            {/* Header */}
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: '#E5E7EB',
+              }}
+            >
+              <TouchableOpacity
+                onPress={onCancel}
+                accessibilityLabel="Cancel"
+                accessibilityRole="button"
+                style={{ paddingVertical: 4, paddingHorizontal: 8 }}
               >
-                {/* Header */}
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                    borderBottomWidth: 1,
-                    borderBottomColor: '#E5E7EB',
-                  }}
-                >
-                  <TouchableOpacity
-                    onPress={handleCancel}
-                    accessibilityLabel="Cancel"
-                    accessibilityRole="button"
-                    style={{ paddingVertical: 4, paddingHorizontal: 8 }}
-                  >
-                    <Text style={{ fontSize: 16, color: '#6B7280' }}>Cancel</Text>
-                  </TouchableOpacity>
-                  <Text
-                    style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}
-                  >
-                    {label ?? 'Select Time'}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={handleConfirm}
-                    accessibilityLabel="Confirm time selection"
-                    accessibilityRole="button"
-                    style={{ paddingVertical: 4, paddingHorizontal: 8 }}
-                  >
-                    <Text style={{ fontSize: 16, fontWeight: '600', color: '#2563EB' }}>
-                      Done
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                <Text style={{ fontSize: 16, color: '#6B7280' }}>Cancel</Text>
+              </TouchableOpacity>
+              <Text
+                style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}
+              >
+                {label}
+              </Text>
+              <TouchableOpacity
+                onPress={onConfirm}
+                accessibilityLabel="Confirm time selection"
+                accessibilityRole="button"
+                style={{ paddingVertical: 4, paddingHorizontal: 8 }}
+              >
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#2563EB' }}>
+                  Done
+                </Text>
+              </TouchableOpacity>
+            </View>
 
-                {/* Picker */}
-                <DateTimePicker
-                  value={tempDate}
-                  mode="time"
-                  is24Hour={true}
-                  display="spinner"
-                  onChange={handleChange}
-                  style={{ height: 200 }}
-                />
-              </View>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </Modal>
-      )}
-    </>
+            {/* Picker */}
+            <DateTimePicker
+              value={tempDate}
+              mode="time"
+              is24Hour={true}
+              display="spinner"
+              onChange={onChange}
+              style={{ height: 200 }}
+            />
+          </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
   );
 }
 
-// Re-export the helper so the parent can trigger the picker
-TimePicker.open = undefined as unknown; // placeholder — see useTimePicker hook below
-
 /**
- * Hook that wraps TimePicker state for use inside a parent component.
- * Returns { openTimePicker, TimePickerModal } so the parent can render
- * the modal and trigger it from any touchable.
+ * Hook that provides a time picker modal element and an open function.
+ * The parent renders {timePicker.modal} and calls timePicker.open() from any touchable.
  */
 export function useTimePicker(props: {
   value: string;
@@ -201,98 +168,18 @@ export function useTimePicker(props: {
     setVisible(false);
   }, []);
 
-  const TimePickerModal = useCallback(() => {
-    if (!visible) return null;
+  const modal = (
+    <TimePickerModalComponent
+      visible={visible}
+      tempDate={tempDate}
+      label={props.label ?? 'Select Time'}
+      onCancel={handleCancel}
+      onConfirm={handleConfirm}
+      onChange={handleChange}
+    />
+  );
 
-    // Android renders a system dialog directly
-    if (Platform.OS === 'android') {
-      return (
-        <DateTimePicker
-          value={tempDate}
-          mode="time"
-          is24Hour={true}
-          display="spinner"
-          onChange={handleChange}
-        />
-      );
-    }
-
-    // iOS modal
-    return (
-      <Modal
-        visible={visible}
-        transparent
-        animationType="slide"
-        onRequestClose={handleCancel}
-      >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={handleCancel}
-          style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}
-          accessibilityLabel="Close time picker"
-          accessibilityRole="button"
-        >
-          <TouchableOpacity activeOpacity={1} onPress={() => {}}>
-            <View
-              style={{
-                backgroundColor: '#FFFFFF',
-                borderTopLeftRadius: 16,
-                borderTopRightRadius: 16,
-                paddingBottom: 32,
-              }}
-            >
-              {/* Header */}
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#E5E7EB',
-                }}
-              >
-                <TouchableOpacity
-                  onPress={handleCancel}
-                  accessibilityLabel="Cancel"
-                  accessibilityRole="button"
-                  style={{ paddingVertical: 4, paddingHorizontal: 8 }}
-                >
-                  <Text style={{ fontSize: 16, color: '#6B7280' }}>Cancel</Text>
-                </TouchableOpacity>
-                <Text
-                  style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}
-                >
-                  {props.label ?? 'Select Time'}
-                </Text>
-                <TouchableOpacity
-                  onPress={handleConfirm}
-                  accessibilityLabel="Confirm time selection"
-                  accessibilityRole="button"
-                  style={{ paddingVertical: 4, paddingHorizontal: 8 }}
-                >
-                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#2563EB' }}>
-                    Done
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Picker */}
-              <DateTimePicker
-                value={tempDate}
-                mode="time"
-                is24Hour={true}
-                display="spinner"
-                onChange={handleChange}
-                style={{ height: 200 }}
-              />
-            </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
-    );
-  }, [visible, tempDate, handleChange, handleConfirm, handleCancel, props.label]);
-
-  return { open, TimePickerModal };
+  return { open, modal };
 }
+
+export default useTimePicker;
