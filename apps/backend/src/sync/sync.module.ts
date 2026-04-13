@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
+import { TimesheetModule } from '../timesheet.module';
+import { ETOModule } from '../eto/eto.module';
 import { SyncService } from './sync.service';
 import { SyncResolver } from './sync.resolver';
 
@@ -9,7 +11,7 @@ import { SyncResolver } from './sync.resolver';
  * Includes service and GraphQL resolver for sync operations
  */
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, TimesheetModule, ETOModule],
   providers: [SyncService, SyncResolver],
   exports: [SyncService],
 })

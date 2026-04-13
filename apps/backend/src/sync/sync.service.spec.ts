@@ -2,6 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { SyncService } from './sync.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { TimesheetService } from '../timesheet/timesheet.service';
+import { SubmissionService } from '../timesheet/submission.service';
+import { ETOService } from '../eto/eto.service';
 import {
   CreateSyncLogInput,
   SyncFilterInput,
@@ -9,11 +12,18 @@ import {
   SyncOperationType,
   ConflictResolutionStrategy,
   ResolveConflictInput,
+  SyncOperation,
+  SyncTimeEntryInput,
+  SyncETOTransactionInput,
+  SyncTimesheetSubmissionInput,
 } from './dto';
 
 describe('SyncService', () => {
   let service: SyncService;
   let prismaService: PrismaService;
+  let timesheetService: TimesheetService;
+  let submissionService: SubmissionService;
+  let etoService: ETOService;
 
   const mockPrismaService = {
     syncLog: {
@@ -34,8 +44,24 @@ describe('SyncService', () => {
     },
     timesheetSubmission: {
       findFirst: jest.fn(),
+      findUnique: jest.fn(),
+      create: jest.fn(),
       update: jest.fn(),
     },
+  };
+
+  const mockTimesheetService = {
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  };
+
+  const mockSubmissionService = {
+    submitTimesheet: jest.fn(),
+  };
+
+  const mockETOService = {
+    useETO: jest.fn(),
   };
 
   const mockUserId = '507f1f77bcf86cd799439011';
@@ -49,11 +75,26 @@ describe('SyncService', () => {
           provide: PrismaService,
           useValue: mockPrismaService,
         },
+        {
+          provide: TimesheetService,
+          useValue: mockTimesheetService,
+        },
+        {
+          provide: SubmissionService,
+          useValue: mockSubmissionService,
+        },
+        {
+          provide: ETOService,
+          useValue: mockETOService,
+        },
       ],
     }).compile();
 
     service = module.get<SyncService>(SyncService);
     prismaService = module.get<PrismaService>(PrismaService);
+    timesheetService = module.get<TimesheetService>(TimesheetService);
+    submissionService = module.get<SubmissionService>(SubmissionService);
+    etoService = module.get<ETOService>(ETOService);
 
     // Reset mocks
     jest.clearAllMocks();
@@ -1189,6 +1230,382 @@ describe('SyncService', () => {
       // Explicitly verify status is NOT present
       const updateCall = mockPrismaService.timesheetSubmission.update.mock.calls[0][0];
       expect(updateCall.data).not.toHaveProperty('status');
+    });
+  });
+
+  describe('syncTimeEntries', () => {
+    it('should successfully sync multiple time entries with CREATE operations', async () => {
+      const entries: SyncTimeEntryInput[] = [
+        {
+          date: '2024-04-12',
+          clientName: 'Client A',
+          description: 'Work done',
+          inTime1: '09:00',
+          outTime1: '17:00',
+          totalHours: 8,
+          operation: SyncOperation.CREATE,
+        },
+        {
+          date: '2024-04-13',
+          clientName: 'Client B',
+          description: 'More work',
+          inTime1: '10:00',
+          outTime1: '18:00',
+          totalHours: 8,
+          operation: SyncOperation.CREATE,
+        },
+      ];
+
+      const mockCreatedEntry1 = { id: 'entry-1', consultantId: mockUserId };
+      const mockCreatedEntry2 = { id: 'entry-2', consultantId: mockUserId };
+
+      mockTimesheetService.create
+        .mockResolvedValueOnce(mockCreatedEntry1)
+        .mockResolvedValueOnce(mockCreatedEntry2);
+
+      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+
+      const result = await service.syncTimeEntries(mockUserId, entries, mockDeviceId);
+
+      expect(result.successful).toBe(2);
+      expect(result.failed).toBe(0);
+      expect(result.conflicts).toHaveLength(0);
+      expect(result.errors).toHaveLength(0);
+      expect(mockTimesheetService.create).toHaveBeenCalledTimes(2);
+      expect(mockPrismaService.syncLog.create).toHaveBeenCalledTimes(2);
+    });
+
+    it('should successfully sync UPDATE operation without conflict', async () => {
+      const entries: SyncTimeEntryInput[] = [
+        {
+          id: 'entry-1',
+          date: '2024-04-12',
+          clientName: 'Client A',
+          description: 'Updated work',
+          inTime1: '09:00',
+          outTime1: '17:00',
+          totalHours: 8,
+          operation: SyncOperation.UPDATE,
+        },
+      ];
+
+      const mockUpdatedEntry = { id: 'entry-1', consultantId: mockUserId };
+      mockTimesheetService.update.mockResolvedValue(mockUpdatedEntry);
+      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+
+      const result = await service.syncTimeEntries(mockUserId, entries, mockDeviceId);
+
+      expect(result.successful).toBe(1);
+      expect(result.failed).toBe(0);
+      expect(mockTimesheetService.update).toHaveBeenCalledWith('entry-1', expect.any(Object));
+    });
+
+    it('should successfully sync DELETE operation', async () => {
+      const entries: SyncTimeEntryInput[] = [
+        {
+          id: 'entry-1',
+          date: '2024-04-12',
+          clientName: 'Client A',
+          description: 'To delete',
+          inTime1: '09:00',
+          outTime1: '17:00',
+          totalHours: 8,
+          operation: SyncOperation.DELETE,
+        },
+      ];
+
+      mockTimesheetService.delete.mockResolvedValue({} as any);
+      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+
+      const result = await service.syncTimeEntries(mockUserId, entries, mockDeviceId);
+
+      expect(result.successful).toBe(1);
+      expect(result.failed).toBe(0);
+      expect(mockTimesheetService.delete).toHaveBeenCalledWith('entry-1');
+    });
+
+    it('should handle conflict with SERVER_WINS resolution', async () => {
+      const entries: SyncTimeEntryInput[] = [
+        {
+          id: 'entry-1',
+          date: '2024-04-12',
+          clientName: 'Client A',
+          description: 'Updated work',
+          inTime1: '09:00',
+          outTime1: '17:00',
+          totalHours: 8,
+          operation: SyncOperation.UPDATE,
+          lastSyncedAt: new Date('2024-04-12T10:00:00Z'),
+          resolution: ConflictResolutionStrategy.SERVER_WINS,
+        },
+      ];
+
+      const mockTimeEntry = {
+        id: 'entry-1',
+        consultantId: mockUserId,
+        updatedAt: new Date('2024-04-12T11:00:00Z'), // After lastSyncedAt - conflict!
+      };
+
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockTimeEntry);
+      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+
+      const result = await service.syncTimeEntries(mockUserId, entries, mockDeviceId);
+
+      expect(result.successful).toBe(1); // SERVER_WINS counts as successful
+      expect(result.failed).toBe(0);
+      expect(result.conflicts).toHaveLength(0);
+      expect(mockTimesheetService.update).not.toHaveBeenCalled(); // No update performed
+    });
+
+    it('should handle conflict with MANUAL_MERGE resolution', async () => {
+      const entries: SyncTimeEntryInput[] = [
+        {
+          id: 'entry-1',
+          date: '2024-04-12',
+          clientName: 'Client A',
+          description: 'Updated work',
+          inTime1: '09:00',
+          outTime1: '17:00',
+          totalHours: 8,
+          operation: SyncOperation.UPDATE,
+          lastSyncedAt: new Date('2024-04-12T10:00:00Z'),
+          resolution: ConflictResolutionStrategy.MANUAL_MERGE,
+        },
+      ];
+
+      const mockTimeEntry = {
+        id: 'entry-1',
+        consultantId: mockUserId,
+        updatedAt: new Date('2024-04-12T11:00:00Z'), // After lastSyncedAt - conflict!
+      };
+
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockTimeEntry);
+      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+
+      const result = await service.syncTimeEntries(mockUserId, entries, mockDeviceId);
+
+      expect(result.successful).toBe(0);
+      expect(result.failed).toBe(1);
+      expect(result.conflicts).toHaveLength(1);
+      expect(result.conflicts[0].hasConflict).toBe(true);
+    });
+
+    it('should handle errors gracefully and continue processing', async () => {
+      const entries: SyncTimeEntryInput[] = [
+        {
+          date: '2024-04-12',
+          clientName: 'Client A',
+          description: 'Work done',
+          inTime1: '09:00',
+          outTime1: '17:00',
+          totalHours: 8,
+          operation: SyncOperation.CREATE,
+        },
+        {
+          date: '2024-04-13',
+          clientName: 'Client B',
+          description: 'More work',
+          inTime1: '10:00',
+          outTime1: '18:00',
+          totalHours: 8,
+          operation: SyncOperation.CREATE,
+        },
+      ];
+
+      const mockCreatedEntry = { id: 'entry-2', consultantId: mockUserId };
+
+      mockTimesheetService.create
+        .mockRejectedValueOnce(new Error('Validation failed'))
+        .mockResolvedValueOnce(mockCreatedEntry);
+
+      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+
+      const result = await service.syncTimeEntries(mockUserId, entries, mockDeviceId);
+
+      expect(result.successful).toBe(1);
+      expect(result.failed).toBe(1);
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0].error).toContain('Validation failed');
+    });
+  });
+
+  describe('syncETOTransactions', () => {
+    it('should successfully sync CREATE operation', async () => {
+      const transactions: SyncETOTransactionInput[] = [
+        {
+          date: '2024-04-12',
+          hours: 8,
+          transactionType: 'Usage',
+          description: 'ETO usage',
+          projectName: 'Project A',
+          operation: SyncOperation.CREATE,
+        },
+      ];
+
+      const mockCreatedTransaction = { id: 'eto-1', consultantId: mockUserId };
+      mockETOService.useETO.mockResolvedValue(mockCreatedTransaction);
+      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+
+      const result = await service.syncETOTransactions(mockUserId, transactions, mockDeviceId);
+
+      expect(result.successful).toBe(1);
+      expect(result.failed).toBe(0);
+      expect(mockETOService.useETO).toHaveBeenCalledWith(mockUserId, {
+        hours: 8,
+        date: '2024-04-12',
+        description: 'ETO usage',
+        projectName: 'Project A',
+      });
+    });
+
+    it('should reject DELETE operation for ETO transactions', async () => {
+      const transactions: SyncETOTransactionInput[] = [
+        {
+          id: 'eto-1',
+          date: '2024-04-12',
+          hours: 8,
+          transactionType: 'Usage',
+          operation: SyncOperation.DELETE,
+        },
+      ];
+
+      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+
+      const result = await service.syncETOTransactions(mockUserId, transactions, mockDeviceId);
+
+      expect(result.successful).toBe(0);
+      expect(result.failed).toBe(1);
+      expect(result.errors[0].error).toContain('cannot be deleted');
+    });
+
+    it('should reject UPDATE operation for ETO transactions', async () => {
+      const transactions: SyncETOTransactionInput[] = [
+        {
+          id: 'eto-1',
+          date: '2024-04-12',
+          hours: 8,
+          transactionType: 'Usage',
+          operation: SyncOperation.UPDATE,
+          lastSyncedAt: new Date('2024-04-12T10:00:00Z'),
+        },
+      ];
+
+      const mockETOTransaction = {
+        id: 'eto-1',
+        consultantId: mockUserId,
+        createdAt: new Date('2024-04-12T09:00:00Z'), // Before lastSyncedAt - no conflict
+      };
+
+      mockPrismaService.eTOTransaction.findFirst.mockResolvedValue(mockETOTransaction);
+      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+
+      const result = await service.syncETOTransactions(mockUserId, transactions, mockDeviceId);
+
+      expect(result.successful).toBe(0);
+      expect(result.failed).toBe(1);
+      expect(result.errors[0].error).toContain('cannot be updated');
+    });
+  });
+
+  describe('syncTimesheetSubmissions', () => {
+    it('should successfully sync CREATE operation', async () => {
+      const submissions: SyncTimesheetSubmissionInput[] = [
+        {
+          payPeriodId: 'period-1',
+          status: 'draft',
+          operation: SyncOperation.CREATE,
+        },
+      ];
+
+      const mockCreatedSubmission = { id: 'submission-1', consultantId: mockUserId };
+      mockPrismaService.timesheetSubmission.findUnique.mockResolvedValue(null); // Not exists
+      mockPrismaService.timesheetSubmission.create.mockResolvedValue(mockCreatedSubmission);
+      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+
+      const result = await service.syncTimesheetSubmissions(mockUserId, submissions, mockDeviceId);
+
+      expect(result.successful).toBe(1);
+      expect(result.failed).toBe(0);
+      expect(mockPrismaService.timesheetSubmission.create).toHaveBeenCalledWith({
+        data: {
+          consultantId: mockUserId,
+          payPeriodId: 'period-1',
+          status: 'draft',
+          submittedAt: undefined,
+          comments: undefined,
+        },
+      });
+    });
+
+    it('should reject CREATE if submission already exists', async () => {
+      const submissions: SyncTimesheetSubmissionInput[] = [
+        {
+          payPeriodId: 'period-1',
+          status: 'draft',
+          operation: SyncOperation.CREATE,
+        },
+      ];
+
+      const mockExistingSubmission = { id: 'submission-1', consultantId: mockUserId };
+      mockPrismaService.timesheetSubmission.findUnique.mockResolvedValue(mockExistingSubmission);
+      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+
+      const result = await service.syncTimesheetSubmissions(mockUserId, submissions, mockDeviceId);
+
+      expect(result.successful).toBe(0);
+      expect(result.failed).toBe(1);
+      expect(result.errors[0].error).toContain('already exists');
+    });
+
+    it('should successfully sync UPDATE operation', async () => {
+      const submissions: SyncTimesheetSubmissionInput[] = [
+        {
+          id: 'submission-1',
+          payPeriodId: 'period-1',
+          status: 'submitted',
+          comments: 'Updated comments',
+          operation: SyncOperation.UPDATE,
+        },
+      ];
+
+      const mockUpdatedSubmission = { id: 'submission-1', consultantId: mockUserId };
+      mockPrismaService.timesheetSubmission.update.mockResolvedValue(mockUpdatedSubmission);
+      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+
+      const result = await service.syncTimesheetSubmissions(mockUserId, submissions, mockDeviceId);
+
+      expect(result.successful).toBe(1);
+      expect(result.failed).toBe(0);
+      expect(mockPrismaService.timesheetSubmission.update).toHaveBeenCalledWith({
+        where: {
+          id: 'submission-1',
+          consultantId: mockUserId,
+        },
+        data: {
+          comments: 'Updated comments',
+          submittedAt: undefined,
+          status: 'submitted',
+        },
+      });
+    });
+
+    it('should reject DELETE operation for timesheet submissions', async () => {
+      const submissions: SyncTimesheetSubmissionInput[] = [
+        {
+          id: 'submission-1',
+          payPeriodId: 'period-1',
+          status: 'draft',
+          operation: SyncOperation.DELETE,
+        },
+      ];
+
+      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+
+      const result = await service.syncTimesheetSubmissions(mockUserId, submissions, mockDeviceId);
+
+      expect(result.successful).toBe(0);
+      expect(result.failed).toBe(1);
+      expect(result.errors[0].error).toContain('cannot be deleted');
     });
   });
 });

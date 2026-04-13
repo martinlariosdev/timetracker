@@ -1,5 +1,8 @@
 import { Injectable, Logger, BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { TimesheetService } from '../timesheet/timesheet.service';
+import { SubmissionService } from '../timesheet/submission.service';
+import { ETOService } from '../eto/eto.service';
 import {
   CreateSyncLogInput,
   SyncFilterInput,
@@ -9,6 +12,13 @@ import {
   ResolvedConflict,
   ConflictResolutionStrategy,
   SyncEntityType,
+  SyncTimeEntryInput,
+  SyncETOTransactionInput,
+  SyncTimesheetSubmissionInput,
+  SyncResult,
+  SyncError,
+  SyncOperation,
+  SyncOperationType,
 } from './dto';
 import { Prisma } from '../generated';
 
@@ -23,7 +33,12 @@ const DEFAULT_SYNC_LOG_LIMIT = 100;
 export class SyncService {
   private readonly logger = new Logger(SyncService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private timesheetService: TimesheetService,
+    private submissionService: SubmissionService,
+    private etoService: ETOService,
+  ) {}
 
   /**
    * Create a sync log entry
@@ -535,6 +550,624 @@ export class SyncService {
 
       default:
         throw new BadRequestException(`Unknown entity type: ${entityType}`);
+    }
+  }
+
+  /**
+   * Convert SyncOperation to SyncOperationType for logging
+   * @private
+   */
+  private convertOperationType(operation: SyncOperation): SyncOperationType {
+    switch (operation) {
+      case SyncOperation.CREATE:
+        return SyncOperationType.CREATE;
+      case SyncOperation.UPDATE:
+        return SyncOperationType.UPDATE;
+      case SyncOperation.DELETE:
+        return SyncOperationType.DELETE;
+      default:
+        return SyncOperationType.CREATE;
+    }
+  }
+
+  /**
+   * Sync time entries in batch
+   * Processes multiple time entries with conflict detection and resolution
+   * @param userId - ID of the user performing sync
+   * @param entries - Array of time entries to sync
+   * @param deviceId - Device ID for sync logging
+   * @returns SyncResult with counts and any errors
+   */
+  async syncTimeEntries(
+    userId: string,
+    entries: SyncTimeEntryInput[],
+    deviceId: string,
+  ): Promise<SyncResult> {
+    const result: SyncResult = {
+      successful: 0,
+      failed: 0,
+      conflicts: [],
+      errors: [],
+    };
+
+    // Process entries sequentially to avoid race conditions
+    for (const entry of entries) {
+      try {
+        await this.syncSingleTimeEntry(userId, entry, deviceId, result);
+      } catch (error) {
+        // Handle unexpected errors
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        this.logger.error(`Unexpected error syncing time entry: ${errorMessage}`);
+        result.failed++;
+        result.errors.push({
+          entityId: entry.id || 'unknown',
+          entityType: 'TimeEntry',
+          operation: entry.operation,
+          error: errorMessage,
+        });
+      }
+    }
+
+    this.logger.log(
+      `Batch sync completed for user ${userId}: ${result.successful} successful, ${result.failed} failed, ${result.conflicts.length} conflicts`,
+    );
+
+    return result;
+  }
+
+  /**
+   * Sync a single time entry
+   * @private
+   */
+  private async syncSingleTimeEntry(
+    userId: string,
+    entry: SyncTimeEntryInput,
+    deviceId: string,
+    result: SyncResult,
+  ): Promise<void> {
+    const entityId = entry.id || 'temp-' + Date.now();
+
+    try {
+      // Handle DELETE operation
+      if (entry.operation === SyncOperation.DELETE) {
+        if (!entry.id) {
+          throw new BadRequestException('Cannot delete entry without ID');
+        }
+
+        await this.timesheetService.delete(entry.id);
+        await this.createSyncLog(userId, {
+          deviceId,
+          entityType: SyncEntityType.TIME_ENTRY,
+          operation: SyncOperationType.DELETE,
+          entityId: entry.id,
+          success: true,
+        });
+
+        result.successful++;
+        this.logger.log(`Deleted time entry ${entry.id}`);
+        return;
+      }
+
+      // Handle CREATE operation
+      if (entry.operation === SyncOperation.CREATE) {
+        const created = await this.timesheetService.create({
+          consultantId: userId,
+          payPeriodId: entry.payPeriodId || '', // Will use current if not provided
+          date: entry.date,
+          projectTaskNumber: entry.projectTaskNumber,
+          clientName: entry.clientName,
+          description: entry.description,
+          inTime1: entry.inTime1,
+          outTime1: entry.outTime1,
+          inTime2: entry.inTime2,
+          outTime2: entry.outTime2,
+        });
+
+        await this.createSyncLog(userId, {
+          deviceId,
+          entityType: SyncEntityType.TIME_ENTRY,
+          operation: SyncOperationType.CREATE,
+          entityId: created.id,
+          success: true,
+        });
+
+        result.successful++;
+        this.logger.log(`Created time entry ${created.id}`);
+        return;
+      }
+
+      // Handle UPDATE operation
+      if (entry.operation === SyncOperation.UPDATE) {
+        if (!entry.id) {
+          throw new BadRequestException('Cannot update entry without ID');
+        }
+
+        // Detect conflict if lastSyncedAt provided
+        if (entry.lastSyncedAt) {
+          const conflictInfo = await this.detectConflict(
+            userId,
+            SyncEntityType.TIME_ENTRY,
+            entry.id,
+            entry.lastSyncedAt,
+          );
+
+          if (conflictInfo.hasConflict) {
+            // Apply resolution strategy
+            const resolution = entry.resolution || ConflictResolutionStrategy.SERVER_WINS;
+
+            if (resolution === ConflictResolutionStrategy.MANUAL_MERGE) {
+              // Add to conflicts list for manual resolution
+              result.conflicts.push(conflictInfo);
+              result.failed++;
+              await this.createSyncLog(userId, {
+                deviceId,
+                entityType: SyncEntityType.TIME_ENTRY,
+                operation: SyncOperationType.UPDATE,
+                entityId: entry.id,
+                success: false,
+                error: 'Conflict requires manual merge',
+              });
+              return;
+            }
+
+            if (resolution === ConflictResolutionStrategy.CLIENT_WINS) {
+              // Proceed with update (client wins)
+              this.logger.log(`Applying CLIENT_WINS for time entry ${entry.id}`);
+            } else {
+              // SERVER_WINS - skip update
+              result.successful++;
+              await this.createSyncLog(userId, {
+                deviceId,
+                entityType: SyncEntityType.TIME_ENTRY,
+                operation: SyncOperationType.UPDATE,
+                entityId: entry.id,
+                success: true,
+                error: 'Conflict resolved with SERVER_WINS',
+              });
+              return;
+            }
+          }
+        }
+
+        // Perform update
+        const updateData: any = {
+          date: entry.date,
+          clientName: entry.clientName,
+          description: entry.description,
+          inTime1: entry.inTime1,
+          outTime1: entry.outTime1,
+        };
+
+        if (entry.projectTaskNumber !== undefined) {
+          updateData.projectTaskNumber = entry.projectTaskNumber;
+        }
+        if (entry.inTime2 !== undefined) {
+          updateData.inTime2 = entry.inTime2;
+        }
+        if (entry.outTime2 !== undefined) {
+          updateData.outTime2 = entry.outTime2;
+        }
+
+        await this.timesheetService.update(entry.id, updateData);
+
+        await this.createSyncLog(userId, {
+          deviceId,
+          entityType: SyncEntityType.TIME_ENTRY,
+          operation: SyncOperationType.UPDATE,
+          entityId: entry.id,
+          success: true,
+        });
+
+        result.successful++;
+        this.logger.log(`Updated time entry ${entry.id}`);
+        return;
+      }
+
+      throw new BadRequestException(`Unknown operation: ${entry.operation}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      result.failed++;
+      result.errors.push({
+        entityId,
+        entityType: 'TimeEntry',
+        operation: entry.operation,
+        error: errorMessage,
+      });
+
+      await this.createSyncLog(userId, {
+        deviceId,
+        entityType: SyncEntityType.TIME_ENTRY,
+        operation: this.convertOperationType(entry.operation),
+        entityId,
+        success: false,
+        error: errorMessage,
+      });
+    }
+  }
+
+  /**
+   * Sync ETO transactions in batch
+   * Processes multiple ETO transactions with conflict detection and resolution
+   * @param userId - ID of the user performing sync
+   * @param transactions - Array of ETO transactions to sync
+   * @param deviceId - Device ID for sync logging
+   * @returns SyncResult with counts and any errors
+   */
+  async syncETOTransactions(
+    userId: string,
+    transactions: SyncETOTransactionInput[],
+    deviceId: string,
+  ): Promise<SyncResult> {
+    const result: SyncResult = {
+      successful: 0,
+      failed: 0,
+      conflicts: [],
+      errors: [],
+    };
+
+    // Process transactions sequentially to avoid race conditions
+    for (const transaction of transactions) {
+      try {
+        await this.syncSingleETOTransaction(userId, transaction, deviceId, result);
+      } catch (error) {
+        // Handle unexpected errors
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        this.logger.error(`Unexpected error syncing ETO transaction: ${errorMessage}`);
+        result.failed++;
+        result.errors.push({
+          entityId: transaction.id || 'unknown',
+          entityType: 'ETOTransaction',
+          operation: transaction.operation,
+          error: errorMessage,
+        });
+      }
+    }
+
+    this.logger.log(
+      `Batch ETO sync completed for user ${userId}: ${result.successful} successful, ${result.failed} failed, ${result.conflicts.length} conflicts`,
+    );
+
+    return result;
+  }
+
+  /**
+   * Sync a single ETO transaction
+   * @private
+   */
+  private async syncSingleETOTransaction(
+    userId: string,
+    transaction: SyncETOTransactionInput,
+    deviceId: string,
+    result: SyncResult,
+  ): Promise<void> {
+    const entityId = transaction.id || 'temp-' + Date.now();
+
+    try {
+      // Handle DELETE operation
+      if (transaction.operation === SyncOperation.DELETE) {
+        if (!transaction.id) {
+          throw new BadRequestException('Cannot delete transaction without ID');
+        }
+
+        // ETO transactions should not be deleted directly - use adjustments
+        throw new BadRequestException('ETO transactions cannot be deleted. Use adjustments instead.');
+      }
+
+      // Handle CREATE operation (use ETO)
+      if (transaction.operation === SyncOperation.CREATE) {
+        const created = await this.etoService.useETO(userId, {
+          hours: transaction.hours,
+          date: transaction.date,
+          description: transaction.description,
+          projectName: transaction.projectName,
+        });
+
+        await this.createSyncLog(userId, {
+          deviceId,
+          entityType: SyncEntityType.ETO_TRANSACTION,
+          operation: SyncOperationType.CREATE,
+          entityId: created.id,
+          success: true,
+        });
+
+        result.successful++;
+        this.logger.log(`Created ETO transaction ${created.id}`);
+        return;
+      }
+
+      // Handle UPDATE operation
+      if (transaction.operation === SyncOperation.UPDATE) {
+        if (!transaction.id) {
+          throw new BadRequestException('Cannot update transaction without ID');
+        }
+
+        // Detect conflict if lastSyncedAt provided
+        if (transaction.lastSyncedAt) {
+          const conflictInfo = await this.detectConflict(
+            userId,
+            SyncEntityType.ETO_TRANSACTION,
+            transaction.id,
+            transaction.lastSyncedAt,
+          );
+
+          if (conflictInfo.hasConflict) {
+            // Apply resolution strategy
+            const resolution = transaction.resolution || ConflictResolutionStrategy.SERVER_WINS;
+
+            if (resolution === ConflictResolutionStrategy.MANUAL_MERGE) {
+              // Add to conflicts list for manual resolution
+              result.conflicts.push(conflictInfo);
+              result.failed++;
+              await this.createSyncLog(userId, {
+                deviceId,
+                entityType: SyncEntityType.ETO_TRANSACTION,
+                operation: SyncOperationType.UPDATE,
+                entityId: transaction.id,
+                success: false,
+                error: 'Conflict requires manual merge',
+              });
+              return;
+            }
+
+            if (resolution === ConflictResolutionStrategy.CLIENT_WINS) {
+              // Proceed with update (client wins)
+              this.logger.log(`Applying CLIENT_WINS for ETO transaction ${transaction.id}`);
+            } else {
+              // SERVER_WINS - skip update
+              result.successful++;
+              await this.createSyncLog(userId, {
+                deviceId,
+                entityType: SyncEntityType.ETO_TRANSACTION,
+                operation: SyncOperationType.UPDATE,
+                entityId: transaction.id,
+                success: true,
+                error: 'Conflict resolved with SERVER_WINS',
+              });
+              return;
+            }
+          }
+        }
+
+        // ETO transactions are immutable after creation - use adjustments
+        throw new BadRequestException('ETO transactions cannot be updated. Use adjustments instead.');
+      }
+
+      throw new BadRequestException(`Unknown operation: ${transaction.operation}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      result.failed++;
+      result.errors.push({
+        entityId,
+        entityType: 'ETOTransaction',
+        operation: transaction.operation,
+        error: errorMessage,
+      });
+
+      await this.createSyncLog(userId, {
+        deviceId,
+        entityType: SyncEntityType.ETO_TRANSACTION,
+        operation: this.convertOperationType(transaction.operation),
+        entityId,
+        success: false,
+        error: errorMessage,
+      });
+    }
+  }
+
+  /**
+   * Sync timesheet submissions in batch
+   * Processes multiple timesheet submissions with conflict detection and resolution
+   * @param userId - ID of the user performing sync
+   * @param submissions - Array of timesheet submissions to sync
+   * @param deviceId - Device ID for sync logging
+   * @returns SyncResult with counts and any errors
+   */
+  async syncTimesheetSubmissions(
+    userId: string,
+    submissions: SyncTimesheetSubmissionInput[],
+    deviceId: string,
+  ): Promise<SyncResult> {
+    const result: SyncResult = {
+      successful: 0,
+      failed: 0,
+      conflicts: [],
+      errors: [],
+    };
+
+    // Process submissions sequentially to avoid race conditions
+    for (const submission of submissions) {
+      try {
+        await this.syncSingleTimesheetSubmission(userId, submission, deviceId, result);
+      } catch (error) {
+        // Handle unexpected errors
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        this.logger.error(`Unexpected error syncing timesheet submission: ${errorMessage}`);
+        result.failed++;
+        result.errors.push({
+          entityId: submission.id || 'unknown',
+          entityType: 'TimesheetSubmission',
+          operation: submission.operation,
+          error: errorMessage,
+        });
+      }
+    }
+
+    this.logger.log(
+      `Batch submission sync completed for user ${userId}: ${result.successful} successful, ${result.failed} failed, ${result.conflicts.length} conflicts`,
+    );
+
+    return result;
+  }
+
+  /**
+   * Sync a single timesheet submission
+   * @private
+   */
+  private async syncSingleTimesheetSubmission(
+    userId: string,
+    submission: SyncTimesheetSubmissionInput,
+    deviceId: string,
+    result: SyncResult,
+  ): Promise<void> {
+    const entityId = submission.id || 'temp-' + Date.now();
+
+    try {
+      // Handle DELETE operation
+      if (submission.operation === SyncOperation.DELETE) {
+        if (!submission.id) {
+          throw new BadRequestException('Cannot delete submission without ID');
+        }
+
+        // Timesheet submissions should not be deleted - use draft status instead
+        throw new BadRequestException('Timesheet submissions cannot be deleted. Use draft status instead.');
+      }
+
+      // Handle CREATE operation
+      if (submission.operation === SyncOperation.CREATE) {
+        // Check if already exists first
+        const existing = await this.prisma.timesheetSubmission.findUnique({
+          where: {
+            consultantId_payPeriodId: {
+              consultantId: userId,
+              payPeriodId: submission.payPeriodId,
+            },
+          },
+        });
+
+        if (existing) {
+          throw new BadRequestException(`Submission already exists for pay period ${submission.payPeriodId}`);
+        }
+
+        // Create draft submission
+        const created = await this.prisma.timesheetSubmission.create({
+          data: {
+            consultantId: userId,
+            payPeriodId: submission.payPeriodId,
+            status: submission.status || 'draft',
+            submittedAt: submission.submittedAt,
+            comments: submission.comments,
+          },
+        });
+
+        await this.createSyncLog(userId, {
+          deviceId,
+          entityType: SyncEntityType.TIMESHEET_SUBMISSION,
+          operation: SyncOperationType.CREATE,
+          entityId: created.id,
+          success: true,
+        });
+
+        result.successful++;
+        this.logger.log(`Created timesheet submission ${created.id}`);
+        return;
+      }
+
+      // Handle UPDATE operation
+      if (submission.operation === SyncOperation.UPDATE) {
+        if (!submission.id) {
+          throw new BadRequestException('Cannot update submission without ID');
+        }
+
+        // Detect conflict if lastSyncedAt provided
+        if (submission.lastSyncedAt) {
+          const conflictInfo = await this.detectConflict(
+            userId,
+            SyncEntityType.TIMESHEET_SUBMISSION,
+            submission.id,
+            submission.lastSyncedAt,
+          );
+
+          if (conflictInfo.hasConflict) {
+            // Apply resolution strategy
+            const resolution = submission.resolution || ConflictResolutionStrategy.SERVER_WINS;
+
+            if (resolution === ConflictResolutionStrategy.MANUAL_MERGE) {
+              // Add to conflicts list for manual resolution
+              result.conflicts.push(conflictInfo);
+              result.failed++;
+              await this.createSyncLog(userId, {
+                deviceId,
+                entityType: SyncEntityType.TIMESHEET_SUBMISSION,
+                operation: SyncOperationType.UPDATE,
+                entityId: submission.id,
+                success: false,
+                error: 'Conflict requires manual merge',
+              });
+              return;
+            }
+
+            if (resolution === ConflictResolutionStrategy.CLIENT_WINS) {
+              // Proceed with update (client wins)
+              this.logger.log(`Applying CLIENT_WINS for timesheet submission ${submission.id}`);
+            } else {
+              // SERVER_WINS - skip update
+              result.successful++;
+              await this.createSyncLog(userId, {
+                deviceId,
+                entityType: SyncEntityType.TIMESHEET_SUBMISSION,
+                operation: SyncOperationType.UPDATE,
+                entityId: submission.id,
+                success: true,
+                error: 'Conflict resolved with SERVER_WINS',
+              });
+              return;
+            }
+          }
+        }
+
+        // Only allow certain fields to be updated
+        const updateData: any = {};
+        if (submission.comments !== undefined) {
+          updateData.comments = submission.comments;
+        }
+        if (submission.submittedAt !== undefined) {
+          updateData.submittedAt = submission.submittedAt;
+        }
+        // Status changes should go through SubmissionService methods, but allow for sync
+        if (submission.status !== undefined) {
+          updateData.status = submission.status;
+        }
+
+        await this.prisma.timesheetSubmission.update({
+          where: {
+            id: submission.id,
+            consultantId: userId, // Ownership verification
+          },
+          data: updateData,
+        });
+
+        await this.createSyncLog(userId, {
+          deviceId,
+          entityType: SyncEntityType.TIMESHEET_SUBMISSION,
+          operation: SyncOperationType.UPDATE,
+          entityId: submission.id,
+          success: true,
+        });
+
+        result.successful++;
+        this.logger.log(`Updated timesheet submission ${submission.id}`);
+        return;
+      }
+
+      throw new BadRequestException(`Unknown operation: ${submission.operation}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      result.failed++;
+      result.errors.push({
+        entityId,
+        entityType: 'TimesheetSubmission',
+        operation: submission.operation,
+        error: errorMessage,
+      });
+
+      await this.createSyncLog(userId, {
+        deviceId,
+        entityType: SyncEntityType.TIMESHEET_SUBMISSION,
+        operation: this.convertOperationType(submission.operation),
+        entityId,
+        success: false,
+        error: errorMessage,
+      });
     }
   }
 }

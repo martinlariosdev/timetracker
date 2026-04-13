@@ -8,6 +8,10 @@ import {
   SyncOperationType,
   ConflictResolutionStrategy,
   ResolveConflictInput,
+  SyncOperation,
+  SyncTimeEntryInput,
+  SyncETOTransactionInput,
+  SyncTimesheetSubmissionInput,
 } from './dto';
 import type { Consultant } from '../generated';
 
@@ -21,6 +25,9 @@ describe('SyncResolver', () => {
     getFailedSyncLogs: jest.fn(),
     detectConflict: jest.fn(),
     resolveConflict: jest.fn(),
+    syncTimeEntries: jest.fn(),
+    syncETOTransactions: jest.fn(),
+    syncTimesheetSubmissions: jest.fn(),
   };
 
   const mockUser = {
@@ -521,6 +528,277 @@ describe('SyncResolver', () => {
       expect(result.success).toBe(true);
       expect(result.finalData).toHaveProperty('status', 'submitted');
       expect(mockSyncService.resolveConflict).toHaveBeenCalledWith(mockUser.id, input);
+    });
+  });
+
+  describe('syncTimeEntries', () => {
+    it('should sync multiple time entries successfully', async () => {
+      const entries: SyncTimeEntryInput[] = [
+        {
+          date: '2024-04-12',
+          clientName: 'Client A',
+          description: 'Work done',
+          inTime1: '09:00',
+          outTime1: '17:00',
+          totalHours: 8,
+          operation: SyncOperation.CREATE,
+        },
+        {
+          date: '2024-04-13',
+          clientName: 'Client B',
+          description: 'More work',
+          inTime1: '10:00',
+          outTime1: '18:00',
+          totalHours: 8,
+          operation: SyncOperation.CREATE,
+        },
+      ];
+
+      const mockResult = {
+        successful: 2,
+        failed: 0,
+        conflicts: [],
+        errors: [],
+      };
+
+      mockSyncService.syncTimeEntries.mockResolvedValue(mockResult);
+
+      const result = await resolver.syncTimeEntries(entries, mockDeviceId, mockUser);
+
+      expect(result).toEqual(mockResult);
+      expect(result.successful).toBe(2);
+      expect(result.failed).toBe(0);
+      expect(mockSyncService.syncTimeEntries).toHaveBeenCalledWith(mockUser.id, entries, mockDeviceId);
+    });
+
+    it('should handle partial failures in batch sync', async () => {
+      const entries: SyncTimeEntryInput[] = [
+        {
+          date: '2024-04-12',
+          clientName: 'Client A',
+          description: 'Work done',
+          inTime1: '09:00',
+          outTime1: '17:00',
+          totalHours: 8,
+          operation: SyncOperation.CREATE,
+        },
+        {
+          date: '2024-04-13',
+          clientName: 'Client B',
+          description: 'More work',
+          inTime1: '10:00',
+          outTime1: '18:00',
+          totalHours: 8,
+          operation: SyncOperation.CREATE,
+        },
+      ];
+
+      const mockResult = {
+        successful: 1,
+        failed: 1,
+        conflicts: [],
+        errors: [
+          {
+            entityId: 'temp-123',
+            entityType: 'TimeEntry',
+            operation: 'CREATE',
+            error: 'Validation failed',
+          },
+        ],
+      };
+
+      mockSyncService.syncTimeEntries.mockResolvedValue(mockResult);
+
+      const result = await resolver.syncTimeEntries(entries, mockDeviceId, mockUser);
+
+      expect(result.successful).toBe(1);
+      expect(result.failed).toBe(1);
+      expect(result.errors).toHaveLength(1);
+      expect(mockSyncService.syncTimeEntries).toHaveBeenCalledWith(mockUser.id, entries, mockDeviceId);
+    });
+
+    it('should handle conflicts in batch sync', async () => {
+      const entries: SyncTimeEntryInput[] = [
+        {
+          id: 'entry-1',
+          date: '2024-04-12',
+          clientName: 'Client A',
+          description: 'Updated work',
+          inTime1: '09:00',
+          outTime1: '17:00',
+          totalHours: 8,
+          operation: SyncOperation.UPDATE,
+          lastSyncedAt: new Date('2024-04-12T10:00:00Z'),
+          resolution: ConflictResolutionStrategy.MANUAL_MERGE,
+        },
+      ];
+
+      const mockResult = {
+        successful: 0,
+        failed: 1,
+        conflicts: [
+          {
+            hasConflict: true,
+            serverVersion: { id: 'entry-1', totalHours: 9 },
+            clientVersion: null,
+            serverUpdatedAt: new Date('2024-04-12T11:00:00Z'),
+            clientLastSyncedAt: new Date('2024-04-12T10:00:00Z'),
+            conflictDetails: 'Server data was modified after client\'s last sync',
+          },
+        ],
+        errors: [],
+      };
+
+      mockSyncService.syncTimeEntries.mockResolvedValue(mockResult);
+
+      const result = await resolver.syncTimeEntries(entries, mockDeviceId, mockUser);
+
+      expect(result.successful).toBe(0);
+      expect(result.failed).toBe(1);
+      expect(result.conflicts).toHaveLength(1);
+      expect(result.conflicts[0].hasConflict).toBe(true);
+      expect(mockSyncService.syncTimeEntries).toHaveBeenCalledWith(mockUser.id, entries, mockDeviceId);
+    });
+  });
+
+  describe('syncETOTransactions', () => {
+    it('should sync ETO transactions successfully', async () => {
+      const transactions: SyncETOTransactionInput[] = [
+        {
+          date: '2024-04-12',
+          hours: 8,
+          transactionType: 'Usage',
+          description: 'ETO usage',
+          projectName: 'Project A',
+          operation: SyncOperation.CREATE,
+        },
+      ];
+
+      const mockResult = {
+        successful: 1,
+        failed: 0,
+        conflicts: [],
+        errors: [],
+      };
+
+      mockSyncService.syncETOTransactions.mockResolvedValue(mockResult);
+
+      const result = await resolver.syncETOTransactions(transactions, mockDeviceId, mockUser);
+
+      expect(result).toEqual(mockResult);
+      expect(result.successful).toBe(1);
+      expect(mockSyncService.syncETOTransactions).toHaveBeenCalledWith(
+        mockUser.id,
+        transactions,
+        mockDeviceId,
+      );
+    });
+
+    it('should handle ETO transaction sync errors', async () => {
+      const transactions: SyncETOTransactionInput[] = [
+        {
+          date: '2024-04-12',
+          hours: 100,
+          transactionType: 'Usage',
+          operation: SyncOperation.CREATE,
+        },
+      ];
+
+      const mockResult = {
+        successful: 0,
+        failed: 1,
+        conflicts: [],
+        errors: [
+          {
+            entityId: 'temp-123',
+            entityType: 'ETOTransaction',
+            operation: 'CREATE',
+            error: 'Insufficient ETO balance',
+          },
+        ],
+      };
+
+      mockSyncService.syncETOTransactions.mockResolvedValue(mockResult);
+
+      const result = await resolver.syncETOTransactions(transactions, mockDeviceId, mockUser);
+
+      expect(result.successful).toBe(0);
+      expect(result.failed).toBe(1);
+      expect(result.errors).toHaveLength(1);
+      expect(mockSyncService.syncETOTransactions).toHaveBeenCalledWith(
+        mockUser.id,
+        transactions,
+        mockDeviceId,
+      );
+    });
+  });
+
+  describe('syncTimesheetSubmissions', () => {
+    it('should sync timesheet submissions successfully', async () => {
+      const submissions: SyncTimesheetSubmissionInput[] = [
+        {
+          payPeriodId: 'period-1',
+          status: 'draft',
+          comments: 'Initial draft',
+          operation: SyncOperation.CREATE,
+        },
+      ];
+
+      const mockResult = {
+        successful: 1,
+        failed: 0,
+        conflicts: [],
+        errors: [],
+      };
+
+      mockSyncService.syncTimesheetSubmissions.mockResolvedValue(mockResult);
+
+      const result = await resolver.syncTimesheetSubmissions(submissions, mockDeviceId, mockUser);
+
+      expect(result).toEqual(mockResult);
+      expect(result.successful).toBe(1);
+      expect(mockSyncService.syncTimesheetSubmissions).toHaveBeenCalledWith(
+        mockUser.id,
+        submissions,
+        mockDeviceId,
+      );
+    });
+
+    it('should handle submission sync errors', async () => {
+      const submissions: SyncTimesheetSubmissionInput[] = [
+        {
+          payPeriodId: 'period-1',
+          status: 'submitted',
+          operation: SyncOperation.CREATE,
+        },
+      ];
+
+      const mockResult = {
+        successful: 0,
+        failed: 1,
+        conflicts: [],
+        errors: [
+          {
+            entityId: 'temp-123',
+            entityType: 'TimesheetSubmission',
+            operation: 'CREATE',
+            error: 'Submission already exists for pay period period-1',
+          },
+        ],
+      };
+
+      mockSyncService.syncTimesheetSubmissions.mockResolvedValue(mockResult);
+
+      const result = await resolver.syncTimesheetSubmissions(submissions, mockDeviceId, mockUser);
+
+      expect(result.successful).toBe(0);
+      expect(result.failed).toBe(1);
+      expect(result.errors).toHaveLength(1);
+      expect(mockSyncService.syncTimesheetSubmissions).toHaveBeenCalledWith(
+        mockUser.id,
+        submissions,
+        mockDeviceId,
+      );
     });
   });
 });

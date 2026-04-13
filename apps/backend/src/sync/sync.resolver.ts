@@ -11,6 +11,10 @@ import {
   ResolveConflictInput,
   ResolvedConflict,
   SyncEntityType,
+  SyncTimeEntryInput,
+  SyncETOTransactionInput,
+  SyncTimesheetSubmissionInput,
+  SyncResult,
 } from './dto';
 import type { Consultant } from '../generated';
 
@@ -100,5 +104,56 @@ export class SyncResolver {
     @CurrentUser() user: Consultant,
   ): Promise<ResolvedConflict> {
     return this.syncService.resolveConflict(user.id, input);
+  }
+
+  /**
+   * Batch sync time entries
+   * Processes multiple time entries with conflict detection and resolution
+   * @param entries - Array of time entries to sync
+   * @param deviceId - Device ID for sync logging
+   * @param user - Current authenticated user
+   * @returns SyncResult with counts and any errors
+   */
+  @Mutation(() => SyncResult, { description: 'Batch sync time entries from mobile device' })
+  async syncTimeEntries(
+    @Args('entries', { type: () => [SyncTimeEntryInput] }) entries: SyncTimeEntryInput[],
+    @Args('deviceId') deviceId: string,
+    @CurrentUser() user: Consultant,
+  ): Promise<SyncResult> {
+    return this.syncService.syncTimeEntries(user.id, entries, deviceId);
+  }
+
+  /**
+   * Batch sync ETO transactions
+   * Processes multiple ETO transactions with conflict detection and resolution
+   * @param transactions - Array of ETO transactions to sync
+   * @param deviceId - Device ID for sync logging
+   * @param user - Current authenticated user
+   * @returns SyncResult with counts and any errors
+   */
+  @Mutation(() => SyncResult, { description: 'Batch sync ETO transactions from mobile device' })
+  async syncETOTransactions(
+    @Args('transactions', { type: () => [SyncETOTransactionInput] }) transactions: SyncETOTransactionInput[],
+    @Args('deviceId') deviceId: string,
+    @CurrentUser() user: Consultant,
+  ): Promise<SyncResult> {
+    return this.syncService.syncETOTransactions(user.id, transactions, deviceId);
+  }
+
+  /**
+   * Batch sync timesheet submissions
+   * Processes multiple timesheet submissions with conflict detection and resolution
+   * @param submissions - Array of timesheet submissions to sync
+   * @param deviceId - Device ID for sync logging
+   * @param user - Current authenticated user
+   * @returns SyncResult with counts and any errors
+   */
+  @Mutation(() => SyncResult, { description: 'Batch sync timesheet submissions from mobile device' })
+  async syncTimesheetSubmissions(
+    @Args('submissions', { type: () => [SyncTimesheetSubmissionInput] }) submissions: SyncTimesheetSubmissionInput[],
+    @Args('deviceId') deviceId: string,
+    @CurrentUser() user: Consultant,
+  ): Promise<SyncResult> {
+    return this.syncService.syncTimesheetSubmissions(user.id, submissions, deviceId);
   }
 }
