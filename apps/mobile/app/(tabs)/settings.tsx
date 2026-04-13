@@ -14,7 +14,12 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  loadNotificationPreferences,
+  saveNotificationPreferences,
+} from '@/lib/notificationPreferences';
 
 // --- Types ---
 
@@ -700,6 +705,7 @@ function DeleteAccountModal({
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const {
     logout,
     user,
@@ -728,6 +734,13 @@ export default function SettingsScreen() {
   React.useEffect(() => {
     setToggleStates((prev) => ({ ...prev, biometric: biometricEnabled }));
   }, [biometricEnabled]);
+
+  // Sync notifications toggle with stored preferences
+  React.useEffect(() => {
+    loadNotificationPreferences().then((prefs) => {
+      setToggleStates((prev) => ({ ...prev, notifications: prefs.masterEnabled }));
+    });
+  }, []);
 
   // --- Derived ---
   const frequentlyUsed = useMemo(
@@ -758,18 +771,32 @@ export default function SettingsScreen() {
         }
         return; // Let the useEffect sync from biometricEnabled
       }
+      if (settingId === 'notifications') {
+        setToggleStates((prev) => ({ ...prev, notifications: value }));
+        const prefs = await loadNotificationPreferences();
+        await saveNotificationPreferences({ ...prefs, masterEnabled: value });
+        return;
+      }
       setToggleStates((prev) => ({ ...prev, [settingId]: value }));
     },
     [enableBiometric, disableBiometric],
   );
 
   const handleNavSetting = useCallback((settingId: string) => {
+    if (settingId === 'notifications') {
+      router.push('/settings/notifications');
+      return;
+    }
     Alert.alert('Coming Soon', `The "${settingId}" setting will be available in a future update.`);
-  }, []);
+  }, [router]);
 
   const handleCategoryPress = useCallback((categoryLabel: string) => {
+    if (categoryLabel === 'Preferences') {
+      router.push('/settings/notifications');
+      return;
+    }
     Alert.alert('Coming Soon', `The "${categoryLabel}" category will be available in a future update.`);
-  }, []);
+  }, [router]);
 
   const handleProfilePress = useCallback(() => {
     Alert.alert('Coming Soon', 'Profile editing will be available in a future update.');
@@ -910,8 +937,42 @@ export default function SettingsScreen() {
               className="bg-white shadow-level-1 mx-md"
               style={{ borderRadius: 12 }}
             >
-              {frequentlyUsed.map((setting, index) =>
-                setting.type === 'toggle' ? (
+              {frequentlyUsed.map((setting, index) => {
+                if (setting.id === 'notifications') {
+                  return (
+                    <View
+                      key={setting.id}
+                      className="flex-row items-center justify-between"
+                      style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 12,
+                        minHeight: 56,
+                        borderBottomWidth: index < frequentlyUsed.length - 1 ? 1 : 0,
+                        borderBottomColor: '#E5E7EB',
+                      }}
+                    >
+                      <TouchableOpacity
+                        onPress={() => handleNavSetting('notifications')}
+                        activeOpacity={0.7}
+                        className="flex-row items-center flex-1 mr-3"
+                        accessibilityLabel="Notifications. Tap for detailed preferences."
+                        accessibilityRole="button"
+                      >
+                        <Ionicons name={setting.icon} size={20} color="#2563EB" />
+                        <Text className="text-body text-gray-800 ml-3">{setting.title}</Text>
+                        <Ionicons name="chevron-forward" size={14} color="#9CA3AF" style={{ marginLeft: 4 }} />
+                      </TouchableOpacity>
+                      <Switch
+                        value={toggleStates[setting.id] ?? false}
+                        onValueChange={(value) => handleToggle(setting.id, value)}
+                        trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
+                        thumbColor={(toggleStates[setting.id] ?? false) ? '#2563EB' : '#F3F4F6'}
+                        accessibilityLabel="Notifications master toggle"
+                      />
+                    </View>
+                  );
+                }
+                return setting.type === 'toggle' ? (
                   <SettingToggleRow
                     key={setting.id}
                     setting={setting}
@@ -926,8 +987,8 @@ export default function SettingsScreen() {
                     onPress={() => handleNavSetting(setting.id)}
                     showDivider={index < frequentlyUsed.length - 1}
                   />
-                ),
-              )}
+                );
+              })}
             </View>
 
             {/* All Settings */}
