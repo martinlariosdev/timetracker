@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import GraphQLJSON from 'graphql-type-json';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthResolver } from './health.resolver';
@@ -18,6 +19,7 @@ import { SyncModule } from './sync/sync.module';
       sortSchema: true,
       playground: true,
       context: ({ req }) => ({ req }),
+      resolvers: { JSONObject: GraphQLJSON },
     }),
     PrismaModule,
     AuthModule,

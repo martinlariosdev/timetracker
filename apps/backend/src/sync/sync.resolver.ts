@@ -7,6 +7,10 @@ import {
   SyncLogObjectType,
   CreateSyncLogInput,
   SyncFilterInput,
+  ConflictInfo,
+  ResolveConflictInput,
+  ResolvedConflict,
+  SyncEntityType,
 } from './dto';
 import type { Consultant } from '../generated';
 
@@ -62,5 +66,39 @@ export class SyncResolver {
     @CurrentUser() user: Consultant,
   ): Promise<SyncLogObjectType[]> {
     return this.syncService.getFailedSyncLogs(user.id);
+  }
+
+  /**
+   * Check for conflicts before syncing
+   * Detects if entity was modified on server since client's last sync
+   * @param entityType - Type of entity to check
+   * @param entityId - ID of the entity to check
+   * @param lastSyncedAt - Client's last sync timestamp
+   * @param user - Current authenticated user
+   * @returns ConflictInfo with details if conflict detected
+   */
+  @Query(() => ConflictInfo, { description: 'Check if an entity has conflicts before syncing' })
+  async checkConflict(
+    @Args('entityType', { type: () => SyncEntityType }) entityType: SyncEntityType,
+    @Args('entityId') entityId: string,
+    @Args('lastSyncedAt') lastSyncedAt: Date,
+    @CurrentUser() user: Consultant,
+  ): Promise<ConflictInfo> {
+    return this.syncService.detectConflict(user.id, entityType, entityId, lastSyncedAt);
+  }
+
+  /**
+   * Resolve a detected conflict
+   * Applies the specified conflict resolution strategy
+   * @param input - Conflict resolution input
+   * @param user - Current authenticated user
+   * @returns ResolvedConflict with final data after resolution
+   */
+  @Mutation(() => ResolvedConflict, { description: 'Resolve a detected conflict using a strategy' })
+  async resolveConflict(
+    @Args('input') input: ResolveConflictInput,
+    @CurrentUser() user: Consultant,
+  ): Promise<ResolvedConflict> {
+    return this.syncService.resolveConflict(user.id, input);
   }
 }

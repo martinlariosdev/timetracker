@@ -1,7 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SyncResolver } from './sync.resolver';
 import { SyncService } from './sync.service';
-import { CreateSyncLogInput, SyncFilterInput, SyncEntityType, SyncOperationType } from './dto';
+import {
+  CreateSyncLogInput,
+  SyncFilterInput,
+  SyncEntityType,
+  SyncOperationType,
+  ConflictResolutionStrategy,
+  ResolveConflictInput,
+} from './dto';
 import type { Consultant } from '../generated';
 
 describe('SyncResolver', () => {
@@ -12,6 +19,8 @@ describe('SyncResolver', () => {
     createSyncLog: jest.fn(),
     getSyncLogs: jest.fn(),
     getFailedSyncLogs: jest.fn(),
+    detectConflict: jest.fn(),
+    resolveConflict: jest.fn(),
   };
 
   const mockUser = {
@@ -248,6 +257,270 @@ describe('SyncResolver', () => {
 
       expect(result).toEqual([]);
       expect(mockSyncService.getFailedSyncLogs).toHaveBeenCalledWith(mockUser.id);
+    });
+  });
+
+  describe('checkConflict', () => {
+    const entityType = SyncEntityType.TIME_ENTRY;
+    const entityId = 'time-entry-123';
+    const lastSyncedAt = new Date('2024-04-12T10:00:00Z');
+
+    it('should detect conflict and return ConflictInfo', async () => {
+      const mockConflictInfo = {
+        hasConflict: true,
+        serverVersion: {
+          id: entityId,
+          consultantId: mockUser.id,
+          date: new Date('2024-04-12'),
+          totalHours: 8,
+          updatedAt: new Date('2024-04-12T11:00:00Z'),
+        },
+        clientVersion: null,
+        serverUpdatedAt: new Date('2024-04-12T11:00:00Z'),
+        clientLastSyncedAt: lastSyncedAt,
+        conflictDetails: 'Server data was modified after client\'s last sync',
+      };
+
+      mockSyncService.detectConflict.mockResolvedValue(mockConflictInfo);
+
+      const result = await resolver.checkConflict(entityType, entityId, lastSyncedAt, mockUser);
+
+      expect(result).toEqual(mockConflictInfo);
+      expect(mockSyncService.detectConflict).toHaveBeenCalledWith(
+        mockUser.id,
+        entityType,
+        entityId,
+        lastSyncedAt,
+      );
+    });
+
+    it('should return no conflict when entity not modified', async () => {
+      const mockConflictInfo = {
+        hasConflict: false,
+        serverVersion: null,
+        clientVersion: null,
+        serverUpdatedAt: null,
+        clientLastSyncedAt: null,
+        conflictDetails: null,
+      };
+
+      mockSyncService.detectConflict.mockResolvedValue(mockConflictInfo);
+
+      const result = await resolver.checkConflict(entityType, entityId, lastSyncedAt, mockUser);
+
+      expect(result.hasConflict).toBe(false);
+      expect(result.serverVersion).toBeNull();
+      expect(mockSyncService.detectConflict).toHaveBeenCalledWith(
+        mockUser.id,
+        entityType,
+        entityId,
+        lastSyncedAt,
+      );
+    });
+
+    it('should check conflict for ETO transaction', async () => {
+      const etoType = SyncEntityType.ETO_TRANSACTION;
+      const etoId = 'eto-123';
+
+      const mockConflictInfo = {
+        hasConflict: true,
+        serverVersion: {
+          id: etoId,
+          consultantId: mockUser.id,
+          hours: 8,
+          createdAt: new Date('2024-04-12T11:00:00Z'),
+        },
+        clientVersion: null,
+        serverUpdatedAt: new Date('2024-04-12T11:00:00Z'),
+        clientLastSyncedAt: lastSyncedAt,
+        conflictDetails: 'Server data was modified after client\'s last sync',
+      };
+
+      mockSyncService.detectConflict.mockResolvedValue(mockConflictInfo);
+
+      const result = await resolver.checkConflict(etoType, etoId, lastSyncedAt, mockUser);
+
+      expect(result.hasConflict).toBe(true);
+      expect(mockSyncService.detectConflict).toHaveBeenCalledWith(
+        mockUser.id,
+        etoType,
+        etoId,
+        lastSyncedAt,
+      );
+    });
+  });
+
+  describe('resolveConflict', () => {
+    const entityId = 'time-entry-123';
+
+    it('should resolve conflict with SERVER_WINS strategy', async () => {
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.TIME_ENTRY,
+        entityId,
+        strategy: ConflictResolutionStrategy.SERVER_WINS,
+      };
+
+      const mockResolvedConflict = {
+        success: true,
+        finalData: {
+          id: entityId,
+          consultantId: mockUser.id,
+          date: new Date('2024-04-12'),
+          totalHours: 8,
+          description: 'Server version',
+        },
+        strategy: ConflictResolutionStrategy.SERVER_WINS,
+        message: 'Server data preserved, client changes discarded',
+      };
+
+      mockSyncService.resolveConflict.mockResolvedValue(mockResolvedConflict);
+
+      const result = await resolver.resolveConflict(input, mockUser);
+
+      expect(result).toEqual(mockResolvedConflict);
+      expect(result.success).toBe(true);
+      expect(result.strategy).toBe(ConflictResolutionStrategy.SERVER_WINS);
+      expect(mockSyncService.resolveConflict).toHaveBeenCalledWith(mockUser.id, input);
+    });
+
+    it('should resolve conflict with CLIENT_WINS strategy', async () => {
+      const clientData = {
+        id: entityId,
+        consultantId: mockUser.id,
+        date: new Date('2024-04-12'),
+        totalHours: 9,
+        description: 'Client version',
+      };
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.TIME_ENTRY,
+        entityId,
+        strategy: ConflictResolutionStrategy.CLIENT_WINS,
+        clientData,
+      };
+
+      const mockResolvedConflict = {
+        success: true,
+        finalData: clientData,
+        strategy: ConflictResolutionStrategy.CLIENT_WINS,
+        message: 'Client data applied, server changes overwritten',
+      };
+
+      mockSyncService.resolveConflict.mockResolvedValue(mockResolvedConflict);
+
+      const result = await resolver.resolveConflict(input, mockUser);
+
+      expect(result).toEqual(mockResolvedConflict);
+      expect(result.success).toBe(true);
+      expect(result.strategy).toBe(ConflictResolutionStrategy.CLIENT_WINS);
+      expect(mockSyncService.resolveConflict).toHaveBeenCalledWith(mockUser.id, input);
+    });
+
+    it('should resolve conflict with MANUAL_MERGE strategy', async () => {
+      const serverData = {
+        id: entityId,
+        consultantId: mockUser.id,
+        date: new Date('2024-04-12'),
+        totalHours: 8,
+        description: 'Server version',
+      };
+
+      const clientData = {
+        id: entityId,
+        consultantId: mockUser.id,
+        date: new Date('2024-04-12'),
+        totalHours: 9,
+        description: 'Client version',
+      };
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.TIME_ENTRY,
+        entityId,
+        strategy: ConflictResolutionStrategy.MANUAL_MERGE,
+        clientData,
+      };
+
+      const mockResolvedConflict = {
+        success: true,
+        finalData: {
+          serverVersion: serverData,
+          clientVersion: clientData,
+        },
+        strategy: ConflictResolutionStrategy.MANUAL_MERGE,
+        message: 'Manual merge required - both versions returned for client handling',
+      };
+
+      mockSyncService.resolveConflict.mockResolvedValue(mockResolvedConflict);
+
+      const result = await resolver.resolveConflict(input, mockUser);
+
+      expect(result).toEqual(mockResolvedConflict);
+      expect(result.success).toBe(true);
+      expect(result.strategy).toBe(ConflictResolutionStrategy.MANUAL_MERGE);
+      expect(result.finalData).toHaveProperty('serverVersion');
+      expect(result.finalData).toHaveProperty('clientVersion');
+      expect(mockSyncService.resolveConflict).toHaveBeenCalledWith(mockUser.id, input);
+    });
+
+    it('should resolve conflict for ETO transaction', async () => {
+      const etoId = 'eto-123';
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.ETO_TRANSACTION,
+        entityId: etoId,
+        strategy: ConflictResolutionStrategy.SERVER_WINS,
+      };
+
+      const mockResolvedConflict = {
+        success: true,
+        finalData: {
+          id: etoId,
+          consultantId: mockUser.id,
+          hours: 8,
+          transactionType: 'Accrual',
+          createdAt: new Date('2024-04-12T11:00:00Z'),
+        },
+        strategy: ConflictResolutionStrategy.SERVER_WINS,
+        message: 'Server data preserved, client changes discarded',
+      };
+
+      mockSyncService.resolveConflict.mockResolvedValue(mockResolvedConflict);
+
+      const result = await resolver.resolveConflict(input, mockUser);
+
+      expect(result.success).toBe(true);
+      expect(result.finalData).toHaveProperty('id', etoId);
+      expect(mockSyncService.resolveConflict).toHaveBeenCalledWith(mockUser.id, input);
+    });
+
+    it('should resolve conflict for Timesheet Submission', async () => {
+      const submissionId = 'submission-123';
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.TIMESHEET_SUBMISSION,
+        entityId: submissionId,
+        strategy: ConflictResolutionStrategy.SERVER_WINS,
+      };
+
+      const mockResolvedConflict = {
+        success: true,
+        finalData: {
+          id: submissionId,
+          consultantId: mockUser.id,
+          status: 'submitted',
+          updatedAt: new Date('2024-04-12T11:00:00Z'),
+        },
+        strategy: ConflictResolutionStrategy.SERVER_WINS,
+        message: 'Server data preserved, client changes discarded',
+      };
+
+      mockSyncService.resolveConflict.mockResolvedValue(mockResolvedConflict);
+
+      const result = await resolver.resolveConflict(input, mockUser);
+
+      expect(result.success).toBe(true);
+      expect(result.finalData).toHaveProperty('status', 'submitted');
+      expect(mockSyncService.resolveConflict).toHaveBeenCalledWith(mockUser.id, input);
     });
   });
 });

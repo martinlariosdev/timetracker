@@ -1,8 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { SyncService } from './sync.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateSyncLogInput, SyncFilterInput, SyncEntityType, SyncOperationType } from './dto';
+import {
+  CreateSyncLogInput,
+  SyncFilterInput,
+  SyncEntityType,
+  SyncOperationType,
+  ConflictResolutionStrategy,
+  ResolveConflictInput,
+} from './dto';
 
 describe('SyncService', () => {
   let service: SyncService;
@@ -12,6 +19,22 @@ describe('SyncService', () => {
     syncLog: {
       create: jest.fn(),
       findMany: jest.fn(),
+    },
+    timeEntry: {
+      findFirst: jest.fn(),
+      update: jest.fn(),
+    },
+    eTOTransaction: {
+      findFirst: jest.fn(),
+      update: jest.fn(),
+    },
+    consultant: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+    timesheetSubmission: {
+      findFirst: jest.fn(),
+      update: jest.fn(),
     },
   };
 
@@ -502,6 +525,459 @@ describe('SyncService', () => {
 
       await expect(service.getSyncLogsByEntity(mockUserId, 'TimeEntry', 'entity-123')).rejects.toThrow(InternalServerErrorException);
       await expect(service.getSyncLogsByEntity(mockUserId, 'TimeEntry', 'entity-123')).rejects.toThrow('Failed to retrieve sync logs for entity');
+    });
+  });
+
+  describe('detectConflict', () => {
+    const entityId = 'time-entry-123';
+    const lastSyncedAt = new Date('2024-04-12T10:00:00Z');
+
+    it('should detect no conflict when entity not modified after lastSyncedAt', async () => {
+      const mockTimeEntry = {
+        id: entityId,
+        consultantId: mockUserId,
+        date: new Date('2024-04-12'),
+        totalHours: 8,
+        updatedAt: new Date('2024-04-12T09:00:00Z'), // Before lastSyncedAt
+        createdAt: new Date('2024-04-12T08:00:00Z'),
+      };
+
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockTimeEntry);
+
+      const result = await service.detectConflict(
+        mockUserId,
+        SyncEntityType.TIME_ENTRY,
+        entityId,
+        lastSyncedAt,
+      );
+
+      expect(result.hasConflict).toBe(false);
+      expect(result.serverVersion).toBeNull();
+      expect(result.conflictDetails).toBeNull();
+      expect(mockPrismaService.timeEntry.findFirst).toHaveBeenCalledWith({
+        where: { id: entityId, consultantId: mockUserId },
+      });
+    });
+
+    it('should detect conflict when TimeEntry modified after lastSyncedAt', async () => {
+      const mockTimeEntry = {
+        id: entityId,
+        consultantId: mockUserId,
+        date: new Date('2024-04-12'),
+        totalHours: 8,
+        updatedAt: new Date('2024-04-12T11:00:00Z'), // After lastSyncedAt
+        createdAt: new Date('2024-04-12T08:00:00Z'),
+      };
+
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockTimeEntry);
+
+      const result = await service.detectConflict(
+        mockUserId,
+        SyncEntityType.TIME_ENTRY,
+        entityId,
+        lastSyncedAt,
+      );
+
+      expect(result.hasConflict).toBe(true);
+      expect(result.serverVersion).toEqual(mockTimeEntry);
+      expect(result.serverUpdatedAt).toEqual(mockTimeEntry.updatedAt);
+      expect(result.clientLastSyncedAt).toEqual(lastSyncedAt);
+      expect(result.conflictDetails).toContain('Server data was modified after client\'s last sync');
+    });
+
+    it('should detect conflict for ETOTransaction using createdAt', async () => {
+      const etoId = 'eto-123';
+      const mockETOTransaction = {
+        id: etoId,
+        consultantId: mockUserId,
+        date: new Date('2024-04-12'),
+        hours: 8,
+        transactionType: 'Accrual',
+        createdAt: new Date('2024-04-12T11:00:00Z'), // After lastSyncedAt
+      };
+
+      mockPrismaService.eTOTransaction.findFirst.mockResolvedValue(mockETOTransaction);
+
+      const result = await service.detectConflict(
+        mockUserId,
+        SyncEntityType.ETO_TRANSACTION,
+        etoId,
+        lastSyncedAt,
+      );
+
+      expect(result.hasConflict).toBe(true);
+      expect(result.serverVersion).toEqual(mockETOTransaction);
+      expect(result.serverUpdatedAt).toEqual(mockETOTransaction.createdAt);
+    });
+
+    it('should detect conflict for Consultant', async () => {
+      const mockConsultant = {
+        id: mockUserId,
+        name: 'John Doe',
+        email: 'john@example.com',
+        updatedAt: new Date('2024-04-12T11:00:00Z'), // After lastSyncedAt
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+      };
+
+      mockPrismaService.consultant.findUnique.mockResolvedValue(mockConsultant);
+
+      const result = await service.detectConflict(
+        mockUserId,
+        SyncEntityType.CONSULTANT,
+        mockUserId,
+        lastSyncedAt,
+      );
+
+      expect(result.hasConflict).toBe(true);
+      expect(result.serverVersion).toEqual(mockConsultant);
+      expect(mockPrismaService.consultant.findUnique).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+      });
+    });
+
+    it('should detect conflict for TimesheetSubmission', async () => {
+      const submissionId = 'submission-123';
+      const mockSubmission = {
+        id: submissionId,
+        consultantId: mockUserId,
+        payPeriodId: 'period-123',
+        status: 'submitted',
+        updatedAt: new Date('2024-04-12T11:00:00Z'), // After lastSyncedAt
+        createdAt: new Date('2024-04-12T08:00:00Z'),
+      };
+
+      mockPrismaService.timesheetSubmission.findFirst.mockResolvedValue(mockSubmission);
+
+      const result = await service.detectConflict(
+        mockUserId,
+        SyncEntityType.TIMESHEET_SUBMISSION,
+        submissionId,
+        lastSyncedAt,
+      );
+
+      expect(result.hasConflict).toBe(true);
+      expect(result.serverVersion).toEqual(mockSubmission);
+    });
+
+    it('should throw NotFoundException when entity does not exist', async () => {
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.detectConflict(mockUserId, SyncEntityType.TIME_ENTRY, 'nonexistent-123', lastSyncedAt),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.detectConflict(mockUserId, SyncEntityType.TIME_ENTRY, 'nonexistent-123', lastSyncedAt),
+      ).rejects.toThrow('TimeEntry with ID nonexistent-123 not found');
+    });
+
+    it('should throw BadRequestException when required fields are missing', async () => {
+      await expect(
+        service.detectConflict('', SyncEntityType.TIME_ENTRY, entityId, lastSyncedAt),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.detectConflict('', SyncEntityType.TIME_ENTRY, entityId, lastSyncedAt),
+      ).rejects.toThrow('All fields are required for conflict detection');
+
+      await expect(
+        service.detectConflict(mockUserId, SyncEntityType.TIME_ENTRY, '', lastSyncedAt),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw InternalServerErrorException when Prisma query fails', async () => {
+      mockPrismaService.timeEntry.findFirst.mockRejectedValue(new Error('Database error'));
+
+      await expect(
+        service.detectConflict(mockUserId, SyncEntityType.TIME_ENTRY, entityId, lastSyncedAt),
+      ).rejects.toThrow(InternalServerErrorException);
+      await expect(
+        service.detectConflict(mockUserId, SyncEntityType.TIME_ENTRY, entityId, lastSyncedAt),
+      ).rejects.toThrow('Failed to detect conflict');
+    });
+  });
+
+  describe('resolveConflict', () => {
+    const entityId = 'time-entry-123';
+
+    it('should resolve conflict with SERVER_WINS strategy', async () => {
+      const mockTimeEntry = {
+        id: entityId,
+        consultantId: mockUserId,
+        date: new Date('2024-04-12'),
+        totalHours: 8,
+        description: 'Server version',
+        updatedAt: new Date('2024-04-12T11:00:00Z'),
+        createdAt: new Date('2024-04-12T08:00:00Z'),
+      };
+
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockTimeEntry);
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.TIME_ENTRY,
+        entityId,
+        strategy: ConflictResolutionStrategy.SERVER_WINS,
+      };
+
+      const result = await service.resolveConflict(mockUserId, input);
+
+      expect(result.success).toBe(true);
+      expect(result.strategy).toBe(ConflictResolutionStrategy.SERVER_WINS);
+      expect(result.finalData).toEqual(mockTimeEntry);
+      expect(result.message).toContain('Server data preserved');
+      expect(mockPrismaService.timeEntry.update).not.toHaveBeenCalled();
+    });
+
+    it('should resolve conflict with CLIENT_WINS strategy', async () => {
+      const mockServerTimeEntry = {
+        id: entityId,
+        consultantId: mockUserId,
+        date: new Date('2024-04-12'),
+        totalHours: 8,
+        description: 'Server version',
+        updatedAt: new Date('2024-04-12T11:00:00Z'),
+        createdAt: new Date('2024-04-12T08:00:00Z'),
+      };
+
+      const clientData = {
+        id: entityId,
+        consultantId: mockUserId,
+        date: new Date('2024-04-12'),
+        totalHours: 9,
+        description: 'Client version',
+      };
+
+      const mockUpdatedTimeEntry = {
+        ...mockServerTimeEntry,
+        totalHours: 9,
+        description: 'Client version',
+      };
+
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockServerTimeEntry);
+      mockPrismaService.timeEntry.update.mockResolvedValue(mockUpdatedTimeEntry);
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.TIME_ENTRY,
+        entityId,
+        strategy: ConflictResolutionStrategy.CLIENT_WINS,
+        clientData,
+      };
+
+      const result = await service.resolveConflict(mockUserId, input);
+
+      expect(result.success).toBe(true);
+      expect(result.strategy).toBe(ConflictResolutionStrategy.CLIENT_WINS);
+      expect(result.finalData).toEqual(mockUpdatedTimeEntry);
+      expect(result.message).toContain('Client data applied');
+      expect(mockPrismaService.timeEntry.update).toHaveBeenCalledWith({
+        where: { id: entityId },
+        data: {
+          date: clientData.date,
+          totalHours: clientData.totalHours,
+          description: clientData.description,
+        },
+      });
+    });
+
+    it('should throw BadRequestException when CLIENT_WINS strategy lacks client data', async () => {
+      const mockTimeEntry = {
+        id: entityId,
+        consultantId: mockUserId,
+        date: new Date('2024-04-12'),
+        totalHours: 8,
+      };
+
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockTimeEntry);
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.TIME_ENTRY,
+        entityId,
+        strategy: ConflictResolutionStrategy.CLIENT_WINS,
+        // clientData missing
+      };
+
+      await expect(service.resolveConflict(mockUserId, input)).rejects.toThrow(BadRequestException);
+      await expect(service.resolveConflict(mockUserId, input)).rejects.toThrow(
+        'Client data is required for CLIENT_WINS strategy',
+      );
+    });
+
+    it('should resolve conflict with MANUAL_MERGE strategy', async () => {
+      const mockServerTimeEntry = {
+        id: entityId,
+        consultantId: mockUserId,
+        date: new Date('2024-04-12'),
+        totalHours: 8,
+        description: 'Server version',
+        updatedAt: new Date('2024-04-12T11:00:00Z'),
+        createdAt: new Date('2024-04-12T08:00:00Z'),
+      };
+
+      const clientData = {
+        id: entityId,
+        consultantId: mockUserId,
+        date: new Date('2024-04-12'),
+        totalHours: 9,
+        description: 'Client version',
+      };
+
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockServerTimeEntry);
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.TIME_ENTRY,
+        entityId,
+        strategy: ConflictResolutionStrategy.MANUAL_MERGE,
+        clientData,
+      };
+
+      const result = await service.resolveConflict(mockUserId, input);
+
+      expect(result.success).toBe(true);
+      expect(result.strategy).toBe(ConflictResolutionStrategy.MANUAL_MERGE);
+      expect(result.finalData).toEqual({
+        serverVersion: mockServerTimeEntry,
+        clientVersion: clientData,
+      });
+      expect(result.message).toContain('Manual merge required');
+      expect(mockPrismaService.timeEntry.update).not.toHaveBeenCalled();
+    });
+
+    it('should resolve conflict for ETOTransaction', async () => {
+      const etoId = 'eto-123';
+      const mockETOTransaction = {
+        id: etoId,
+        consultantId: mockUserId,
+        date: new Date('2024-04-12'),
+        hours: 8,
+        transactionType: 'Accrual',
+        createdAt: new Date('2024-04-12T11:00:00Z'),
+      };
+
+      mockPrismaService.eTOTransaction.findFirst.mockResolvedValue(mockETOTransaction);
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.ETO_TRANSACTION,
+        entityId: etoId,
+        strategy: ConflictResolutionStrategy.SERVER_WINS,
+      };
+
+      const result = await service.resolveConflict(mockUserId, input);
+
+      expect(result.success).toBe(true);
+      expect(result.finalData).toEqual(mockETOTransaction);
+      expect(mockPrismaService.eTOTransaction.findFirst).toHaveBeenCalledWith({
+        where: { id: etoId, consultantId: mockUserId },
+      });
+    });
+
+    it('should resolve conflict for Consultant', async () => {
+      const mockConsultant = {
+        id: mockUserId,
+        name: 'John Doe',
+        email: 'john@example.com',
+        updatedAt: new Date('2024-04-12T11:00:00Z'),
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+      };
+
+      mockPrismaService.consultant.findUnique.mockResolvedValue(mockConsultant);
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.CONSULTANT,
+        entityId: mockUserId,
+        strategy: ConflictResolutionStrategy.SERVER_WINS,
+      };
+
+      const result = await service.resolveConflict(mockUserId, input);
+
+      expect(result.success).toBe(true);
+      expect(result.finalData).toEqual(mockConsultant);
+    });
+
+    it('should resolve conflict for TimesheetSubmission', async () => {
+      const submissionId = 'submission-123';
+      const mockSubmission = {
+        id: submissionId,
+        consultantId: mockUserId,
+        payPeriodId: 'period-123',
+        status: 'submitted',
+        updatedAt: new Date('2024-04-12T11:00:00Z'),
+        createdAt: new Date('2024-04-12T08:00:00Z'),
+      };
+
+      mockPrismaService.timesheetSubmission.findFirst.mockResolvedValue(mockSubmission);
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.TIMESHEET_SUBMISSION,
+        entityId: submissionId,
+        strategy: ConflictResolutionStrategy.SERVER_WINS,
+      };
+
+      const result = await service.resolveConflict(mockUserId, input);
+
+      expect(result.success).toBe(true);
+      expect(result.finalData).toEqual(mockSubmission);
+    });
+
+    it('should throw NotFoundException when entity does not exist', async () => {
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(null);
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.TIME_ENTRY,
+        entityId: 'nonexistent-123',
+        strategy: ConflictResolutionStrategy.SERVER_WINS,
+      };
+
+      await expect(service.resolveConflict(mockUserId, input)).rejects.toThrow(NotFoundException);
+      await expect(service.resolveConflict(mockUserId, input)).rejects.toThrow(
+        'TimeEntry with ID nonexistent-123 not found',
+      );
+    });
+
+    it('should throw BadRequestException when required fields are missing', async () => {
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.TIME_ENTRY,
+        entityId: entityId,
+        strategy: ConflictResolutionStrategy.SERVER_WINS,
+      };
+
+      await expect(service.resolveConflict('', input)).rejects.toThrow(BadRequestException);
+      await expect(service.resolveConflict('', input)).rejects.toThrow(
+        'User ID, entity type, entity ID, and strategy are required',
+      );
+    });
+
+    it('should throw InternalServerErrorException when Prisma query fails', async () => {
+      mockPrismaService.timeEntry.findFirst.mockRejectedValue(new Error('Database error'));
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.TIME_ENTRY,
+        entityId: entityId,
+        strategy: ConflictResolutionStrategy.SERVER_WINS,
+      };
+
+      await expect(service.resolveConflict(mockUserId, input)).rejects.toThrow(InternalServerErrorException);
+      await expect(service.resolveConflict(mockUserId, input)).rejects.toThrow('Failed to resolve conflict');
+    });
+
+    it('should use provided serverData instead of fetching from database', async () => {
+      const serverData = {
+        id: entityId,
+        consultantId: mockUserId,
+        date: new Date('2024-04-12'),
+        totalHours: 8,
+        description: 'Provided server data',
+      };
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.TIME_ENTRY,
+        entityId,
+        strategy: ConflictResolutionStrategy.SERVER_WINS,
+        serverData,
+      };
+
+      const result = await service.resolveConflict(mockUserId, input);
+
+      expect(result.success).toBe(true);
+      expect(result.finalData).toEqual(serverData);
+      expect(mockPrismaService.timeEntry.findFirst).not.toHaveBeenCalled();
     });
   });
 });
