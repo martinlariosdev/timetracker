@@ -20,8 +20,8 @@ export class SyncETOTransactionInput {
   @Field({ description: 'Transaction type (Usage, Accrual, Adjustment)' })
   transactionType: string;
 
-  @Field({ description: 'Description of the transaction' })
-  description: string;
+  @Field({ nullable: true, description: 'Description of the transaction' })
+  description?: string;
 
   @Field({ nullable: true, description: 'Project name (for Usage type)' })
   projectName?: string;
