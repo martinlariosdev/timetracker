@@ -16,6 +16,22 @@ export interface OktaAuthResult {
 }
 
 /**
+ * Decoded JWT token payload
+ * Contains standard JWT claims that may be present in Okta tokens
+ */
+export interface DecodedJWT {
+  sub?: string; // Subject (user ID)
+  exp?: number; // Expiration time (seconds since epoch)
+  iat?: number; // Issued at time (seconds since epoch)
+  iss?: string; // Issuer
+  aud?: string | string[]; // Audience
+  name?: string; // User's full name
+  email?: string; // User's email
+  preferred_username?: string; // Preferred username
+  [key: string]: unknown; // Additional claims
+}
+
+/**
  * Okta user profile from ID token
  */
 export interface OktaUserProfile {
@@ -23,7 +39,7 @@ export interface OktaUserProfile {
   name?: string;
   email?: string;
   preferred_username?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -237,7 +253,7 @@ export class OktaService {
    * @param token - JWT token to decode
    * @returns Decoded token payload
    */
-  static decodeToken(token: string): any {
+  static decodeToken(token: string): DecodedJWT {
     try {
       const parts = token.split('.');
       if (parts.length !== 3) {
@@ -270,6 +286,13 @@ export class OktaService {
     try {
       const decoded = this.decodeToken(idToken);
 
+      if (!decoded.sub) {
+        throw new OktaAuthError(
+          'Invalid ID token: missing sub claim',
+          'INVALID_TOKEN'
+        );
+      }
+
       return {
         sub: decoded.sub,
         name: decoded.name,
@@ -278,6 +301,9 @@ export class OktaService {
         ...decoded,
       };
     } catch (error) {
+      if (error instanceof OktaAuthError) {
+        throw error;
+      }
       throw new OktaAuthError(
         'Failed to get user profile',
         'PROFILE_FAILED',
