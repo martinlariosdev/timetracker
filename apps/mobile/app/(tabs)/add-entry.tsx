@@ -27,7 +27,7 @@ import {
   CREATE_TIME_ENTRY_MUTATION,
   UPDATE_TIME_ENTRY_MUTATION,
 } from '@/lib/graphql/mutations';
-import { TIME_ENTRY_QUERY, WEEK_TIME_ENTRIES_QUERY } from '@/lib/graphql/queries';
+import { TIME_ENTRY_QUERY } from '@/lib/graphql/queries';
 
 // --- Types ---
 
@@ -797,11 +797,8 @@ export default function AddEntryScreen() {
       setErrors({
         general: 'Failed to save. Please try again.',
       });
-      // Also try mock-save for development
-      // TODO: Remove when backend is connected
-      Alert.alert('Saved (Mock)', 'Entry saved locally for development', [
-        { text: 'OK', onPress: () => router.back() },
-      ]);
+      // TODO: Remove mock alert when backend is connected
+      Alert.alert('Save Failed (Dev)', 'Backend unavailable. Entry was not saved.');
     } finally {
       setIsSaving(false);
     }
