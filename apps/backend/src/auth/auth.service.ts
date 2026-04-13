@@ -10,6 +10,15 @@ interface OktaProfile {
   [key: string]: any;
 }
 
+interface JwtPayload {
+  sub: string;          // External ID from Okta
+  email?: string;
+  name?: string;
+  consultantId?: string;
+  iat?: number;
+  exp?: number;
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -82,7 +91,7 @@ export class AuthService {
     }
   }
 
-  async validateJwtPayload(payload: any): Promise<Consultant> {
+  async validateJwtPayload(payload: JwtPayload): Promise<Consultant> {
     if (!payload || !payload.sub) {
       this.logger.warn('Invalid JWT payload');
       throw new UnauthorizedException('Invalid JWT payload');
