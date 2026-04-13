@@ -40,82 +40,18 @@ import {
   MOCK_LAST_CLIENT,
   MOCK_YESTERDAY_ENTRY,
 } from '@/constants/add-entry';
-
-// --- Utilities ---
-
-function formatDateParam(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-function parseDate(dateStr: string): Date {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function isSameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-
-function generateWeekStrip(center: Date): Date[] {
-  // Show selected date ±3 days (7 days total, 4 visible at a time)
-  const dates: Date[] = [];
-  for (let i = -3; i <= 3; i++) {
-    const d = new Date(center);
-    d.setDate(d.getDate() + i);
-    dates.push(d);
-  }
-  return dates;
-}
-
-function parseTimeToMinutes(time: string): number {
-  const [h, m] = time.split(':').map(Number);
-  return h * 60 + m;
-}
-
-function calculateHoursFromEntries(entries: TimeEntryPairData[]): number {
-  let totalMinutes = 0;
-  for (const entry of entries) {
-    const inMinutes = parseTimeToMinutes(entry.inTime);
-    const outMinutes = parseTimeToMinutes(entry.outTime);
-    if (outMinutes > inMinutes) {
-      totalMinutes += outMinutes - inMinutes;
-    }
-  }
-  return totalMinutes / 60;
-}
-
-function formatHours(hours: number): string {
-  return hours.toFixed(1);
-}
-
-function isValidTimeEntry(entry: TimeEntryPairData): boolean {
-  const inMin = parseTimeToMinutes(entry.inTime);
-  const outMin = parseTimeToMinutes(entry.outTime);
-  return outMin > inMin;
-}
-
-function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
-
-function formatTimeDisplay(time: string): string {
-  // Convert HH:MM to display format
-  const [h, m] = time.split(':').map(Number);
-  if (Platform.OS === 'ios') {
-    // 12-hour for iOS
-    const period = h >= 12 ? 'PM' : 'AM';
-    const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
-    return `${displayH}:${String(m).padStart(2, '0')} ${period}`;
-  }
-  return time;
-}
+import {
+  formatDateParam,
+  parseDate,
+  isSameDay,
+  generateWeekStrip,
+  parseTimeToMinutes,
+  calculateHoursFromEntries,
+  formatHours,
+  isValidTimeEntry,
+  generateId,
+  formatTimeDisplay,
+} from '@/utils/add-entry';
 
 // --- Sub-Components ---
 
