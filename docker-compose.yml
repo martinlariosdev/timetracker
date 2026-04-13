@@ -9,19 +9,19 @@ services:
     ports:
       - '27017:27017'
     environment:
-      MONGO_INITDB_ROOT_USERNAME: timetrack
-      MONGO_INITDB_ROOT_PASSWORD: timetrack_dev_password
       MONGO_INITDB_DATABASE: timetrack
     volumes:
       - mongodb_data:/data/db
       - mongodb_config:/data/configdb
     networks:
       - timetrack-network
+    command: ["--replSet", "rs0", "--bind_ip_all"]
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh mongodb://localhost:27017/timetrack --quiet
+      test: |
+        mongosh --eval "try { rs.status(); } catch(e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongodb:27017' }] }); }" --quiet || exit 1
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
       start_period: 40s
 
   # Backend API (development)
@@ -35,7 +35,7 @@ services:
       - '3000:3000'
     environment:
       NODE_ENV: development
-      DATABASE_URL: mongodb://timetrack:timetrack_dev_password@mongodb:27017/timetrack?authSource=admin
+      DATABASE_URL: mongodb://mongodb:27017/timetrack?replicaSet=rs0&directConnection=true
       JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
       JWT_EXPIRES_IN: 7d
       ENABLE_MOCK_AUTH: ${ENABLE_MOCK_AUTH:-true}
@@ -74,7 +74,7 @@ services:
       - '3001:3000'
     environment:
       NODE_ENV: production
-      DATABASE_URL: mongodb://timetrack:timetrack_dev_password@mongodb:27017/timetrack?authSource=admin
+      DATABASE_URL: mongodb://timetrack:timetrack_dev_password@mongodb:27017/timetrack?authSource=admin&replicaSet=rs0
       JWT_SECRET: ${JWT_SECRET:-}
       JWT_EXPIRES_IN: 7d
       ENABLE_MOCK_AUTH: false
