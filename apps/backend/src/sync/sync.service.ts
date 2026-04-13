@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSyncLogInput, SyncFilterInput, SyncLogObjectType } from './dto';
 
@@ -23,25 +23,36 @@ export class SyncService {
    * @returns Created sync log entry
    */
   async createSyncLog(userId: string, data: CreateSyncLogInput): Promise<SyncLogObjectType> {
+    // Validate required fields
+    if (!userId || !data.deviceId || !data.entityType || !data.operation || !data.entityId) {
+      throw new BadRequestException('Missing required fields for sync log');
+    }
+
     const { deviceId, entityType, operation, entityId, success, error } = data;
+    const successValue = success ?? true; // Default to true if not provided
 
-    const syncLog = await this.prisma.syncLog.create({
-      data: {
-        userId,
-        deviceId,
-        entityType,
-        operation,
-        entityId,
-        success: success ?? true, // Default to true if not provided
-        error,
-      },
-    });
+    try {
+      const syncLog = await this.prisma.syncLog.create({
+        data: {
+          userId,
+          deviceId,
+          entityType,
+          operation,
+          entityId,
+          success: successValue,
+          error,
+        },
+      });
 
-    this.logger.log(
-      `Sync log created: ${operation} ${entityType} ${entityId} for user ${userId} on device ${deviceId} - ${success ? 'SUCCESS' : 'FAILED'}`,
-    );
+      this.logger.log(
+        `Sync log created: ${operation} ${entityType} ${entityId} for user ${userId} on device ${deviceId} - ${successValue ? 'SUCCESS' : 'FAILED'}`,
+      );
 
-    return syncLog as any;
+      return syncLog;
+    } catch (error) {
+      this.logger.error(`Failed to create sync log: ${error.message}`);
+      throw new BadRequestException('Failed to create sync log');
+    }
   }
 
   /**
@@ -57,6 +68,11 @@ export class SyncService {
     deviceId?: string,
     filters?: SyncFilterInput,
   ): Promise<SyncLogObjectType[]> {
+    // Validate required fields
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
     const where: any = { userId };
 
     // Add deviceId filter if provided
@@ -80,13 +96,18 @@ export class SyncService {
       }
     }
 
-    const syncLogs = await this.prisma.syncLog.findMany({
-      where,
-      orderBy: { syncedAt: 'desc' },
-      take: DEFAULT_SYNC_LOG_LIMIT,
-    });
+    try {
+      const syncLogs = await this.prisma.syncLog.findMany({
+        where,
+        orderBy: { syncedAt: 'desc' },
+        take: DEFAULT_SYNC_LOG_LIMIT,
+      });
 
-    return syncLogs as any;
+      return syncLogs;
+    } catch (error) {
+      this.logger.error(`Failed to get sync logs: ${error.message}`);
+      throw new BadRequestException('Failed to retrieve sync logs');
+    }
   }
 
   /**
@@ -97,6 +118,11 @@ export class SyncService {
    * @returns Array of failed sync logs ordered by syncedAt desc
    */
   async getFailedSyncLogs(userId: string, deviceId?: string): Promise<SyncLogObjectType[]> {
+    // Validate required fields
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
     const where: any = {
       userId,
       success: false,
@@ -106,15 +132,20 @@ export class SyncService {
       where.deviceId = deviceId;
     }
 
-    const syncLogs = await this.prisma.syncLog.findMany({
-      where,
-      orderBy: { syncedAt: 'desc' },
-      take: DEFAULT_SYNC_LOG_LIMIT,
-    });
+    try {
+      const syncLogs = await this.prisma.syncLog.findMany({
+        where,
+        orderBy: { syncedAt: 'desc' },
+        take: DEFAULT_SYNC_LOG_LIMIT,
+      });
 
-    this.logger.log(`Found ${syncLogs.length} failed sync logs for user ${userId}`);
+      this.logger.log(`Found ${syncLogs.length} failed sync logs for user ${userId}`);
 
-    return syncLogs as any;
+      return syncLogs;
+    } catch (error) {
+      this.logger.error(`Failed to get failed sync logs: ${error.message}`);
+      throw new BadRequestException('Failed to retrieve failed sync logs');
+    }
   }
 
   /**
@@ -130,15 +161,25 @@ export class SyncService {
     entityType: string,
     entityId: string,
   ): Promise<SyncLogObjectType[]> {
-    const syncLogs = await this.prisma.syncLog.findMany({
-      where: {
-        userId,
-        entityType,
-        entityId,
-      },
-      orderBy: { syncedAt: 'desc' },
-    });
+    // Validate required fields
+    if (!userId || !entityType || !entityId) {
+      throw new BadRequestException('User ID, entity type, and entity ID are required');
+    }
 
-    return syncLogs as any;
+    try {
+      const syncLogs = await this.prisma.syncLog.findMany({
+        where: {
+          userId,
+          entityType,
+          entityId,
+        },
+        orderBy: { syncedAt: 'desc' },
+      });
+
+      return syncLogs;
+    } catch (error) {
+      this.logger.error(`Failed to get sync logs by entity: ${error.message}`);
+      throw new BadRequestException('Failed to retrieve sync logs for entity');
+    }
   }
 }

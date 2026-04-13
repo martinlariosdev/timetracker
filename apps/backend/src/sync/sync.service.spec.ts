@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException } from '@nestjs/common';
 import { SyncService } from './sync.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSyncLogInput, SyncFilterInput, SyncEntityType, SyncOperationType } from './dto';
@@ -117,6 +118,82 @@ describe('SyncService', () => {
           error: 'Network timeout',
         },
       });
+    });
+
+    it('should default success to true when omitted', async () => {
+      const input: CreateSyncLogInput = {
+        deviceId: mockDeviceId,
+        entityType: SyncEntityType.TIME_ENTRY,
+        operation: SyncOperationType.CREATE,
+        entityId: 'time-entry-123',
+        // success omitted - should default to true
+      };
+
+      const mockSyncLog = {
+        id: 'sync-log-3',
+        userId: mockUserId,
+        deviceId: mockDeviceId,
+        entityType: 'TimeEntry',
+        operation: 'create',
+        entityId: 'time-entry-123',
+        syncedAt: new Date('2024-04-12'),
+        success: true, // defaulted
+        error: null,
+      };
+
+      mockPrismaService.syncLog.create.mockResolvedValue(mockSyncLog);
+
+      const result = await service.createSyncLog(mockUserId, input);
+
+      expect(result).toEqual(mockSyncLog);
+      expect(mockPrismaService.syncLog.create).toHaveBeenCalledWith({
+        data: {
+          userId: mockUserId,
+          deviceId: mockDeviceId,
+          entityType: 'TimeEntry',
+          operation: 'create',
+          entityId: 'time-entry-123',
+          success: true, // should be defaulted to true
+          error: undefined,
+        },
+      });
+    });
+
+    it('should throw BadRequestException when userId is missing', async () => {
+      const input: CreateSyncLogInput = {
+        deviceId: mockDeviceId,
+        entityType: SyncEntityType.TIME_ENTRY,
+        operation: SyncOperationType.CREATE,
+        entityId: 'time-entry-123',
+      };
+
+      await expect(service.createSyncLog('', input)).rejects.toThrow(BadRequestException);
+      await expect(service.createSyncLog('', input)).rejects.toThrow('Missing required fields for sync log');
+    });
+
+    it('should throw BadRequestException when required fields are missing', async () => {
+      const inputMissingDeviceId = {
+        entityType: SyncEntityType.TIME_ENTRY,
+        operation: SyncOperationType.CREATE,
+        entityId: 'time-entry-123',
+      } as CreateSyncLogInput;
+
+      await expect(service.createSyncLog(mockUserId, inputMissingDeviceId)).rejects.toThrow(BadRequestException);
+      await expect(service.createSyncLog(mockUserId, inputMissingDeviceId)).rejects.toThrow('Missing required fields for sync log');
+    });
+
+    it('should throw BadRequestException when Prisma create fails', async () => {
+      const input: CreateSyncLogInput = {
+        deviceId: mockDeviceId,
+        entityType: SyncEntityType.TIME_ENTRY,
+        operation: SyncOperationType.CREATE,
+        entityId: 'time-entry-123',
+      };
+
+      mockPrismaService.syncLog.create.mockRejectedValue(new Error('Database connection error'));
+
+      await expect(service.createSyncLog(mockUserId, input)).rejects.toThrow(BadRequestException);
+      await expect(service.createSyncLog(mockUserId, input)).rejects.toThrow('Failed to create sync log');
     });
   });
 
@@ -259,6 +336,18 @@ describe('SyncService', () => {
         take: 100,
       });
     });
+
+    it('should throw BadRequestException when userId is missing', async () => {
+      await expect(service.getSyncLogs('')).rejects.toThrow(BadRequestException);
+      await expect(service.getSyncLogs('')).rejects.toThrow('User ID is required');
+    });
+
+    it('should throw BadRequestException when Prisma findMany fails', async () => {
+      mockPrismaService.syncLog.findMany.mockRejectedValue(new Error('Database connection error'));
+
+      await expect(service.getSyncLogs(mockUserId)).rejects.toThrow(BadRequestException);
+      await expect(service.getSyncLogs(mockUserId)).rejects.toThrow('Failed to retrieve sync logs');
+    });
   });
 
   describe('getFailedSyncLogs', () => {
@@ -321,6 +410,18 @@ describe('SyncService', () => {
         orderBy: { syncedAt: 'desc' },
         take: 100,
       });
+    });
+
+    it('should throw BadRequestException when userId is missing', async () => {
+      await expect(service.getFailedSyncLogs('')).rejects.toThrow(BadRequestException);
+      await expect(service.getFailedSyncLogs('')).rejects.toThrow('User ID is required');
+    });
+
+    it('should throw BadRequestException when Prisma findMany fails', async () => {
+      mockPrismaService.syncLog.findMany.mockRejectedValue(new Error('Database connection error'));
+
+      await expect(service.getFailedSyncLogs(mockUserId)).rejects.toThrow(BadRequestException);
+      await expect(service.getFailedSyncLogs(mockUserId)).rejects.toThrow('Failed to retrieve failed sync logs');
     });
   });
 
@@ -386,6 +487,21 @@ describe('SyncService', () => {
         },
         orderBy: { syncedAt: 'desc' },
       });
+    });
+
+    it('should throw BadRequestException when required fields are missing', async () => {
+      await expect(service.getSyncLogsByEntity('', 'TimeEntry', 'entity-123')).rejects.toThrow(BadRequestException);
+      await expect(service.getSyncLogsByEntity('', 'TimeEntry', 'entity-123')).rejects.toThrow('User ID, entity type, and entity ID are required');
+
+      await expect(service.getSyncLogsByEntity(mockUserId, '', 'entity-123')).rejects.toThrow(BadRequestException);
+      await expect(service.getSyncLogsByEntity(mockUserId, 'TimeEntry', '')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when Prisma findMany fails', async () => {
+      mockPrismaService.syncLog.findMany.mockRejectedValue(new Error('Database connection error'));
+
+      await expect(service.getSyncLogsByEntity(mockUserId, 'TimeEntry', 'entity-123')).rejects.toThrow(BadRequestException);
+      await expect(service.getSyncLogsByEntity(mockUserId, 'TimeEntry', 'entity-123')).rejects.toThrow('Failed to retrieve sync logs for entity');
     });
   });
 });

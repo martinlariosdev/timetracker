@@ -46,9 +46,9 @@ export class SyncResolver {
   @Query(() => [SyncLogObjectType], { description: 'Get sync logs for current user with optional filters' })
   async syncLogs(
     @Args('filters', { nullable: true }) filters?: SyncFilterInput,
-    @CurrentUser() user?: Consultant,
+    @CurrentUser() user: Consultant,
   ): Promise<SyncLogObjectType[]> {
-    return this.syncService.getSyncLogs(user!.id, undefined, filters);
+    return this.syncService.getSyncLogs(user.id, undefined, filters);
   }
 
   /**
