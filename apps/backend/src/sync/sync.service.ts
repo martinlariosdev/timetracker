@@ -1,6 +1,7 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSyncLogInput, SyncFilterInput, SyncLogObjectType } from './dto';
+import { Prisma } from '../generated';
 
 const DEFAULT_SYNC_LOG_LIMIT = 100;
 
@@ -48,10 +49,11 @@ export class SyncService {
         `Sync log created: ${operation} ${entityType} ${entityId} for user ${userId} on device ${deviceId} - ${successValue ? 'SUCCESS' : 'FAILED'}`,
       );
 
-      return syncLog;
-    } catch (error) {
-      this.logger.error(`Failed to create sync log: ${error.message}`);
-      throw new BadRequestException('Failed to create sync log');
+      return syncLog as SyncLogObjectType;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Failed to create sync log: ${message}`);
+      throw new InternalServerErrorException('Failed to create sync log');
     }
   }
 
@@ -59,13 +61,11 @@ export class SyncService {
    * Get sync logs for a user
    * Supports optional filtering by device and various filters
    * @param userId - ID of the user
-   * @param deviceId - Optional device ID filter
-   * @param filters - Optional filters (entityType, operation, onlyFailed)
+   * @param filters - Optional filters (deviceId, entityType, operation, onlyFailed)
    * @returns Array of sync logs ordered by syncedAt desc
    */
   async getSyncLogs(
     userId: string,
-    deviceId?: string,
     filters?: SyncFilterInput,
   ): Promise<SyncLogObjectType[]> {
     // Validate required fields
@@ -73,12 +73,7 @@ export class SyncService {
       throw new BadRequestException('User ID is required');
     }
 
-    const where: any = { userId };
-
-    // Add deviceId filter if provided
-    if (deviceId) {
-      where.deviceId = deviceId;
-    }
+    const where: Prisma.SyncLogWhereInput = { userId };
 
     // Apply additional filters if provided
     if (filters) {
@@ -103,10 +98,11 @@ export class SyncService {
         take: DEFAULT_SYNC_LOG_LIMIT,
       });
 
-      return syncLogs;
-    } catch (error) {
-      this.logger.error(`Failed to get sync logs: ${error.message}`);
-      throw new BadRequestException('Failed to retrieve sync logs');
+      return syncLogs as SyncLogObjectType[];
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Failed to get sync logs: ${message}`);
+      throw new InternalServerErrorException('Failed to retrieve sync logs');
     }
   }
 
@@ -123,7 +119,7 @@ export class SyncService {
       throw new BadRequestException('User ID is required');
     }
 
-    const where: any = {
+    const where: Prisma.SyncLogWhereInput = {
       userId,
       success: false,
     };
@@ -141,10 +137,11 @@ export class SyncService {
 
       this.logger.log(`Found ${syncLogs.length} failed sync logs for user ${userId}`);
 
-      return syncLogs;
-    } catch (error) {
-      this.logger.error(`Failed to get failed sync logs: ${error.message}`);
-      throw new BadRequestException('Failed to retrieve failed sync logs');
+      return syncLogs as SyncLogObjectType[];
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Failed to get failed sync logs: ${message}`);
+      throw new InternalServerErrorException('Failed to retrieve failed sync logs');
     }
   }
 
@@ -176,10 +173,11 @@ export class SyncService {
         orderBy: { syncedAt: 'desc' },
       });
 
-      return syncLogs;
-    } catch (error) {
-      this.logger.error(`Failed to get sync logs by entity: ${error.message}`);
-      throw new BadRequestException('Failed to retrieve sync logs for entity');
+      return syncLogs as SyncLogObjectType[];
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Failed to get sync logs by entity: ${message}`);
+      throw new InternalServerErrorException('Failed to retrieve sync logs for entity');
     }
   }
 }

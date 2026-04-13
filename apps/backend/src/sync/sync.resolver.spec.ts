@@ -14,13 +14,20 @@ describe('SyncResolver', () => {
     getFailedSyncLogs: jest.fn(),
   };
 
-  const mockUser: Consultant = {
+  const mockUser = {
     id: '507f1f77bcf86cd799439011',
     externalId: 'EXT-001',
     name: 'John Doe',
     email: 'john@example.com',
     etoBalance: 40.0,
-  };
+    teamLeadId: null,
+    teamLeadName: null,
+    teamLeadEmail: null,
+    workingHoursPerPeriod: 88,
+    paymentType: 'Hourly',
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+  } as Consultant;
 
   const mockDeviceId = 'device-abc-123';
 
@@ -136,10 +143,10 @@ describe('SyncResolver', () => {
 
       mockSyncService.getSyncLogs.mockResolvedValue(mockSyncLogs);
 
-      const result = await resolver.syncLogs(undefined, mockUser);
+      const result = await resolver.syncLogs(mockUser, undefined);
 
       expect(result).toEqual(mockSyncLogs);
-      expect(mockSyncService.getSyncLogs).toHaveBeenCalledWith(mockUser.id, undefined, undefined);
+      expect(mockSyncService.getSyncLogs).toHaveBeenCalledWith(mockUser.id, undefined);
     });
 
     it('should return sync logs with filters', async () => {
@@ -165,10 +172,10 @@ describe('SyncResolver', () => {
 
       mockSyncService.getSyncLogs.mockResolvedValue(mockSyncLogs);
 
-      const result = await resolver.syncLogs(filters, mockUser);
+      const result = await resolver.syncLogs(mockUser, filters);
 
       expect(result).toEqual(mockSyncLogs);
-      expect(mockSyncService.getSyncLogs).toHaveBeenCalledWith(mockUser.id, undefined, filters);
+      expect(mockSyncService.getSyncLogs).toHaveBeenCalledWith(mockUser.id, filters);
     });
 
     it('should return only failed syncs when onlyFailed filter is true', async () => {
@@ -192,10 +199,10 @@ describe('SyncResolver', () => {
 
       mockSyncService.getSyncLogs.mockResolvedValue(mockFailedSyncLogs);
 
-      const result = await resolver.syncLogs(filters, mockUser);
+      const result = await resolver.syncLogs(mockUser, filters);
 
       expect(result).toEqual(mockFailedSyncLogs);
-      expect(mockSyncService.getSyncLogs).toHaveBeenCalledWith(mockUser.id, undefined, filters);
+      expect(mockSyncService.getSyncLogs).toHaveBeenCalledWith(mockUser.id, filters);
     });
   });
 

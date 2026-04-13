@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { SyncService } from './sync.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSyncLogInput, SyncFilterInput, SyncEntityType, SyncOperationType } from './dto';
@@ -182,7 +182,7 @@ describe('SyncService', () => {
       await expect(service.createSyncLog(mockUserId, inputMissingDeviceId)).rejects.toThrow('Missing required fields for sync log');
     });
 
-    it('should throw BadRequestException when Prisma create fails', async () => {
+    it('should throw InternalServerErrorException when Prisma create fails', async () => {
       const input: CreateSyncLogInput = {
         deviceId: mockDeviceId,
         entityType: SyncEntityType.TIME_ENTRY,
@@ -192,7 +192,7 @@ describe('SyncService', () => {
 
       mockPrismaService.syncLog.create.mockRejectedValue(new Error('Database connection error'));
 
-      await expect(service.createSyncLog(mockUserId, input)).rejects.toThrow(BadRequestException);
+      await expect(service.createSyncLog(mockUserId, input)).rejects.toThrow(InternalServerErrorException);
       await expect(service.createSyncLog(mockUserId, input)).rejects.toThrow('Failed to create sync log');
     });
   });
@@ -253,7 +253,7 @@ describe('SyncService', () => {
 
       mockPrismaService.syncLog.findMany.mockResolvedValue(mockSyncLogs);
 
-      const result = await service.getSyncLogs(mockUserId, mockDeviceId);
+      const result = await service.getSyncLogs(mockUserId, { deviceId: mockDeviceId });
 
       expect(result).toEqual(mockSyncLogs);
       expect(mockPrismaService.syncLog.findMany).toHaveBeenCalledWith({
@@ -289,7 +289,7 @@ describe('SyncService', () => {
 
       mockPrismaService.syncLog.findMany.mockResolvedValue(mockSyncLogs);
 
-      const result = await service.getSyncLogs(mockUserId, undefined, filters);
+      const result = await service.getSyncLogs(mockUserId, filters);
 
       expect(result).toEqual(mockSyncLogs);
       expect(mockPrismaService.syncLog.findMany).toHaveBeenCalledWith({
@@ -324,7 +324,7 @@ describe('SyncService', () => {
 
       mockPrismaService.syncLog.findMany.mockResolvedValue(mockSyncLogs);
 
-      const result = await service.getSyncLogs(mockUserId, undefined, filters);
+      const result = await service.getSyncLogs(mockUserId, filters);
 
       expect(result).toEqual(mockSyncLogs);
       expect(mockPrismaService.syncLog.findMany).toHaveBeenCalledWith({
@@ -342,10 +342,10 @@ describe('SyncService', () => {
       await expect(service.getSyncLogs('')).rejects.toThrow('User ID is required');
     });
 
-    it('should throw BadRequestException when Prisma findMany fails', async () => {
+    it('should throw InternalServerErrorException when Prisma findMany fails', async () => {
       mockPrismaService.syncLog.findMany.mockRejectedValue(new Error('Database connection error'));
 
-      await expect(service.getSyncLogs(mockUserId)).rejects.toThrow(BadRequestException);
+      await expect(service.getSyncLogs(mockUserId)).rejects.toThrow(InternalServerErrorException);
       await expect(service.getSyncLogs(mockUserId)).rejects.toThrow('Failed to retrieve sync logs');
     });
   });
@@ -417,10 +417,10 @@ describe('SyncService', () => {
       await expect(service.getFailedSyncLogs('')).rejects.toThrow('User ID is required');
     });
 
-    it('should throw BadRequestException when Prisma findMany fails', async () => {
+    it('should throw InternalServerErrorException when Prisma findMany fails', async () => {
       mockPrismaService.syncLog.findMany.mockRejectedValue(new Error('Database connection error'));
 
-      await expect(service.getFailedSyncLogs(mockUserId)).rejects.toThrow(BadRequestException);
+      await expect(service.getFailedSyncLogs(mockUserId)).rejects.toThrow(InternalServerErrorException);
       await expect(service.getFailedSyncLogs(mockUserId)).rejects.toThrow('Failed to retrieve failed sync logs');
     });
   });
@@ -497,10 +497,10 @@ describe('SyncService', () => {
       await expect(service.getSyncLogsByEntity(mockUserId, 'TimeEntry', '')).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw BadRequestException when Prisma findMany fails', async () => {
+    it('should throw InternalServerErrorException when Prisma findMany fails', async () => {
       mockPrismaService.syncLog.findMany.mockRejectedValue(new Error('Database connection error'));
 
-      await expect(service.getSyncLogsByEntity(mockUserId, 'TimeEntry', 'entity-123')).rejects.toThrow(BadRequestException);
+      await expect(service.getSyncLogsByEntity(mockUserId, 'TimeEntry', 'entity-123')).rejects.toThrow(InternalServerErrorException);
       await expect(service.getSyncLogsByEntity(mockUserId, 'TimeEntry', 'entity-123')).rejects.toThrow('Failed to retrieve sync logs for entity');
     });
   });
