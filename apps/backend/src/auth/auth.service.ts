@@ -114,4 +114,25 @@ export class AuthService {
       expiresIn: '7d',
     };
   }
+
+  /**
+   * Find consultant by email address.
+   * Used for mock authentication in development.
+   *
+   * @param email - Email address to search for
+   * @returns Consultant if found, null otherwise
+   */
+  async findConsultantByEmail(email: string): Promise<Consultant | null> {
+    try {
+      const consultant = await this.prisma.consultant.findUnique({
+        where: { email },
+      });
+      return consultant;
+    } catch (error) {
+      this.logger.error(
+        `Error finding consultant by email ${email}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+      return null;
+    }
+  }
 }

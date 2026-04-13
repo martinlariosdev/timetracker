@@ -14,7 +14,7 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
-import { LoginInput, AuthResponse, UserType, TokenResponse } from './dto';
+import { LoginInput, AuthResponse, UserType, TokenResponse, MockLoginInput } from './dto';
 import type { Consultant } from '../generated';
 
 /**
@@ -98,6 +98,73 @@ export class AuthResolver {
         throw error;
       }
       throw new UnauthorizedException('Authentication failed');
+    }
+  }
+
+  /**
+   * Mock login mutation - authenticates user by email (development only).
+   * This endpoint bypasses Okta and directly authenticates a user by email.
+   *
+   * ⚠️ ONLY ENABLED WHEN ENABLE_MOCK_AUTH=true IN ENVIRONMENT
+   * ⚠️ NEVER USE IN PRODUCTION
+   *
+   * @param input - Mock login input containing email
+   * @returns Authentication response with JWT token and user data
+   * @throws UnauthorizedException if mock auth is disabled or user not found
+   */
+  @Mutation(() => AuthResponse, {
+    description: 'Mock authentication by email (DEVELOPMENT ONLY)',
+  })
+  @Public()
+  async mockLogin(@Args('input') input: MockLoginInput): Promise<AuthResponse> {
+    this.logger.log('Mock login mutation called');
+
+    // Check if mock auth is enabled
+    const mockAuthEnabled = process.env.ENABLE_MOCK_AUTH === 'true';
+    if (!mockAuthEnabled) {
+      this.logger.warn('Mock login attempted but ENABLE_MOCK_AUTH is not set to true');
+      throw new UnauthorizedException(
+        'Mock authentication is disabled. Set ENABLE_MOCK_AUTH=true in .env to enable (development only)'
+      );
+    }
+
+    try {
+      // Find consultant by email
+      const consultant = await this.authService.findConsultantByEmail(input.email);
+
+      if (!consultant) {
+        throw new UnauthorizedException(`No consultant found with email: ${input.email}`);
+      }
+
+      // Generate JWT token
+      const { accessToken, expiresIn } = await this.authService.login(consultant);
+
+      // Map consultant to UserType
+      const user: UserType = {
+        id: consultant.id,
+        externalId: consultant.externalId,
+        name: consultant.name,
+        email: consultant.email,
+        etoBalance: consultant.etoBalance,
+        workingHoursPerPeriod: consultant.workingHoursPerPeriod ?? undefined,
+        paymentType: consultant.paymentType ?? undefined,
+      };
+
+      this.logger.log(`Mock login successful for ${consultant.email}`);
+
+      return {
+        accessToken,
+        expiresIn,
+        user,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Mock login failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Mock authentication failed');
     }
   }
 
