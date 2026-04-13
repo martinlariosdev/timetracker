@@ -1,5 +1,5 @@
 import { ObjectType, Field, Float } from '@nestjs/graphql';
-import { ETOTransactionType } from './eto-transaction.type';
+import { ETOTransactionType } from './eto-transaction.object';
 
 /**
  * GraphQL Object Type for ETO Balance information

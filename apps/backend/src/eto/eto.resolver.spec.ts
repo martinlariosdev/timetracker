@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ETOResolver } from './eto.resolver';
 import { ETOService } from './eto.service';
-import { UseETOInput, AdjustETOInput, ETOFilterInput } from './dto';
+import { UseETOInput, AdjustETOInput } from './dto';
 import type { Consultant } from '../generated';
 
 describe('ETOResolver', () => {
@@ -10,7 +10,6 @@ describe('ETOResolver', () => {
 
   const mockETOService = {
     getBalance: jest.fn(),
-    getBalanceWithTransactions: jest.fn(),
     getTransactions: jest.fn(),
     useETO: jest.fn(),
     adjustETO: jest.fn(),
@@ -54,67 +53,18 @@ describe('ETOResolver', () => {
   });
 
   describe('etoBalance', () => {
-    it('should return ETO balance with transactions', async () => {
-      const mockBalanceData = {
-        balance: 40.0,
-        recentTransactions: [
-          {
-            id: '1',
-            consultantId: mockConsultant.id,
-            date: new Date('2024-04-10'),
-            hours: -8,
-            transactionType: 'Usage',
-            description: 'Vacation day',
-            synced: true,
-            createdAt: new Date('2024-04-10'),
-            runningBalance: 40.0,
-          },
-        ],
-        accruedThisPeriod: 4,
-        usedThisPeriod: 8,
-      };
+    it('should return ETO balance as a number', async () => {
+      mockETOService.getBalance.mockResolvedValue(40.0);
 
-      mockETOService.getBalanceWithTransactions.mockResolvedValue(mockBalanceData);
+      const result = await resolver.etoBalance(mockConsultant.id, mockConsultant);
 
-      const result = await resolver.etoBalance(null, mockConsultant);
-
-      expect(result.balance).toBe(40.0);
-      expect(result.recentTransactions.length).toBe(1);
-      expect(result.accruedThisPeriod).toBe(4);
-      expect(result.usedThisPeriod).toBe(8);
-      expect(mockETOService.getBalanceWithTransactions).toHaveBeenCalledWith(
-        mockConsultant.id,
-        null,
-      );
-    });
-
-    it('should pass filters to service', async () => {
-      const filters: ETOFilterInput = {
-        startDate: '2024-04-01',
-        endDate: '2024-04-30',
-        limit: 5,
-      };
-
-      const mockBalanceData = {
-        balance: 40.0,
-        recentTransactions: [],
-        accruedThisPeriod: 0,
-        usedThisPeriod: 0,
-      };
-
-      mockETOService.getBalanceWithTransactions.mockResolvedValue(mockBalanceData);
-
-      await resolver.etoBalance(filters, mockConsultant);
-
-      expect(mockETOService.getBalanceWithTransactions).toHaveBeenCalledWith(
-        mockConsultant.id,
-        filters,
-      );
+      expect(result).toBe(40.0);
+      expect(mockETOService.getBalance).toHaveBeenCalledWith(mockConsultant.id);
     });
   });
 
   describe('etoTransactions', () => {
-    it('should return ETO transactions for current user', async () => {
+    it('should return ETO transactions for consultant', async () => {
       const mockTransactions = [
         {
           id: '1',
@@ -125,7 +75,6 @@ describe('ETOResolver', () => {
           description: 'Vacation day',
           synced: true,
           createdAt: new Date('2024-04-10'),
-          runningBalance: 40.0,
         },
         {
           id: '2',
@@ -136,35 +85,36 @@ describe('ETOResolver', () => {
           description: 'Monthly accrual',
           synced: true,
           createdAt: new Date('2024-04-05'),
-          runningBalance: 48.0,
         },
       ];
 
       mockETOService.getTransactions.mockResolvedValue(mockTransactions);
 
-      const result = await resolver.etoTransactions(null, mockConsultant);
+      const result = await resolver.etoTransactions(
+        mockConsultant.id,
+        undefined,
+        undefined,
+        mockConsultant,
+      );
 
       expect(result.length).toBe(2);
       expect(result[0].id).toBe('1');
       expect(mockETOService.getTransactions).toHaveBeenCalledWith(
         mockConsultant.id,
-        null,
+        undefined,
+        undefined,
       );
     });
 
-    it('should pass filters to service', async () => {
-      const filters: ETOFilterInput = {
-        startDate: '2024-04-01',
-        transactionType: 'Usage',
-      };
-
+    it('should pass limit and offset to service', async () => {
       mockETOService.getTransactions.mockResolvedValue([]);
 
-      await resolver.etoTransactions(filters, mockConsultant);
+      await resolver.etoTransactions(mockConsultant.id, 10, 5, mockConsultant);
 
       expect(mockETOService.getTransactions).toHaveBeenCalledWith(
         mockConsultant.id,
-        filters,
+        10,
+        5,
       );
     });
   });
@@ -228,10 +178,11 @@ describe('ETOResolver', () => {
   });
 
   describe('adjustETO', () => {
-    it('should adjust ETO balance for current user', async () => {
+    it('should adjust ETO balance for specified consultant', async () => {
       const input: AdjustETOInput = {
+        consultantId: mockConsultant.id,
         hours: 4,
-        type: 'Accrual',
+        transactionType: 'Accrual',
         date: '2024-04-01',
         description: 'Monthly accrual',
       };
@@ -253,13 +204,14 @@ describe('ETOResolver', () => {
 
       expect(result.hours).toBe(4);
       expect(result.transactionType).toBe('Accrual');
-      expect(mockETOService.adjustETO).toHaveBeenCalledWith(mockConsultant.id, input);
+      expect(mockETOService.adjustETO).toHaveBeenCalledWith(input);
     });
 
-    it('should handle negative adjustments', async () => {
+    it('should handle Usage transaction type', async () => {
       const input: AdjustETOInput = {
-        hours: -2,
-        type: 'Adjustment',
+        consultantId: mockConsultant.id,
+        hours: 2,
+        transactionType: 'Usage',
         date: '2024-04-01',
         description: 'Admin correction',
       };
@@ -269,7 +221,7 @@ describe('ETOResolver', () => {
         consultantId: mockConsultant.id,
         date: new Date('2024-04-01'),
         hours: -2,
-        transactionType: 'Adjustment',
+        transactionType: 'Usage',
         description: 'Admin correction',
         synced: true,
         createdAt: new Date('2024-04-01'),
@@ -280,7 +232,7 @@ describe('ETOResolver', () => {
       const result = await resolver.adjustETO(input, mockConsultant);
 
       expect(result.hours).toBe(-2);
-      expect(mockETOService.adjustETO).toHaveBeenCalledWith(mockConsultant.id, input);
+      expect(mockETOService.adjustETO).toHaveBeenCalledWith(input);
     });
   });
 });

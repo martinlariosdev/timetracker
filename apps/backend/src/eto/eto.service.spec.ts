@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ETOService } from './eto.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { UseETOInput, AdjustETOInput, ETOFilterInput } from './dto';
+import { UseETOInput, AdjustETOInput } from './dto';
 
 describe('ETOService', () => {
   let service: ETOService;
@@ -65,88 +65,16 @@ describe('ETOService', () => {
       });
     });
 
-    it('should throw BadRequestException if consultant not found', async () => {
+    it('should throw NotFoundException if consultant not found', async () => {
       mockPrismaService.consultant.findUnique.mockResolvedValue(null);
 
-      await expect(service.getBalance('invalid-id')).rejects.toThrow(BadRequestException);
+      await expect(service.getBalance('invalid-id')).rejects.toThrow(NotFoundException);
     });
   });
 
-  describe('getBalanceWithTransactions', () => {
-    it('should return balance with recent transactions and period statistics', async () => {
-      const mockTransactions = [
-        {
-          id: '1',
-          consultantId: mockConsultant.id,
-          date: new Date('2024-04-10'),
-          hours: -8,
-          transactionType: 'Usage',
-          description: 'Vacation day',
-          synced: true,
-          createdAt: new Date('2024-04-10'),
-        },
-        {
-          id: '2',
-          consultantId: mockConsultant.id,
-          date: new Date('2024-04-05'),
-          hours: 4,
-          transactionType: 'Accrual',
-          description: 'Monthly accrual',
-          synced: true,
-          createdAt: new Date('2024-04-05'),
-        },
-      ];
-
-      mockPrismaService.consultant.findUnique.mockResolvedValue({
-        etoBalance: 40.0,
-      });
-
-      mockPrismaService.eTOTransaction.findMany
-        .mockResolvedValueOnce(mockTransactions) // For recent transactions
-        .mockResolvedValueOnce(mockTransactions); // For period statistics
-
-      const result = await service.getBalanceWithTransactions(mockConsultant.id);
-
-      expect(result.balance).toBe(40.0);
-      expect(result.recentTransactions.length).toBe(2);
-      expect(result.accruedThisPeriod).toBe(4);
-      expect(result.usedThisPeriod).toBe(8);
-    });
-
-    it('should apply filters to transactions', async () => {
-      mockPrismaService.consultant.findUnique.mockResolvedValue({
-        etoBalance: 40.0,
-      });
-
-      mockPrismaService.eTOTransaction.findMany.mockResolvedValue([]);
-
-      const filters: ETOFilterInput = {
-        startDate: '2024-04-01',
-        endDate: '2024-04-30',
-        transactionType: 'Usage',
-        limit: 5,
-      };
-
-      await service.getBalanceWithTransactions(mockConsultant.id, filters);
-
-      expect(mockPrismaService.eTOTransaction.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            consultantId: mockConsultant.id,
-            transactionType: 'Usage',
-            date: expect.objectContaining({
-              gte: expect.any(Date),
-              lte: expect.any(Date),
-            }),
-          }),
-          take: 5,
-        }),
-      );
-    });
-  });
 
   describe('getTransactions', () => {
-    it('should return filtered ETO transactions', async () => {
+    it('should return ETO transactions with limit and offset', async () => {
       const mockTransactions = [
         {
           id: '1',
@@ -159,17 +87,32 @@ describe('ETOService', () => {
           createdAt: new Date('2024-04-10'),
         },
       ];
-
-      mockPrismaService.consultant.findUnique.mockResolvedValue({
-        etoBalance: 40.0,
-      });
 
       mockPrismaService.eTOTransaction.findMany.mockResolvedValue(mockTransactions);
 
-      const result = await service.getTransactions(mockConsultant.id);
+      const result = await service.getTransactions(mockConsultant.id, 10, 5);
 
       expect(result.length).toBe(1);
       expect(result[0].id).toBe('1');
+      expect(mockPrismaService.eTOTransaction.findMany).toHaveBeenCalledWith({
+        where: { consultantId: mockConsultant.id },
+        orderBy: { date: 'desc' },
+        take: 10,
+        skip: 5,
+      });
+    });
+
+    it('should use default limit when not provided', async () => {
+      mockPrismaService.eTOTransaction.findMany.mockResolvedValue([]);
+
+      await service.getTransactions(mockConsultant.id);
+
+      expect(mockPrismaService.eTOTransaction.findMany).toHaveBeenCalledWith({
+        where: { consultantId: mockConsultant.id },
+        orderBy: { date: 'desc' },
+        take: 50,
+        skip: 0,
+      });
     });
   });
 
@@ -245,10 +188,11 @@ describe('ETOService', () => {
   });
 
   describe('adjustETO', () => {
-    it('should successfully adjust ETO balance (positive)', async () => {
+    it('should successfully adjust ETO balance (Accrual)', async () => {
       const input: AdjustETOInput = {
+        consultantId: mockConsultant.id,
         hours: 4,
-        type: 'Accrual',
+        transactionType: 'Accrual',
         date: '2024-04-01',
         description: 'Monthly accrual',
       };
@@ -279,17 +223,18 @@ describe('ETOService', () => {
         });
       });
 
-      const result = await service.adjustETO(mockConsultant.id, input);
+      const result = await service.adjustETO(input);
 
       expect(result.hours).toBe(4);
       expect(result.transactionType).toBe('Accrual');
       expect(mockPrismaService.$transaction).toHaveBeenCalled();
     });
 
-    it('should successfully adjust ETO balance (negative)', async () => {
+    it('should successfully adjust ETO balance (Usage)', async () => {
       const input: AdjustETOInput = {
-        hours: -2,
-        type: 'Adjustment',
+        consultantId: mockConsultant.id,
+        hours: 2,
+        transactionType: 'Usage',
         date: '2024-04-01',
         description: 'Admin correction',
       };
@@ -299,7 +244,7 @@ describe('ETOService', () => {
         consultantId: mockConsultant.id,
         date: new Date('2024-04-01'),
         hours: -2,
-        transactionType: 'Adjustment',
+        transactionType: 'Usage',
         description: 'Admin correction',
         synced: true,
         createdAt: new Date('2024-04-01'),
@@ -320,11 +265,41 @@ describe('ETOService', () => {
         });
       });
 
-      const result = await service.adjustETO(mockConsultant.id, input);
+      const result = await service.adjustETO(input);
 
       expect(result.hours).toBe(-2);
-      expect(result.transactionType).toBe('Adjustment');
+      expect(result.transactionType).toBe('Usage');
       expect(mockPrismaService.$transaction).toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException if hours is not positive', async () => {
+      const input: AdjustETOInput = {
+        consultantId: mockConsultant.id,
+        hours: -2,
+        transactionType: 'Accrual',
+        date: '2024-04-01',
+        description: 'Invalid',
+      };
+
+      await expect(service.adjustETO(input)).rejects.toThrow('Hours must be positive');
+    });
+
+    it('should throw BadRequestException if adjustment would result in negative balance', async () => {
+      const input: AdjustETOInput = {
+        consultantId: mockConsultant.id,
+        hours: 50,
+        transactionType: 'Usage',
+        date: '2024-04-01',
+        description: 'Too much',
+      };
+
+      mockPrismaService.consultant.findUnique.mockResolvedValue({
+        etoBalance: 40.0,
+      });
+
+      await expect(service.adjustETO(input)).rejects.toThrow(
+        'Adjustment would result in negative balance',
+      );
     });
   });
 });

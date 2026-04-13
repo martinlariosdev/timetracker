@@ -1,6 +1,6 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { UseETOInput, AdjustETOInput, ETOFilterInput } from './dto';
+import { UseETOInput, AdjustETOInput } from './dto';
 
 /**
  * ETOService
@@ -25,108 +25,31 @@ export class ETOService {
     });
 
     if (!consultant) {
-      throw new BadRequestException(`Consultant with ID ${consultantId} not found`);
+      throw new NotFoundException(`Consultant with ID ${consultantId} not found`);
     }
 
     return consultant.etoBalance;
   }
 
-  /**
-   * Get ETO balance with recent transactions and period statistics
-   * @param consultantId - ID of the consultant
-   * @param filters - Optional filters for transactions
-   * @returns Balance information with recent transactions
-   */
-  async getBalanceWithTransactions(consultantId: string, filters?: ETOFilterInput) {
-    const balance = await this.getBalance(consultantId);
-
-    // Get recent transactions
-    const limit = filters?.limit || 10;
-    const where: any = { consultantId };
-
-    if (filters?.startDate || filters?.endDate) {
-      where.date = {};
-      if (filters.startDate) {
-        where.date.gte = new Date(filters.startDate);
-      }
-      if (filters.endDate) {
-        where.date.lte = new Date(filters.endDate);
-      }
-    }
-
-    if (filters?.transactionType) {
-      where.transactionType = filters.transactionType;
-    }
-
-    const transactions = await this.prisma.eTOTransaction.findMany({
-      where,
-      orderBy: { date: 'desc' },
-      take: limit,
-    });
-
-    // Calculate running balances for each transaction
-    const transactionsWithBalance = await this.calculateRunningBalances(consultantId, transactions);
-
-    // Calculate period statistics (last 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const periodTransactions = await this.prisma.eTOTransaction.findMany({
-      where: {
-        consultantId,
-        date: { gte: thirtyDaysAgo },
-      },
-    });
-
-    const accruedThisPeriod = periodTransactions
-      .filter((t) => t.transactionType === 'Accrual' && t.hours > 0)
-      .reduce((sum, t) => sum + t.hours, 0);
-
-    const usedThisPeriod = periodTransactions
-      .filter((t) => t.transactionType === 'Usage')
-      .reduce((sum, t) => sum + Math.abs(t.hours), 0);
-
-    return {
-      balance,
-      recentTransactions: transactionsWithBalance,
-      accruedThisPeriod,
-      usedThisPeriod,
-    };
-  }
 
   /**
    * Get ETO transactions for a consultant
    * @param consultantId - ID of the consultant
-   * @param filters - Optional filters for date range and type
+   * @param limit - Maximum number of transactions to return
+   * @param offset - Number of transactions to skip
    * @returns Array of ETO transactions
    */
-  async getTransactions(consultantId: string, filters?: ETOFilterInput) {
-    const where: any = { consultantId };
-
-    if (filters?.startDate || filters?.endDate) {
-      where.date = {};
-      if (filters.startDate) {
-        where.date.gte = new Date(filters.startDate);
-      }
-      if (filters.endDate) {
-        where.date.lte = new Date(filters.endDate);
-      }
-    }
-
-    if (filters?.transactionType) {
-      where.transactionType = filters.transactionType;
-    }
-
-    const limit = filters?.limit || 50;
+  async getTransactions(consultantId: string, limit?: number, offset?: number) {
+    const where = { consultantId };
 
     const transactions = await this.prisma.eTOTransaction.findMany({
       where,
       orderBy: { date: 'desc' },
-      take: limit,
+      take: limit || 50,
+      skip: offset || 0,
     });
 
-    // Calculate running balances
-    return this.calculateRunningBalances(consultantId, transactions);
+    return transactions;
   }
 
   /**
@@ -190,15 +113,33 @@ export class ETOService {
   /**
    * Adjust ETO balance (accrual or administrative adjustment)
    * Creates a transaction and updates the consultant's balance atomically
-   * @param consultantId - ID of the consultant
-   * @param input - Hours, type, date, and description
+   * @param input - ConsultantId, hours, transactionType, date, and description
    * @returns Created ETO transaction
+   * @throws NotFoundException if consultant not found
+   * @throws BadRequestException if adjustment would result in negative balance
    */
-  async adjustETO(consultantId: string, input: AdjustETOInput) {
-    const { hours, type, date, description } = input;
+  async adjustETO(input: AdjustETOInput) {
+    const { consultantId, hours, transactionType, date, description } = input;
 
-    // Validate consultant exists
-    await this.getBalance(consultantId);
+    // Validate that hours is positive
+    if (hours <= 0) {
+      throw new BadRequestException('Hours must be positive');
+    }
+
+    // Validate consultant exists and get current balance
+    const currentBalance = await this.getBalance(consultantId);
+
+    // Determine if this is adding or subtracting based on transactionType
+    const isAccrual = transactionType === 'Accrual';
+    const actualHours = isAccrual ? hours : -hours;
+
+    // Check that adjustment won't result in negative balance
+    const newBalance = currentBalance + actualHours;
+    if (newBalance < 0) {
+      throw new BadRequestException(
+        `Adjustment would result in negative balance. Current: ${currentBalance} hours, Adjustment: ${actualHours} hours`,
+      );
+    }
 
     // Use a transaction to ensure atomic update
     const result = await this.prisma.$transaction(async (tx) => {
@@ -207,15 +148,15 @@ export class ETOService {
         data: {
           consultantId,
           date: new Date(date),
-          hours, // Can be positive or negative
-          transactionType: type,
+          hours: actualHours,
+          transactionType,
           description,
           synced: true,
         },
       });
 
       // Update consultant's ETO balance
-      if (hours > 0) {
+      if (isAccrual) {
         await tx.consultant.update({
           where: { id: consultantId },
           data: {
@@ -229,48 +170,16 @@ export class ETOService {
           where: { id: consultantId },
           data: {
             etoBalance: {
-              decrement: Math.abs(hours),
+              decrement: hours,
             },
           },
         });
       }
 
-      this.logger.log(`Consultant ${consultantId} ETO adjusted by ${hours} hours (${type})`);
+      this.logger.log(`Consultant ${consultantId} ETO adjusted by ${actualHours} hours (${transactionType})`);
       return transaction;
     });
 
     return result;
-  }
-
-  /**
-   * Calculate running balances for a list of transactions
-   * Adds runningBalance field to each transaction
-   * @param consultantId - ID of the consultant
-   * @param transactions - Array of transactions (should be ordered by date desc)
-   * @returns Transactions with running balance calculated
-   */
-  private async calculateRunningBalances(consultantId: string, transactions: any[]) {
-    if (transactions.length === 0) {
-      return [];
-    }
-
-    // Get current balance
-    const currentBalance = await this.getBalance(consultantId);
-
-    // Sort transactions by date descending to calculate backwards
-    const sorted = [...transactions].sort((a, b) => b.date.getTime() - a.date.getTime());
-
-    let runningBalance = currentBalance;
-    const withBalances = sorted.map((transaction) => {
-      const transactionWithBalance = {
-        ...transaction,
-        runningBalance,
-      };
-      // Subtract this transaction to get previous balance
-      runningBalance -= transaction.hours;
-      return transactionWithBalance;
-    });
-
-    return withBalances;
   }
 }

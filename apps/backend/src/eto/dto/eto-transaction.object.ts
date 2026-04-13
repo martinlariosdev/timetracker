@@ -33,7 +33,4 @@ export class ETOTransactionType {
 
   @Field({ description: 'Timestamp when this transaction was created' })
   createdAt: Date;
-
-  @Field(() => Float, { nullable: true, description: 'Running balance after this transaction' })
-  runningBalance?: number;
 }

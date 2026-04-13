@@ -1,14 +1,12 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
-import { UseGuards, ForbiddenException } from '@nestjs/common';
+import { Resolver, Query, Mutation, Args, ID, Float, Int } from '@nestjs/graphql';
+import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ETOService } from './eto.service';
 import {
   ETOTransactionType,
-  ETOBalanceType,
   UseETOInput,
   AdjustETOInput,
-  ETOFilterInput,
 } from './dto';
 import type { Consultant } from '../generated';
 
@@ -24,33 +22,41 @@ export class ETOResolver {
   constructor(private etoService: ETOService) {}
 
   /**
-   * Query ETO balance for the current user
-   * Returns balance along with recent transactions and period statistics
-   * @param filters - Optional filters for transactions
+   * Query ETO balance for a consultant
+   * Returns just the balance number
+   * @param consultantId - ID of the consultant
    * @param user - Current authenticated user
-   * @returns ETO balance information
+   * @returns ETO balance in hours
    */
-  @Query(() => ETOBalanceType, { description: 'Get current ETO balance and recent transactions' })
+  @Query(() => Float, { description: 'Get current ETO balance for a consultant' })
   async etoBalance(
-    @Args('filters', { nullable: true }) filters: ETOFilterInput,
+    @Args('consultantId', { type: () => ID }) consultantId: string,
     @CurrentUser() user: Consultant,
-  ): Promise<ETOBalanceType> {
-    return this.etoService.getBalanceWithTransactions(user.id, filters);
+  ): Promise<number> {
+    // TODO: Add authorization check - users should only query their own data OR be admin
+    // For now, allow any authenticated user to query any consultant
+    return this.etoService.getBalance(consultantId);
   }
 
   /**
-   * Query ETO transactions for the current user
-   * Optional filters can be applied for date range and transaction type
-   * @param filters - Optional filters for date range and type
+   * Query ETO transactions for a consultant
+   * Supports pagination via limit and offset
+   * @param consultantId - ID of the consultant
+   * @param limit - Maximum number of transactions to return
+   * @param offset - Number of transactions to skip
    * @param user - Current authenticated user
-   * @returns Array of ETO transactions with running balances
+   * @returns Array of ETO transactions
    */
-  @Query(() => [ETOTransactionType], { description: 'Get ETO transactions for the current user' })
+  @Query(() => [ETOTransactionType], { description: 'Get ETO transactions for a consultant' })
   async etoTransactions(
-    @Args('filters', { nullable: true }) filters: ETOFilterInput,
-    @CurrentUser() user: Consultant,
+    @Args('consultantId', { type: () => ID }) consultantId: string,
+    @Args('limit', { type: () => Int, nullable: true }) limit?: number,
+    @Args('offset', { type: () => Int, nullable: true }) offset?: number,
+    @CurrentUser() user?: Consultant,
   ): Promise<ETOTransactionType[]> {
-    return this.etoService.getTransactions(user.id, filters);
+    // TODO: Add authorization check - users should only query their own data OR be admin
+    // For now, allow any authenticated user to query any consultant
+    return this.etoService.getTransactions(consultantId, limit, offset);
   }
 
   /**
@@ -72,8 +78,8 @@ export class ETOResolver {
   /**
    * Manually adjust ETO balance
    * For accruals or administrative adjustments
-   * Note: In production, this should be restricted to admins/managers
-   * @param input - Hours, type, date, and description
+   * This is an admin operation - admins can adjust any consultant's balance
+   * @param input - ConsultantId, hours, transactionType, date, and description
    * @param user - Current authenticated user
    * @returns Created ETO transaction
    */
@@ -84,7 +90,6 @@ export class ETOResolver {
   ): Promise<ETOTransactionType> {
     // TODO: In production, add role-based authorization
     // Only allow admins or team leads to perform adjustments
-    // For now, users can adjust their own balance for testing
-    return this.etoService.adjustETO(user.id, input);
+    return this.etoService.adjustETO(input);
   }
 }
