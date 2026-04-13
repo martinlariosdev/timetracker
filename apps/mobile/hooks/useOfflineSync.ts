@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useMutation } from '@apollo/client/react';
+import { useAuthenticatedMutation } from './useAuthenticatedMutation';
 import { useOfflineStatus } from './useOfflineStatus';
 import { useOfflineQueue } from './useOfflineQueue';
 import { OfflineQueue, QueueItem, QueueItemType } from '../lib/offline-queue';
@@ -120,9 +120,9 @@ export function useOfflineSync(): OfflineSyncState {
   const wasOnlineRef = useRef(isOnline);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [syncTimeEntries] = useMutation<{ syncTimeEntries: SyncResult }>(SYNC_TIME_ENTRIES_MUTATION);
-  const [syncETOTransactions] = useMutation<{ syncETOTransactions: SyncResult }>(SYNC_ETO_TRANSACTIONS_MUTATION);
-  const [syncTimesheetSubmissions] = useMutation<{ syncTimesheetSubmissions: SyncResult }>(SYNC_TIMESHEET_SUBMISSIONS_MUTATION);
+  const [syncTimeEntries] = useAuthenticatedMutation<{ syncTimeEntries: SyncResult }>(SYNC_TIME_ENTRIES_MUTATION);
+  const [syncETOTransactions] = useAuthenticatedMutation<{ syncETOTransactions: SyncResult }>(SYNC_ETO_TRANSACTIONS_MUTATION);
+  const [syncTimesheetSubmissions] = useAuthenticatedMutation<{ syncTimesheetSubmissions: SyncResult }>(SYNC_TIMESHEET_SUBMISSIONS_MUTATION);
 
   const triggerSync = useCallback(async () => {
     if (isSyncing) return;
@@ -151,31 +151,35 @@ export function useOfflineSync(): OfflineSyncState {
               deviceId,
             },
           });
-          const result = data!.syncTimeEntries;
-          console.log(`[useOfflineSync] Time entries: ${result.successful} synced, ${result.failed} failed`);
+          const result = data?.syncTimeEntries;
+          if (!result) {
+            console.error('[useOfflineSync] No data returned for time entries sync');
+          } else {
+            console.log(`[useOfflineSync] Time entries: ${result.successful} synced, ${result.failed} failed`);
 
-          if (result.errors.length > 0) {
-            errors.push(...result.errors);
-          }
+            if (result.errors.length > 0) {
+              errors.push(...result.errors);
+            }
 
-          // Remove successfully synced items
-          const errorEntityIds = new Set(result.errors.map((e: SyncError) => e.entityId));
-          const successIds = timeEntries
-            .filter((item) => !errorEntityIds.has(item.entityId ?? item.id))
-            .map((item) => item.id);
-          if (successIds.length > 0) {
-            await OfflineQueue.removeByIds(successIds);
-          }
+            // Remove successfully synced items
+            const errorEntityIds = new Set(result.errors.map((e: SyncError) => e.entityId));
+            const successIds = timeEntries
+              .filter((item) => !errorEntityIds.has(item.entityId ?? item.id))
+              .map((item) => item.id);
+            if (successIds.length > 0) {
+              await OfflineQueue.removeByIds(successIds);
+            }
 
-          // Update retry count for failed items
-          for (const item of timeEntries) {
-            if (errorEntityIds.has(item.entityId ?? item.id)) {
-              await OfflineQueue.updateById(item.id, {
-                retryCount: item.retryCount + 1,
-                lastError: result.errors.find(
-                  (e: SyncError) => e.entityId === (item.entityId ?? item.id)
-                )?.error,
-              });
+            // Update retry count for failed items
+            for (const item of timeEntries) {
+              if (errorEntityIds.has(item.entityId ?? item.id)) {
+                await OfflineQueue.updateById(item.id, {
+                  retryCount: item.retryCount + 1,
+                  lastError: result.errors.find(
+                    (e: SyncError) => e.entityId === (item.entityId ?? item.id)
+                  )?.error,
+                });
+              }
             }
           }
         } catch (err) {
@@ -195,29 +199,33 @@ export function useOfflineSync(): OfflineSyncState {
               deviceId,
             },
           });
-          const result = data!.syncETOTransactions;
-          console.log(`[useOfflineSync] ETO transactions: ${result.successful} synced, ${result.failed} failed`);
+          const result = data?.syncETOTransactions;
+          if (!result) {
+            console.error('[useOfflineSync] No data returned for ETO transactions sync');
+          } else {
+            console.log(`[useOfflineSync] ETO transactions: ${result.successful} synced, ${result.failed} failed`);
 
-          if (result.errors.length > 0) {
-            errors.push(...result.errors);
-          }
+            if (result.errors.length > 0) {
+              errors.push(...result.errors);
+            }
 
-          const errorEntityIds = new Set(result.errors.map((e: SyncError) => e.entityId));
-          const successIds = etoTransactions
-            .filter((item) => !errorEntityIds.has(item.entityId ?? item.id))
-            .map((item) => item.id);
-          if (successIds.length > 0) {
-            await OfflineQueue.removeByIds(successIds);
-          }
+            const errorEntityIds = new Set(result.errors.map((e: SyncError) => e.entityId));
+            const successIds = etoTransactions
+              .filter((item) => !errorEntityIds.has(item.entityId ?? item.id))
+              .map((item) => item.id);
+            if (successIds.length > 0) {
+              await OfflineQueue.removeByIds(successIds);
+            }
 
-          for (const item of etoTransactions) {
-            if (errorEntityIds.has(item.entityId ?? item.id)) {
-              await OfflineQueue.updateById(item.id, {
-                retryCount: item.retryCount + 1,
-                lastError: result.errors.find(
-                  (e: SyncError) => e.entityId === (item.entityId ?? item.id)
-                )?.error,
-              });
+            for (const item of etoTransactions) {
+              if (errorEntityIds.has(item.entityId ?? item.id)) {
+                await OfflineQueue.updateById(item.id, {
+                  retryCount: item.retryCount + 1,
+                  lastError: result.errors.find(
+                    (e: SyncError) => e.entityId === (item.entityId ?? item.id)
+                  )?.error,
+                });
+              }
             }
           }
         } catch (err) {
@@ -236,29 +244,33 @@ export function useOfflineSync(): OfflineSyncState {
               deviceId,
             },
           });
-          const result = data!.syncTimesheetSubmissions;
-          console.log(`[useOfflineSync] Timesheet submissions: ${result.successful} synced, ${result.failed} failed`);
+          const result = data?.syncTimesheetSubmissions;
+          if (!result) {
+            console.error('[useOfflineSync] No data returned for timesheet submissions sync');
+          } else {
+            console.log(`[useOfflineSync] Timesheet submissions: ${result.successful} synced, ${result.failed} failed`);
 
-          if (result.errors.length > 0) {
-            errors.push(...result.errors);
-          }
+            if (result.errors.length > 0) {
+              errors.push(...result.errors);
+            }
 
-          const errorEntityIds = new Set(result.errors.map((e: SyncError) => e.entityId));
-          const successIds = timesheetSubmissions
-            .filter((item) => !errorEntityIds.has(item.entityId ?? item.id))
-            .map((item) => item.id);
-          if (successIds.length > 0) {
-            await OfflineQueue.removeByIds(successIds);
-          }
+            const errorEntityIds = new Set(result.errors.map((e: SyncError) => e.entityId));
+            const successIds = timesheetSubmissions
+              .filter((item) => !errorEntityIds.has(item.entityId ?? item.id))
+              .map((item) => item.id);
+            if (successIds.length > 0) {
+              await OfflineQueue.removeByIds(successIds);
+            }
 
-          for (const item of timesheetSubmissions) {
-            if (errorEntityIds.has(item.entityId ?? item.id)) {
-              await OfflineQueue.updateById(item.id, {
-                retryCount: item.retryCount + 1,
-                lastError: result.errors.find(
-                  (e: SyncError) => e.entityId === (item.entityId ?? item.id)
-                )?.error,
-              });
+            for (const item of timesheetSubmissions) {
+              if (errorEntityIds.has(item.entityId ?? item.id)) {
+                await OfflineQueue.updateById(item.id, {
+                  retryCount: item.retryCount + 1,
+                  lastError: result.errors.find(
+                    (e: SyncError) => e.entityId === (item.entityId ?? item.id)
+                  )?.error,
+                });
+              }
             }
           }
         } catch (err) {
