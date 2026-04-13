@@ -28,4 +28,4 @@ export class PrismaClient {
   $disconnect = jest.fn();
 }
 
-export * from '../generated/models';
+// Export types from @prisma/client if needed for tests

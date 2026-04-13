@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { Consultant } from '../../generated';
+import { Consultant } from '@prisma/client';
 
 /**
  * Decorator to extract the currently authenticated consultant from the request.
