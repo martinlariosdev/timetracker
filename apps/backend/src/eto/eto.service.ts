@@ -61,7 +61,7 @@ export class ETOService {
       skip: offset || 0,
     });
 
-    return transactions as any;
+    return transactions as ETOTransactionObjectType[];
   }
 
   /**
@@ -123,7 +123,7 @@ export class ETOService {
       });
 
       this.logger.log(`Consultant ${consultantId} used ${hours} hours of ETO. New balance: ${consultant.etoBalance - hours}`);
-      return transaction as any;
+      return transaction as ETOTransactionObjectType;
     });
 
     return result;
@@ -192,7 +192,7 @@ export class ETOService {
       });
 
       this.logger.log(`Consultant ${consultantId} ETO adjusted by ${actualHours} hours (${transactionType})`);
-      return transaction as any;
+      return transaction as ETOTransactionObjectType;
     });
 
     return result;
