@@ -2,6 +2,7 @@ import { Stack, Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { ApolloProvider } from '../lib/apollo-provider';
+import { useNotifications } from '../hooks/useNotifications';
 import '../global.css';
 
 // This is a placeholder for actual auth context
@@ -25,6 +26,9 @@ function useAuth() {
 }
 
 export default function RootLayout() {
+  // Initialize push notifications on app startup
+  useNotifications();
+
   const { isAuthenticated } = useAuth();
   const segments = useSegments();
   const router = useRouter();
