@@ -7,6 +7,7 @@ import { HealthResolver } from './health.resolver';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth.module';
 import { TimesheetModule } from './timesheet.module';
+import { ETOModule } from './eto/eto.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { TimesheetModule } from './timesheet.module';
     PrismaModule,
     AuthModule,
     TimesheetModule,
+    ETOModule,
   ],
   controllers: [AppController],
   providers: [AppService, HealthResolver],
