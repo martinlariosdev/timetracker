@@ -7,7 +7,8 @@ interface OktaProfile {
   id: string;
   displayName: string;
   emails: Array<{ value: string }>;
-  [key: string]: any;
+  email?: string;
+  name?: string;
 }
 
 interface JwtPayload {
