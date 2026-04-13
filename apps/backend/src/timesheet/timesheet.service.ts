@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '../generated';
 import { createTimeEntrySchema, patchTimeEntrySchema } from '@timetrack/shared';
 import { ZodError } from 'zod';
 import { CreateTimeEntryInput } from './dto/create-time-entry.input';
@@ -109,7 +110,7 @@ export class TimesheetService {
     startDate?: Date;
     endDate?: Date;
   }) {
-    const where: any = {};
+    const where: Prisma.TimeEntryWhereInput = {};
 
     if (filters?.consultantId) {
       where.consultantId = filters.consultantId;
@@ -171,7 +172,7 @@ export class TimesheetService {
 
     try {
       // Build validation data from update input
-      const validationData: any = {};
+      const validationData: Record<string, unknown> = {};
 
       if (data.consultantId !== undefined) {
         validationData.consultantId = this.convertToNumericId(data.consultantId);
@@ -208,7 +209,7 @@ export class TimesheetService {
       patchTimeEntrySchema.parse(validationData);
 
       // Build Prisma update data
-      const prismaData: any = {};
+      const prismaData: Partial<Prisma.TimeEntryUpdateInput> = {};
       const dateStr = data.date || existingEntry.date.toISOString().split('T')[0];
 
       if (data.consultantId !== undefined) {
