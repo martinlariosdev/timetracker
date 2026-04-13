@@ -31,6 +31,7 @@ import { ClientCard } from '@/components/add-entry/ClientCard';
 import { TimeEntryPairRow } from '@/components/add-entry/TimeEntryPairRow';
 import { TotalHoursDisplay } from '@/components/add-entry/TotalHoursDisplay';
 import { DuplicateYesterdayButton } from '@/components/add-entry/DuplicateYesterdayButton';
+import { ExpandToggle } from '@/components/add-entry/ExpandToggle';
 import {
   CREATE_TIME_ENTRY_MUTATION,
   UPDATE_TIME_ENTRY_MUTATION,
@@ -58,48 +59,6 @@ import {
   generateId,
   formatTimeDisplay,
 } from '@/utils/add-entry';
-
-// --- Sub-Components ---
-
-function ExpandToggle({
-  isExpanded,
-  onToggle,
-}: {
-  isExpanded: boolean;
-  onToggle: () => void;
-}) {
-  const rotateValue = useSharedValue(0);
-
-  useEffect(() => {
-    rotateValue.value = withTiming(isExpanded ? 180 : 0, {
-      duration: 300,
-      easing: Easing.out(Easing.ease),
-    });
-  }, [isExpanded, rotateValue]);
-
-  const chevronStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotateValue.value}deg` }],
-  }));
-
-  return (
-    <TouchableOpacity
-      onPress={onToggle}
-      className="mt-2 mb-md items-center justify-center flex-row"
-      style={{ height: 44 }}
-      accessibilityLabel={
-        isExpanded ? 'Show less details' : 'Show more details'
-      }
-      accessibilityRole="button"
-    >
-      <Text className="text-body font-semibold" style={{ color: '#2563EB' }}>
-        {isExpanded ? 'Less Details' : 'More Details'}
-      </Text>
-      <Animated.View style={[{ marginLeft: 4 }, chevronStyle]}>
-        <Ionicons name="chevron-down" size={16} color="#2563EB" />
-      </Animated.View>
-    </TouchableOpacity>
-  );
-}
 
 // --- Main Screen ---
 
