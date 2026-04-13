@@ -153,10 +153,10 @@ function BalanceCard({
   onPress,
 }: {
   balance: number;
-  recentChange: number;
+  recentChange: number | null;
   onPress: () => void;
 }) {
-  const isPositiveChange = recentChange >= 0;
+  const isPositiveChange = recentChange != null && recentChange >= 0;
 
   return (
     <TouchableOpacity
@@ -169,7 +169,7 @@ function BalanceCard({
         borderColor: '#2563EB',
         padding: 28,
       }}
-      accessibilityLabel={`ETO Balance: ${balance.toFixed(2)} hours. ${isPositiveChange ? 'Plus' : 'Minus'} ${Math.abs(recentChange).toFixed(2)} accrued this period. Tap for details.`}
+      accessibilityLabel={`ETO Balance: ${balance.toFixed(2)} hours.${recentChange != null ? ` ${isPositiveChange ? 'Plus' : 'Minus'} ${Math.abs(recentChange).toFixed(2)} accrued this period.` : ''} Tap for details.`}
       accessibilityRole="button"
     >
       <View className="flex-row items-center" style={{ gap: 8 }}>
@@ -190,16 +190,18 @@ function BalanceCard({
         {balance.toFixed(2)}
       </Text>
 
-      <View className="flex-row items-center justify-center" style={{ gap: 4 }}>
-        <Ionicons
-          name={isPositiveChange ? 'arrow-up' : 'arrow-down'}
-          size={14}
-          color={isPositiveChange ? '#10B981' : '#EF4444'}
-        />
-        <Text className="text-body-small text-gray-600">
-          {isPositiveChange ? '+' : ''}{recentChange.toFixed(2)} accrued this period
-        </Text>
-      </View>
+      {recentChange != null && (
+        <View className="flex-row items-center justify-center" style={{ gap: 4 }}>
+          <Ionicons
+            name={isPositiveChange ? 'arrow-up' : 'arrow-down'}
+            size={14}
+            color={isPositiveChange ? '#10B981' : '#EF4444'}
+          />
+          <Text className="text-body-small text-gray-600">
+            {isPositiveChange ? '+' : ''}{recentChange.toFixed(2)} accrued this period
+          </Text>
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
@@ -410,6 +412,15 @@ export default function ETOScreen() {
     return MOCK_TRANSACTIONS;
   }, [transactionsData]);
 
+  const recentChange = useMemo(() => {
+    if (meData?.me?.etoBalance != null && transactions.length > 0 && transactions !== MOCK_TRANSACTIONS) {
+      const lastAccrual = transactions.find((t) => t.hours > 0);
+      return lastAccrual?.hours ?? null;
+    }
+    if (meData?.me?.etoBalance != null) return null;
+    return MOCK_RECENT_CHANGE;
+  }, [meData, transactions]);
+
   const recentTransactions = useMemo(
     () => transactions.slice(0, 5),
     [transactions],
@@ -508,7 +519,7 @@ export default function ETOScreen() {
           {/* Balance Card */}
           <BalanceCard
             balance={balance}
-            recentChange={MOCK_RECENT_CHANGE}
+            recentChange={recentChange}
             onPress={handleBalancePress}
           />
 
