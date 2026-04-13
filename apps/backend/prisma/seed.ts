@@ -1,6 +1,6 @@
 import { PrismaClient, TimeEntry, ETOTransaction, TimesheetSubmission, SyncLog } from '../src/generated';
 
-const prisma = new PrismaClient({});
+const prisma = new (PrismaClient as any)();
 
 async function main() {
   console.log('🌱 Starting database seed...');
