@@ -10,7 +10,6 @@ import {
   Platform,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
