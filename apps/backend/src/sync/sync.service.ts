@@ -1,5 +1,6 @@
 import { Injectable, Logger, BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '../generated';
 import { TimesheetService } from '../timesheet/timesheet.service';
 import { SubmissionService } from '../timesheet/submission.service';
 import { ETOService } from '../eto/eto.service';
@@ -832,7 +833,7 @@ export class SyncService {
           entry.outTime2,
         );
 
-        const prismaUpdateData: any = {
+        const prismaUpdateData: Prisma.TimeEntryUpdateInput = {
           date: new Date(dateStr),
           clientName: entry.clientName,
           description: entry.description,
@@ -1250,7 +1251,7 @@ export class SyncService {
         }
 
         // Only allow certain fields to be updated
-        const updateData: any = {};
+        const updateData: Partial<Prisma.TimesheetSubmissionUpdateInput> = {};
         if (submission.comments !== undefined) {
           updateData.comments = submission.comments;
         }
