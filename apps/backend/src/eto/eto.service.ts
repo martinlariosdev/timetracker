@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { UseETOInput, AdjustETOInput } from './dto';
-import { ETOTransaction } from '../generated';
+import { UseETOInput, AdjustETOInput, ETOTransactionObjectType } from './dto';
 import { ETOTransactionType } from './dto/eto-transaction.object';
 
 const DEFAULT_TRANSACTION_LIMIT = 50;
@@ -43,7 +42,7 @@ export class ETOService {
    * @param offset - Number of transactions to skip
    * @returns Array of ETO transactions
    */
-  async getTransactions(consultantId: string, limit?: number, offset?: number): Promise<ETOTransaction[]> {
+  async getTransactions(consultantId: string, limit?: number, offset?: number): Promise<ETOTransactionObjectType[]> {
     // Verify consultant exists
     const consultant = await this.prisma.consultant.findUnique({
       where: { id: consultantId },
@@ -62,7 +61,7 @@ export class ETOService {
       skip: offset || 0,
     });
 
-    return transactions;
+    return transactions as any;
   }
 
   /**
@@ -73,7 +72,7 @@ export class ETOService {
    * @returns Created ETO transaction
    * @throws BadRequestException if insufficient balance
    */
-  async useETO(consultantId: string, input: UseETOInput): Promise<ETOTransaction> {
+  async useETO(consultantId: string, input: UseETOInput): Promise<ETOTransactionObjectType> {
     const { hours, date, description, projectName } = input;
 
     // Validate that hours is positive
@@ -124,7 +123,7 @@ export class ETOService {
       });
 
       this.logger.log(`Consultant ${consultantId} used ${hours} hours of ETO. New balance: ${consultant.etoBalance - hours}`);
-      return transaction;
+      return transaction as any;
     });
 
     return result;
@@ -138,7 +137,7 @@ export class ETOService {
    * @throws NotFoundException if consultant not found
    * @throws BadRequestException if adjustment would result in negative balance
    */
-  async adjustETO(input: AdjustETOInput): Promise<ETOTransaction> {
+  async adjustETO(input: AdjustETOInput): Promise<ETOTransactionObjectType> {
     const { consultantId, hours, transactionType, date, description } = input;
 
     // Validate that hours is positive
@@ -193,7 +192,7 @@ export class ETOService {
       });
 
       this.logger.log(`Consultant ${consultantId} ETO adjusted by ${actualHours} hours (${transactionType})`);
-      return transaction;
+      return transaction as any;
     });
 
     return result;
