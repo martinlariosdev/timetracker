@@ -260,3 +260,17 @@ export const SYNC_TIMESHEET_SUBMISSIONS_MUTATION = gql`
     }
   }
 `;
+
+/**
+ * Resolve a detected sync conflict - requires authentication
+ */
+export const RESOLVE_CONFLICT_MUTATION = gql`
+  mutation ResolveConflict($input: ResolveConflictInput!) {
+    resolveConflict(input: $input) {
+      success
+      finalData
+      strategy
+      message
+    }
+  }
+`;

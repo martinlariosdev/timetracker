@@ -18,8 +18,8 @@ export interface SyncError {
   error: string;
 }
 
-/** Conflict detected during sync */
-export interface SyncConflict {
+/** Raw conflict info returned from a batch sync mutation */
+export interface RawSyncConflict {
   hasConflict: boolean;
   serverVersion?: Record<string, any> | null;
   clientVersion?: Record<string, any> | null;
@@ -28,11 +28,23 @@ export interface SyncConflict {
   conflictDetails?: string | null;
 }
 
+/** Enriched conflict with entity context for UI display */
+export interface SyncConflict {
+  id: string;
+  entityType: 'TimeEntry' | 'ETOTransaction' | 'TimesheetSubmission';
+  entityId: string;
+  serverData: Record<string, any>;
+  localData: Record<string, any>;
+  conflictingFields: string[];
+  timestamp: Date;
+  details?: string | null;
+}
+
 /** Result from a batch sync mutation */
 interface SyncResult {
   successful: number;
   failed: number;
-  conflicts: SyncConflict[];
+  conflicts: RawSyncConflict[];
   errors: SyncError[];
 }
 
@@ -42,10 +54,56 @@ export interface OfflineSyncState {
   queueSize: number;
   lastSyncedAt: Date | null;
   syncErrors: SyncError[];
+  syncConflicts: SyncConflict[];
+  clearConflict: (conflictId: string) => void;
   triggerSync: () => Promise<void>;
 }
 
 const DEBOUNCE_MS = 2000;
+
+/** Derive which fields differ between two data objects */
+function getConflictingFields(
+  serverData: Record<string, any>,
+  clientData: Record<string, any>,
+): string[] {
+  const allKeys = new Set([...Object.keys(serverData), ...Object.keys(clientData)]);
+  const diffFields: string[] = [];
+  for (const key of allKeys) {
+    if (JSON.stringify(serverData[key]) !== JSON.stringify(clientData[key])) {
+      diffFields.push(key);
+    }
+  }
+  return diffFields;
+}
+
+/** Build enriched SyncConflict entries from raw conflicts and the queue items that triggered them */
+function enrichConflicts(
+  rawConflicts: RawSyncConflict[],
+  queueItems: QueueItem[],
+  entityType: 'TimeEntry' | 'ETOTransaction' | 'TimesheetSubmission',
+): SyncConflict[] {
+  const enriched: SyncConflict[] = [];
+  // Match conflicts to queue items by index (backend returns one conflict per input entry)
+  for (let i = 0; i < rawConflicts.length; i++) {
+    const raw = rawConflicts[i];
+    if (!raw.hasConflict) continue;
+
+    const queueItem = queueItems[i];
+    const serverData = raw.serverVersion ?? {};
+    const localData = raw.clientVersion ?? queueItem?.data ?? {};
+    enriched.push({
+      id: queueItem?.id ?? `conflict-${Date.now()}-${i}`,
+      entityType,
+      entityId: queueItem?.entityId ?? '',
+      serverData,
+      localData,
+      conflictingFields: getConflictingFields(serverData, localData),
+      timestamp: new Date(),
+      details: raw.conflictDetails,
+    });
+  }
+  return enriched;
+}
 
 function groupByType(items: QueueItem[]): Map<QueueItemType, QueueItem[]> {
   const groups = new Map<QueueItemType, QueueItem[]>();
@@ -116,6 +174,11 @@ export function useOfflineSync(): OfflineSyncState {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [syncErrors, setSyncErrors] = useState<SyncError[]>([]);
+  const [syncConflicts, setSyncConflicts] = useState<SyncConflict[]>([]);
+
+  const clearConflict = useCallback((conflictId: string) => {
+    setSyncConflicts((prev) => prev.filter((c) => c.id !== conflictId));
+  }, []);
 
   const wasOnlineRef = useRef(isOnline);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -135,6 +198,7 @@ export function useOfflineSync(): OfflineSyncState {
 
     setIsSyncing(true);
     const errors: SyncError[] = [];
+    const conflicts: SyncConflict[] = [];
 
     try {
       const deviceId = await getDeviceId();
@@ -159,6 +223,10 @@ export function useOfflineSync(): OfflineSyncState {
 
             if (result.errors.length > 0) {
               errors.push(...result.errors);
+            }
+
+            if (result.conflicts.length > 0) {
+              conflicts.push(...enrichConflicts(result.conflicts, timeEntries, 'TimeEntry'));
             }
 
             // Remove successfully synced items
@@ -209,6 +277,10 @@ export function useOfflineSync(): OfflineSyncState {
               errors.push(...result.errors);
             }
 
+            if (result.conflicts.length > 0) {
+              conflicts.push(...enrichConflicts(result.conflicts, etoTransactions, 'ETOTransaction'));
+            }
+
             const errorEntityIds = new Set(result.errors.map((e: SyncError) => e.entityId));
             const successIds = etoTransactions
               .filter((item) => !errorEntityIds.has(item.entityId ?? item.id))
@@ -254,6 +326,10 @@ export function useOfflineSync(): OfflineSyncState {
               errors.push(...result.errors);
             }
 
+            if (result.conflicts.length > 0) {
+              conflicts.push(...enrichConflicts(result.conflicts, timesheetSubmissions, 'TimesheetSubmission'));
+            }
+
             const errorEntityIds = new Set(result.errors.map((e: SyncError) => e.entityId));
             const successIds = timesheetSubmissions
               .filter((item) => !errorEntityIds.has(item.entityId ?? item.id))
@@ -279,9 +355,10 @@ export function useOfflineSync(): OfflineSyncState {
       }
 
       setSyncErrors(errors);
+      setSyncConflicts((prev) => [...prev, ...conflicts]);
       setLastSyncedAt(new Date());
       await refreshQueue();
-      console.log('[useOfflineSync] Sync complete');
+      console.log(`[useOfflineSync] Sync complete, ${conflicts.length} conflicts detected`);
     } catch (err) {
       console.error('[useOfflineSync] Sync failed:', err);
     } finally {
@@ -320,6 +397,8 @@ export function useOfflineSync(): OfflineSyncState {
     queueSize,
     lastSyncedAt,
     syncErrors,
+    syncConflicts,
+    clearConflict,
     triggerSync,
   };
 }
