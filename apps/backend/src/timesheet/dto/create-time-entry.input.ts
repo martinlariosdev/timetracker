@@ -5,6 +5,13 @@ import { z } from 'zod';
 /**
  * Zod schema for creating a new TimeEntry
  * Defines validation rules for all input fields
+ *
+ * NOTE: This schema differs from packages/shared/src/validation/time-entry.schema.ts because:
+ * - Backend uses MongoDB ObjectId strings for consultantId/payPeriodId
+ * - Shared package uses numeric IDs for mobile/GraphQL compatibility
+ * - Backend requires server-side validations not needed in shared package
+ *
+ * Do NOT consolidate these schemas - they serve different purposes in different contexts.
  */
 export const createTimeEntrySchema = z.object({
   consultantId: z.string().min(1, 'Consultant ID is required'),
