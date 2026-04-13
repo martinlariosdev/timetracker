@@ -5,8 +5,10 @@ import {
   ApolloLink,
   from,
 } from '@apollo/client';
-import { onError } from '@apollo/client/link/error';
+import { onError, type ErrorLink } from '@apollo/client/link/error';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { setContext } from '@apollo/client/link/context';
+import type { GraphQLFormattedError } from 'graphql';
 import { Storage } from './storage';
 
 // GraphQL endpoint configuration
@@ -67,25 +69,25 @@ const httpLink = new HttpLink({
  * Error handling link
  * Logs GraphQL and network errors
  */
-const errorLink = onError((errorResponse: any) => {
-  const { graphQLErrors, networkError } = errorResponse;
+const errorLink = onError((errorResponse: ErrorLink.ErrorHandlerOptions) => {
+  const { error } = errorResponse;
 
-  if (graphQLErrors) {
-    graphQLErrors.forEach((error: any) => {
+  // Check if it's a GraphQL error with an errors array
+  if (CombinedGraphQLErrors.is(error)) {
+    error.errors.forEach((graphQLError: GraphQLFormattedError) => {
       console.error(
-        `[GraphQL error]: Message: ${error.message}, Location: ${JSON.stringify(error.locations)}, Path: ${error.path}`,
+        `[GraphQL error]: Message: ${graphQLError.message}, Location: ${JSON.stringify(graphQLError.locations)}, Path: ${graphQLError.path}`,
       );
 
       // Handle authentication errors
-      if (error.extensions?.code === 'UNAUTHENTICATED') {
+      if (graphQLError.extensions?.code === 'UNAUTHENTICATED') {
         // TODO: Navigate to login screen or refresh token
         console.warn('Authentication error - user needs to login');
       }
     });
-  }
-
-  if (networkError) {
-    console.error(`[Network error]: ${networkError.message}`);
+  } else {
+    // Network error or other error type
+    console.error(`[Network error]: ${error.message}`);
     // TODO: Handle offline mode and queue requests
   }
 });
