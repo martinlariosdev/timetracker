@@ -7,6 +7,7 @@ import {
 } from '@apollo/client';
 import { onError } from '@apollo/client/link/error';
 import { setContext } from '@apollo/client/link/context';
+import { Storage } from './storage';
 
 // GraphQL endpoint configuration
 const GRAPHQL_ENDPOINT = __DEV__
@@ -15,15 +16,26 @@ const GRAPHQL_ENDPOINT = __DEV__
 
 /**
  * Get JWT token from storage
- * TODO: This will be implemented in Task 28 (AsyncStorage integration)
- * For now, returns null to allow unauthenticated queries
+ * Retrieves the stored authentication token for API requests
  */
 const getAuthToken = async (): Promise<string | null> => {
   try {
-    // TODO: Replace with AsyncStorage implementation
-    // const token = await AsyncStorage.getItem('auth_token');
-    // return token;
-    return null;
+    const stored = await Storage.getItem<{
+      jwtToken: string;
+      jwtExpiresAt: number;
+    }>('auth_tokens');
+
+    if (!stored || !stored.jwtToken) {
+      return null;
+    }
+
+    // Check if token is expired
+    const now = Date.now();
+    if (now >= stored.jwtExpiresAt) {
+      return null;
+    }
+
+    return stored.jwtToken;
   } catch (error) {
     console.error('Error getting auth token:', error);
     return null;

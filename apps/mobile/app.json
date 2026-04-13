@@ -8,6 +8,11 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "scheme": "timetrack",
+    "extra": {
+      "oktaIssuer": "${EXPO_PUBLIC_OKTA_ISSUER}",
+      "oktaClientId": "${EXPO_PUBLIC_OKTA_CLIENT_ID}",
+      "oktaRedirectUri": "${EXPO_PUBLIC_OKTA_REDIRECT_URI}"
+    },
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",

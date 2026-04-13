@@ -17,3 +17,20 @@ export {
   type QueueItemType,
   type QueueOperation,
 } from './offline-queue';
+
+/**
+ * Authentication
+ */
+export {
+  OktaService,
+  OktaAuthError,
+  type OktaAuthResult,
+  type OktaUserProfile,
+} from './auth/okta-service';
+
+export {
+  getOktaConfig,
+  validateOktaConfig,
+  isOktaConfigured,
+  type OktaConfig,
+} from './auth/okta-config';
