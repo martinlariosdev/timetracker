@@ -1,7 +1,9 @@
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { Heading, BodyText, Button } from '@/components/BentoBox';
+import { useAuth } from '@/hooks/useAuth';
+import { useState } from 'react';
 
 const SETTINGS_SECTIONS = [
   {
@@ -28,9 +30,37 @@ const SETTINGS_SECTIONS = [
 ];
 
 export default function SettingsScreen() {
-  const handleLogout = () => {
-    // TODO: Implement logout logic
-    console.log('Logout');
+  const {
+    logout,
+    user,
+    biometricEnabled,
+    biometricSupported,
+    enableBiometric,
+    disableBiometric,
+  } = useAuth();
+  const [biometricToggling, setBiometricToggling] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  const handleBiometricToggle = async (value: boolean) => {
+    setBiometricToggling(true);
+    try {
+      if (value) {
+        await enableBiometric();
+      } else {
+        await disableBiometric();
+      }
+    } catch (error) {
+      console.error('Biometric toggle error:', error);
+    } finally {
+      setBiometricToggling(false);
+    }
   };
 
   return (
@@ -42,9 +72,40 @@ export default function SettingsScreen() {
           <Ionicons name="person" size={40} color="#fff" />
         </View>
         <Heading level={3} className="mb-1">
-          John Doe
+          {user?.name ?? 'User'}
         </Heading>
-        <BodyText className="text-gray-600">john.doe@example.com</BodyText>
+        <BodyText className="text-gray-600">{user?.email ?? ''}</BodyText>
+      </View>
+
+      {/* Biometric Authentication Section */}
+      <View className="mb-lg">
+        <Text className="text-caption font-semibold text-gray-600 uppercase mb-2 ml-md">
+          Security
+        </Text>
+        <View className="bg-white">
+          <View className="flex-row items-center justify-between p-md">
+            <View className="flex-row items-center gap-3 flex-1 mr-md">
+              <Ionicons name="finger-print-outline" size={24} color="#2563EB" />
+              <View className="flex-1">
+                <BodyText>Biometric Authentication</BodyText>
+                <Text className="text-caption text-gray-500 mt-0.5">
+                  {biometricSupported
+                    ? biometricEnabled
+                      ? 'Enabled'
+                      : 'Use biometrics for quick unlock'
+                    : 'Not available on this device'}
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={biometricEnabled}
+              onValueChange={handleBiometricToggle}
+              disabled={!biometricSupported || biometricToggling}
+              trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
+              thumbColor={biometricEnabled ? '#2563EB' : '#F3F4F6'}
+            />
+          </View>
+        </View>
       </View>
 
       {SETTINGS_SECTIONS.map((section, index) => (

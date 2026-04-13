@@ -14,8 +14,9 @@ User → Okta OIDC Login → ID Token → Backend API → JWT Token → Authenti
 
 1. **okta-config.ts** - Configuration management for Okta credentials
 2. **okta-service.ts** - Okta OIDC authentication service (login, logout, token refresh)
-3. **useAuth hook** - React hook for authentication state management
-4. **types.ts** - TypeScript type definitions
+3. **biometric-service.ts** - Biometric authentication service (fingerprint/Face ID)
+4. **useAuth hook** - React hook for authentication state management
+5. **types.ts** - TypeScript type definitions
 
 ### Flow Diagram
 
@@ -358,23 +359,70 @@ await Storage.setItem('auth_tokens', {
 3. **Storage Access**: Async operations, minimal performance impact
 4. **Browser Launch**: Native browser on device, optimized by OS
 
+## Biometric Authentication
+
+Biometric authentication provides quick unlock for returning users who have already authenticated with Okta.
+
+### Architecture
+
+```
+First-time user → Okta Login → Enable biometric in Settings
+Returning user  → Biometric prompt → Check stored tokens → Resume session
+Fallback        → If biometric fails → Okta Login
+```
+
+### Components
+
+**biometric-service.ts** - Core biometric functionality using expo-local-authentication and expo-secure-store.
+
+Key methods:
+- `isBiometricSupported()` - Check device hardware and enrollment
+- `authenticateWithBiometric()` - Prompt biometric authentication
+- `setBiometricEnabled()` / `isBiometricEnabled()` - Manage user preference
+- `getBiometricLabel()` - Get human-readable label (e.g., "Face ID", "Fingerprint")
+- `getBiometricIconName()` - Get icon name for UI display
+
+### useAuth Hook Integration
+
+The hook exposes biometric state and actions:
+- `biometricEnabled` - Whether user has enabled biometric unlock
+- `biometricSupported` - Whether device supports biometrics
+- `enableBiometric()` - Enable biometric (prompts verification first)
+- `disableBiometric()` - Disable biometric
+- `authenticateWithBiometric()` - Authenticate and restore session
+
+### Security
+
+- Only a boolean preference flag is stored in SecureStore (never credentials)
+- Biometric only works if valid session tokens exist
+- If JWT is expired, token refresh is attempted; on failure, falls back to Okta
+- Logout clears biometric preference
+- Biometric is always optional, never forced
+
+### Usage
+
+```typescript
+// In Settings - enable biometric
+const { biometricSupported, biometricEnabled, enableBiometric, disableBiometric } = useAuth();
+
+// In Login - use biometric
+const { authenticateWithBiometric, biometricEnabled } = useAuth();
+const success = await authenticateWithBiometric();
+```
+
 ## Future Enhancements
 
 1. **Secure Storage**: Migrate from AsyncStorage to secure storage
    - iOS: Keychain
    - Android: Keystore
 
-2. **Biometric Authentication**: Add fingerprint/face recognition
-   - Store tokens in secure storage
-   - Re-authenticate with biometrics
+2. **Token Encryption**: Encrypt tokens before storing
 
-3. **Token Encryption**: Encrypt tokens before storing
+3. **Offline Support**: Handle authentication in offline mode
 
-4. **Offline Support**: Handle authentication in offline mode
+4. **Multi-Factor Authentication**: Support MFA flows
 
-5. **Multi-Factor Authentication**: Support MFA flows
-
-6. **Session Management**: Track active sessions
+5. **Session Management**: Track active sessions
 
 ## Troubleshooting
 

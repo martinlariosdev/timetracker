@@ -2,10 +2,11 @@ import { View, Text, Pressable, ActivityIndicator, AccessibilityInfo, Linking } 
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useState, useEffect } from 'react';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { useAuth } from '@/hooks/useAuth';
+import { BiometricService } from '@/lib/auth/biometric-service';
 
 const FEATURE_PILLS = [
   { icon: 'clock' as const, label: 'Quick Entry' },
@@ -14,8 +15,11 @@ const FEATURE_PILLS = [
 ];
 
 export default function LoginScreen() {
-  const { login, isLoading, error } = useAuth();
+  const { login, isLoading, error, biometricEnabled, authenticateWithBiometric } = useAuth();
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [biometricLabel, setBiometricLabel] = useState('Biometric');
+  const [biometricIcon, setBiometricIcon] = useState<string>('finger-print-outline');
+  const [showBiometric, setShowBiometric] = useState(false);
 
   useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
@@ -26,9 +30,30 @@ export default function LoginScreen() {
     return () => subscription.remove();
   }, []);
 
+  useEffect(() => {
+    if (biometricEnabled) {
+      setShowBiometric(true);
+      BiometricService.getBiometricLabel().then(setBiometricLabel);
+      BiometricService.getBiometricIconName().then(setBiometricIcon);
+    } else {
+      setShowBiometric(false);
+    }
+  }, [biometricEnabled]);
+
   const handleSignIn = async () => {
     try {
       await login();
+    } catch {
+      // Error is surfaced via authState.error
+    }
+  };
+
+  const handleBiometricLogin = async () => {
+    try {
+      const success = await authenticateWithBiometric();
+      if (!success) {
+        // Biometric failed or tokens expired - user can use Okta button
+      }
     } catch {
       // Error is surfaced via authState.error
     }
@@ -190,6 +215,33 @@ export default function LoginScreen() {
                 </Text>
               </LinearGradient>
             </Pressable>
+
+            {/* Biometric sign-in button */}
+            {showBiometric ? (
+              <Pressable
+                onPress={handleBiometricLogin}
+                disabled={isLoading}
+                accessibilityRole="button"
+                accessibilityLabel={`Sign in with ${biometricLabel}`}
+                accessibilityState={{ disabled: isLoading }}
+                className="w-full mt-md rounded-[14px] overflow-hidden border-2 border-blue-600"
+                style={({ pressed }) => ({
+                  transform: [{ scale: pressed && !isLoading ? 0.97 : 1 }],
+                  opacity: isLoading ? 0.5 : 1,
+                })}
+              >
+                <View className="h-[54px] flex-row items-center justify-center gap-3 bg-white">
+                  <Ionicons
+                    name={biometricIcon as any}
+                    size={24}
+                    color="#2563EB"
+                  />
+                  <Text className="text-body font-semibold text-blue-600">
+                    Sign in with {biometricLabel}
+                  </Text>
+                </View>
+              </Pressable>
+            ) : null}
 
             {/* Error message */}
             {error ? (

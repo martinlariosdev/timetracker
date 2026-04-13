@@ -137,6 +137,41 @@ export enum AuthErrorCode {
   // Storage errors
   STORAGE_ERROR = 'STORAGE_ERROR',
 
+  // Biometric errors
+  BIOMETRIC_NOT_SUPPORTED = 'BIOMETRIC_NOT_SUPPORTED',
+  BIOMETRIC_NOT_ENROLLED = 'BIOMETRIC_NOT_ENROLLED',
+  BIOMETRIC_AUTH_FAILED = 'BIOMETRIC_AUTH_FAILED',
+  BIOMETRIC_CANCELLED = 'BIOMETRIC_CANCELLED',
+
   // Unknown errors
   UNKNOWN_ERROR = 'UNKNOWN_ERROR',
+}
+
+/**
+ * Biometric authentication type
+ */
+export enum BiometricType {
+  FINGERPRINT = 'FINGERPRINT',
+  FACIAL_RECOGNITION = 'FACIAL_RECOGNITION',
+  IRIS = 'IRIS',
+}
+
+/**
+ * Biometric availability status
+ */
+export interface BiometricStatus {
+  /** Whether biometric hardware is available on the device */
+  isSupported: boolean;
+  /** Whether the user has enrolled biometrics on the device */
+  isEnrolled: boolean;
+  /** Available biometric types on the device */
+  availableTypes: BiometricType[];
+}
+
+/**
+ * Biometric authentication result
+ */
+export interface BiometricAuthResult {
+  success: boolean;
+  error?: string;
 }

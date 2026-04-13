@@ -189,9 +189,15 @@ importers:
       expo-linear-gradient:
         specifier: ^55.0.13
         version: 55.0.13(expo@54.0.33)(react-native@0.81.5)(react@19.1.0)
+      expo-local-authentication:
+        specifier: ^55.0.13
+        version: 55.0.13(expo@54.0.33)
       expo-router:
         specifier: ~5.0.0
         version: 5.0.7(@types/react@19.1.17)(expo-constants@55.0.14)(expo-linking@55.0.13)(expo@54.0.33)(react-native-reanimated@4.3.0)(react-native-safe-area-context@5.0.0)(react-native-screens@4.4.0)(react-native@0.81.5)(react@19.1.0)
+      expo-secure-store:
+        specifier: ^55.0.13
+        version: 55.0.13(expo@54.0.33)
       expo-status-bar:
         specifier: ~3.0.9
         version: 3.0.9(react-native@0.81.5)(react@19.1.0)
@@ -6746,6 +6752,15 @@ packages:
       - typescript
     dev: false
 
+  /expo-local-authentication@55.0.13(expo@54.0.33):
+    resolution: {integrity: sha512-7m1+Roub/6xxjHtVKe0vVtsC5g0MXp1Nf0dxK0YfJ1i5314hvi/Glhl5/2loAgnplw8Nx4UVbf6L0/rDjhljsQ==}
+    peerDependencies:
+      expo: '*'
+    dependencies:
+      expo: 54.0.33(@babel/core@7.29.0)(expo-router@5.0.7)(graphql@16.13.2)(react-native@0.81.5)(react@19.1.0)(typescript@5.9.3)
+      invariant: 2.2.4
+    dev: false
+
   /expo-modules-autolinking@3.0.24:
     resolution: {integrity: sha512-TP+6HTwhL7orDvsz2VzauyQlXJcAWyU3ANsZ7JGL4DQu8XaZv/A41ZchbtAYLfozNA2Ya1Hzmhx65hXryBMjaQ==}
     hasBin: true
@@ -6813,6 +6828,14 @@ packages:
       - react
       - react-native
       - supports-color
+    dev: false
+
+  /expo-secure-store@55.0.13(expo@54.0.33):
+    resolution: {integrity: sha512-I6r0JNO1Fd4o0Gu7Ixiic7s89lqgdUHq17uBH9y1f/AntoyKn71TdtYJH82RgfsBbu5qNVzrwImmvlANyOlITQ==}
+    peerDependencies:
+      expo: '*'
+    dependencies:
+      expo: 54.0.33(@babel/core@7.29.0)(expo-router@5.0.7)(graphql@16.13.2)(react-native@0.81.5)(react@19.1.0)(typescript@5.9.3)
     dev: false
 
   /expo-server@1.0.5:

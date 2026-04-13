@@ -3,6 +3,7 @@ import { useMutation } from '@apollo/client/react';
 import { Storage } from '../lib/storage';
 import { OktaService, OktaAuthError } from '../lib/auth/okta-service';
 import { isOktaConfigured } from '../lib/auth/okta-config';
+import { BiometricService } from '../lib/auth/biometric-service';
 import { LOGIN_MUTATION, REFRESH_TOKEN_MUTATION } from '../lib/graphql/mutations';
 
 /**
@@ -119,6 +120,8 @@ export const useAuth = () => {
     user: null,
     error: null,
   });
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricSupported, setBiometricSupported] = useState(false);
 
   // GraphQL mutations
   const [loginMutation] = useMutation<LoginResponse>(LOGIN_MUTATION);
@@ -172,8 +175,10 @@ export const useAuth = () => {
       // Get stored tokens
       const stored = await Storage.getItem<StoredAuthTokens>(AUTH_STORAGE_KEY);
 
-      // Clear local storage
+      // Clear local storage and biometric preference
       await Storage.removeItem(AUTH_STORAGE_KEY);
+      await BiometricService.clearBiometricPreference();
+      setBiometricEnabled(false);
 
       // Logout from Okta (best effort)
       if (stored?.oktaIdToken) {
@@ -371,17 +376,122 @@ export const useAuth = () => {
     return token !== null;
   };
 
-  // Load stored authentication on mount
+  /**
+   * Load biometric availability and preference state
+   */
+  const loadBiometricState = useCallback(async () => {
+    try {
+      const supported = await BiometricService.isBiometricSupported();
+      setBiometricSupported(supported);
+
+      if (supported) {
+        const enabled = await BiometricService.isBiometricEnabled();
+        setBiometricEnabled(enabled);
+      } else {
+        setBiometricEnabled(false);
+      }
+    } catch (error) {
+      console.error('Error loading biometric state:', error);
+      setBiometricSupported(false);
+      setBiometricEnabled(false);
+    }
+  }, []);
+
+  /**
+   * Enable biometric authentication
+   * Requires an existing authenticated session
+   */
+  const enableBiometric = useCallback(async (): Promise<boolean> => {
+    const supported = await BiometricService.isBiometricSupported();
+    if (!supported) {
+      return false;
+    }
+
+    // Verify user can authenticate with biometrics before enabling
+    const result = await BiometricService.authenticateWithBiometric(
+      'Verify to enable biometric unlock',
+    );
+    if (!result.success) {
+      return false;
+    }
+
+    await BiometricService.setBiometricEnabled(true);
+    setBiometricEnabled(true);
+    return true;
+  }, []);
+
+  /**
+   * Disable biometric authentication
+   */
+  const disableBiometric = useCallback(async (): Promise<void> => {
+    await BiometricService.setBiometricEnabled(false);
+    setBiometricEnabled(false);
+  }, []);
+
+  /**
+   * Authenticate using biometrics
+   * Prompts biometric, then restores session from stored tokens if valid.
+   * Falls back to requiring Okta if tokens are expired.
+   */
+  const authenticateWithBiometric = useCallback(async (): Promise<boolean> => {
+    const enabled = await BiometricService.isBiometricEnabled();
+    if (!enabled) {
+      return false;
+    }
+
+    // Prompt biometric
+    const result = await BiometricService.authenticateWithBiometric();
+    if (!result.success) {
+      return false;
+    }
+
+    // Check stored tokens
+    const stored = await Storage.getItem<StoredAuthTokens>(AUTH_STORAGE_KEY);
+    if (!stored) {
+      // No stored session - need full Okta login
+      return false;
+    }
+
+    // Check if JWT is still valid
+    const now = Date.now();
+    if (now >= stored.jwtExpiresAt) {
+      // Token expired - try refresh
+      try {
+        await refreshJWT(stored);
+        return true;
+      } catch {
+        // Refresh failed - need full Okta login
+        return false;
+      }
+    }
+
+    // Valid token - restore session
+    setAuthState({
+      isAuthenticated: true,
+      isLoading: false,
+      user: stored.user,
+      error: null,
+    });
+    return true;
+  }, [refreshJWT]);
+
+  // Load stored authentication and biometric state on mount
   useEffect(() => {
     loadStoredAuth();
-  }, [loadStoredAuth]);
+    loadBiometricState();
+  }, [loadStoredAuth, loadBiometricState]);
 
   return {
     ...authState,
+    biometricEnabled,
+    biometricSupported,
     login,
     logout,
     getToken,
     checkAuth,
     refreshAuth: loadStoredAuth,
+    enableBiometric,
+    disableBiometric,
+    authenticateWithBiometric,
   };
 };
