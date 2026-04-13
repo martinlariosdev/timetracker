@@ -21,6 +21,8 @@ import Animated, {
   withSpring,
   Easing,
 } from 'react-native-reanimated';
+import { useDatePicker } from '@/components/DatePicker';
+import { useTimePicker } from '@/components/TimePicker';
 import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
 import {
@@ -359,6 +361,18 @@ function TimeEntryPairRow({
   const isValid = isValidTimeEntry(entry);
   const borderColor = error ? '#EF4444' : '#D1D5DB';
 
+  const inTimePicker = useTimePicker({
+    value: entry.inTime,
+    onChange: onChangeInTime,
+    label: 'In Time',
+  });
+
+  const outTimePicker = useTimePicker({
+    value: entry.outTime,
+    onChange: onChangeOutTime,
+    label: 'Out Time',
+  });
+
   return (
     <View className="mx-md mt-3">
       {showLabel && (
@@ -392,13 +406,7 @@ function TimeEntryPairRow({
         <TouchableOpacity
           className="flex-1 items-center"
           style={{ height: 56, justifyContent: 'center' }}
-          onPress={() => {
-            // TODO: Open native time picker
-            // For now, cycle through common in-times for testing
-            const times = ['07:00', '07:30', '08:00', '08:30', '09:00'];
-            const idx = times.indexOf(entry.inTime);
-            onChangeInTime(times[(idx + 1) % times.length] || '08:00');
-          }}
+          onPress={inTimePicker.open}
           accessibilityLabel={`In time, ${formatTimeDisplay(entry.inTime)}`}
           accessibilityRole="button"
           accessibilityHint="Tap to change start time"
@@ -422,12 +430,7 @@ function TimeEntryPairRow({
         <TouchableOpacity
           className="flex-1 items-center"
           style={{ height: 56, justifyContent: 'center' }}
-          onPress={() => {
-            // TODO: Open native time picker
-            const times = ['16:00', '16:30', '17:00', '17:30', '18:00'];
-            const idx = times.indexOf(entry.outTime);
-            onChangeOutTime(times[(idx + 1) % times.length] || '17:00');
-          }}
+          onPress={outTimePicker.open}
           accessibilityLabel={`Out time, ${formatTimeDisplay(entry.outTime)}`}
           accessibilityRole="button"
           accessibilityHint="Tap to change end time"
@@ -438,6 +441,8 @@ function TimeEntryPairRow({
           <Text className="text-caption text-gray-500 mt-1">Out Time</Text>
         </TouchableOpacity>
       </View>
+      <inTimePicker.TimePickerModal />
+      <outTimePicker.TimePickerModal />
       {error && (
         <Text className="text-caption text-error mt-1 ml-1">{error}</Text>
       )}
@@ -672,16 +677,13 @@ export default function AddEntryScreen() {
     }
   }, [existingEntryData]);
 
-  // --- Handlers ---
+  // --- Date Picker ---
+  const datePicker = useDatePicker({
+    value: selectedDate,
+    onChange: setSelectedDate,
+  });
 
-  const handleDatePress = useCallback(() => {
-    // TODO: Open native date picker (expo-date-time-picker)
-    // For now, this is a no-op placeholder
-    Alert.alert(
-      'Date Picker',
-      'Native date picker will be integrated in Task 35: Date/Time Picker Components',
-    );
-  }, []);
+  // --- Handlers ---
 
   const handleClientPress = useCallback(() => {
     // TODO: Open client selector/autocomplete
@@ -867,7 +869,7 @@ export default function AddEntryScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {/* Date Selector Card */}
-        <DateSelectorCard date={selectedDate} onPress={handleDatePress} />
+        <DateSelectorCard date={selectedDate} onPress={datePicker.open} />
 
         {/* Week Strip */}
         <WeekStripCard
@@ -1063,6 +1065,7 @@ export default function AddEntryScreen() {
           onToggle={() => setIsExpanded((prev) => !prev)}
         />
       </ScrollView>
+      <datePicker.DatePickerModal />
     </View>
   );
 }
