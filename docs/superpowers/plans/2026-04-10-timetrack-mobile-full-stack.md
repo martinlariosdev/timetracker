@@ -1695,18 +1695,31 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 - Task 43: Settings Screen
 - Task 44: Notification Preferences
 
-## Phase 13: Push Notifications
+## Phase 13: Code Refactoring - Add/Edit Entry Screen
+- Task 57: Extract Types and Interfaces
+- Task 58: Extract Constants and Mock Data
+- Task 59: Extract Utility Functions
+- Task 60: Extract DateSelectorCard Component
+- Task 61: Extract WeekStripCard Component
+- Task 62: Extract ClientCard Component
+- Task 63: Extract TimeEntryPairRow Component
+- Task 64: Extract TotalHoursDisplay Component
+- Task 65: Extract DuplicateYesterdayButton Component
+- Task 66: Extract ExpandToggle Component
+- Task 67: Refactor Main AddEntryScreen
+
+## Phase 14: Push Notifications
 - Task 45: Firebase Setup
 - Task 46: Notification Service
 - Task 47: Deadline Reminders (7th/22nd)
 
-## Phase 14: Testing
+## Phase 15: Testing
 - Task 48: Backend Unit Tests (Jest)
 - Task 49: Backend Integration Tests (Supertest)
 - Task 50: Frontend Unit Tests (Testing Library)
 - Task 51: Frontend E2E Tests (Detox)
 
-## Phase 15: Deployment Preparation
+## Phase 16: Deployment Preparation
 - Task 52: App Store Submission Checklist
 - Task 53: Google Play Store Submission Checklist
 - Task 54: EAS Build Configuration
