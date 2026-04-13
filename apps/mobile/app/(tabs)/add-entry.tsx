@@ -22,7 +22,6 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { useDatePicker } from '@/components/DatePicker';
-import { useTimePicker } from '@/components/TimePicker';
 import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
 import { DateSelectorCard } from '@/components/add-entry/DateSelectorCard';
