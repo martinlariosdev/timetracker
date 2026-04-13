@@ -132,12 +132,17 @@ export default function NotificationPreferencesScreen() {
 
   const updatePrefs = useCallback(
     async (updater: (prev: NotificationPreferences) => NotificationPreferences) => {
+      // TODO: When notification system is implemented, use these preferences to filter
+      let nextPrefs: NotificationPreferences;
       setPrefs((prev) => {
-        const next = updater(prev);
-        // TODO: When notification system is implemented, use these preferences to filter
-        saveNotificationPreferences(next);
-        return next;
+        nextPrefs = updater(prev);
+        return nextPrefs;
       });
+      try {
+        await saveNotificationPreferences(nextPrefs!);
+      } catch (err) {
+        console.error('[NotificationPreferences] Failed to save:', err);
+      }
     },
     [],
   );
