@@ -88,12 +88,16 @@ describe('ETOService', () => {
         },
       ];
 
+      mockPrismaService.consultant.findUnique.mockResolvedValue(mockConsultant);
       mockPrismaService.eTOTransaction.findMany.mockResolvedValue(mockTransactions);
 
       const result = await service.getTransactions(mockConsultant.id, 10, 5);
 
       expect(result.length).toBe(1);
       expect(result[0].id).toBe('1');
+      expect(mockPrismaService.consultant.findUnique).toHaveBeenCalledWith({
+        where: { id: mockConsultant.id },
+      });
       expect(mockPrismaService.eTOTransaction.findMany).toHaveBeenCalledWith({
         where: { consultantId: mockConsultant.id },
         orderBy: { date: 'desc' },
@@ -103,6 +107,7 @@ describe('ETOService', () => {
     });
 
     it('should use default limit when not provided', async () => {
+      mockPrismaService.consultant.findUnique.mockResolvedValue(mockConsultant);
       mockPrismaService.eTOTransaction.findMany.mockResolvedValue([]);
 
       await service.getTransactions(mockConsultant.id);
@@ -113,6 +118,12 @@ describe('ETOService', () => {
         take: 50,
         skip: 0,
       });
+    });
+
+    it('should throw NotFoundException if consultant not found', async () => {
+      mockPrismaService.consultant.findUnique.mockResolvedValue(null);
+
+      await expect(service.getTransactions('invalid-id')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -136,17 +147,16 @@ describe('ETOService', () => {
         createdAt: new Date('2024-04-15'),
       };
 
-      mockPrismaService.consultant.findUnique.mockResolvedValue({
-        etoBalance: 40.0,
-      });
-
       mockPrismaService.$transaction.mockImplementation(async (callback) => {
         return callback({
+          consultant: {
+            findUnique: jest.fn().mockResolvedValue({
+              etoBalance: 40.0,
+            }),
+            update: jest.fn().mockResolvedValue({ etoBalance: 32.0 }),
+          },
           eTOTransaction: {
             create: jest.fn().mockResolvedValue(mockTransaction),
-          },
-          consultant: {
-            update: jest.fn().mockResolvedValue({ etoBalance: 32.0 }),
           },
         });
       });
@@ -177,8 +187,14 @@ describe('ETOService', () => {
         description: 'Too much',
       };
 
-      mockPrismaService.consultant.findUnique.mockResolvedValue({
-        etoBalance: 40.0,
+      mockPrismaService.$transaction.mockImplementation(async (callback) => {
+        return callback({
+          consultant: {
+            findUnique: jest.fn().mockResolvedValue({
+              etoBalance: 40.0,
+            }),
+          },
+        });
       });
 
       await expect(service.useETO(mockConsultant.id, input)).rejects.toThrow(
@@ -208,17 +224,16 @@ describe('ETOService', () => {
         createdAt: new Date('2024-04-01'),
       };
 
-      mockPrismaService.consultant.findUnique.mockResolvedValue({
-        etoBalance: 40.0,
-      });
-
       mockPrismaService.$transaction.mockImplementation(async (callback) => {
         return callback({
+          consultant: {
+            findUnique: jest.fn().mockResolvedValue({
+              etoBalance: 40.0,
+            }),
+            update: jest.fn().mockResolvedValue({ etoBalance: 44.0 }),
+          },
           eTOTransaction: {
             create: jest.fn().mockResolvedValue(mockTransaction),
-          },
-          consultant: {
-            update: jest.fn().mockResolvedValue({ etoBalance: 44.0 }),
           },
         });
       });
@@ -250,17 +265,16 @@ describe('ETOService', () => {
         createdAt: new Date('2024-04-01'),
       };
 
-      mockPrismaService.consultant.findUnique.mockResolvedValue({
-        etoBalance: 40.0,
-      });
-
       mockPrismaService.$transaction.mockImplementation(async (callback) => {
         return callback({
+          consultant: {
+            findUnique: jest.fn().mockResolvedValue({
+              etoBalance: 40.0,
+            }),
+            update: jest.fn().mockResolvedValue({ etoBalance: 38.0 }),
+          },
           eTOTransaction: {
             create: jest.fn().mockResolvedValue(mockTransaction),
-          },
-          consultant: {
-            update: jest.fn().mockResolvedValue({ etoBalance: 38.0 }),
           },
         });
       });
@@ -293,8 +307,14 @@ describe('ETOService', () => {
         description: 'Too much',
       };
 
-      mockPrismaService.consultant.findUnique.mockResolvedValue({
-        etoBalance: 40.0,
+      mockPrismaService.$transaction.mockImplementation(async (callback) => {
+        return callback({
+          consultant: {
+            findUnique: jest.fn().mockResolvedValue({
+              etoBalance: 40.0,
+            }),
+          },
+        });
       });
 
       await expect(service.adjustETO(input)).rejects.toThrow(

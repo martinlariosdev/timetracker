@@ -6,7 +6,6 @@ import type { Consultant } from '../generated';
 
 describe('ETOResolver', () => {
   let resolver: ETOResolver;
-  let etoService: ETOService;
 
   const mockETOService = {
     getBalance: jest.fn(),
@@ -42,7 +41,6 @@ describe('ETOResolver', () => {
     }).compile();
 
     resolver = module.get<ETOResolver>(ETOResolver);
-    etoService = module.get<ETOService>(ETOService);
 
     // Reset mocks
     jest.clearAllMocks();

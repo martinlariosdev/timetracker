@@ -1,4 +1,5 @@
 import { InputType, Field, Float, ID } from '@nestjs/graphql';
+import { ETOTransactionType } from './eto-transaction.object';
 
 /**
  * GraphQL Input Type for manually adjusting ETO balance
@@ -13,8 +14,8 @@ export class AdjustETOInput {
   @Field(() => Float, { description: 'Number of hours (always positive, direction determined by transactionType)' })
   hours: number;
 
-  @Field({ description: 'Type of adjustment: Accrual (adds to balance) or Usage (deducts from balance)' })
-  transactionType: string;
+  @Field(() => ETOTransactionType, { description: 'Type of adjustment: Accrual (adds to balance) or Usage (deducts from balance)' })
+  transactionType: ETOTransactionType;
 
   @Field({ description: 'Date of the adjustment' })
   date: string;

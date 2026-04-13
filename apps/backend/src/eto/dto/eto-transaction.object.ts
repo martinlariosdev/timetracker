@@ -1,4 +1,18 @@
-import { ObjectType, Field, ID, Float } from '@nestjs/graphql';
+import { ObjectType, Field, ID, Float, registerEnumType } from '@nestjs/graphql';
+
+/**
+ * Enum for ETO transaction types
+ */
+export enum ETOTransactionType {
+  ACCRUAL = 'Accrual',
+  USAGE = 'Usage',
+  ADJUSTMENT = 'Adjustment',
+}
+
+registerEnumType(ETOTransactionType, {
+  name: 'ETOTransactionType',
+  description: 'Type of ETO transaction',
+});
 
 /**
  * GraphQL Object Type for ETOTransaction
@@ -6,7 +20,7 @@ import { ObjectType, Field, ID, Float } from '@nestjs/graphql';
  * Corresponds to the ETOTransaction Prisma model
  */
 @ObjectType({ description: 'ETO transaction record for tracking earned time off' })
-export class ETOTransactionType {
+export class ETOTransactionObjectType {
   @Field(() => ID, { description: 'Unique identifier for the ETO transaction' })
   id: string;
 
@@ -19,8 +33,8 @@ export class ETOTransactionType {
   @Field(() => Float, { description: 'Number of hours for this transaction (positive for accrual, negative for usage)' })
   hours: number;
 
-  @Field({ description: 'Type of transaction: Accrual, Usage, or Adjustment' })
-  transactionType: string;
+  @Field(() => ETOTransactionType, { description: 'Type of transaction: Accrual, Usage, or Adjustment' })
+  transactionType: ETOTransactionType;
 
   @Field({ nullable: true, description: 'Description or reason for the transaction' })
   description?: string | null;

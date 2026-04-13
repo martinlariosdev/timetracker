@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UseETOInput, AdjustETOInput } from './dto';
+import { ETOTransaction } from '../generated';
+import { ETOTransactionType } from './dto/eto-transaction.object';
+
+const DEFAULT_TRANSACTION_LIMIT = 50;
 
 /**
  * ETOService
@@ -39,13 +43,22 @@ export class ETOService {
    * @param offset - Number of transactions to skip
    * @returns Array of ETO transactions
    */
-  async getTransactions(consultantId: string, limit?: number, offset?: number) {
+  async getTransactions(consultantId: string, limit?: number, offset?: number): Promise<ETOTransaction[]> {
+    // Verify consultant exists
+    const consultant = await this.prisma.consultant.findUnique({
+      where: { id: consultantId },
+    });
+
+    if (!consultant) {
+      throw new NotFoundException(`Consultant with ID ${consultantId} not found`);
+    }
+
     const where = { consultantId };
 
     const transactions = await this.prisma.eTOTransaction.findMany({
       where,
       orderBy: { date: 'desc' },
-      take: limit || 50,
+      take: limit || DEFAULT_TRANSACTION_LIMIT,
       skip: offset || 0,
     });
 
@@ -60,7 +73,7 @@ export class ETOService {
    * @returns Created ETO transaction
    * @throws BadRequestException if insufficient balance
    */
-  async useETO(consultantId: string, input: UseETOInput) {
+  async useETO(consultantId: string, input: UseETOInput): Promise<ETOTransaction> {
     const { hours, date, description, projectName } = input;
 
     // Validate that hours is positive
@@ -68,25 +81,32 @@ export class ETOService {
       throw new BadRequestException('Hours must be positive when using ETO');
     }
 
-    // Get current balance
-    const currentBalance = await this.getBalance(consultantId);
-
-    // Check sufficient balance
-    if (currentBalance < hours) {
-      throw new BadRequestException(
-        `Insufficient ETO balance. Available: ${currentBalance} hours, Requested: ${hours} hours`,
-      );
-    }
-
     // Use a transaction to ensure atomic update
     const result = await this.prisma.$transaction(async (tx) => {
+      // Read consultant inside transaction to prevent race condition
+      const consultant = await tx.consultant.findUnique({
+        where: { id: consultantId },
+        select: { etoBalance: true },
+      });
+
+      if (!consultant) {
+        throw new NotFoundException(`Consultant with ID ${consultantId} not found`);
+      }
+
+      // Check sufficient balance inside transaction
+      if (consultant.etoBalance < hours) {
+        throw new BadRequestException(
+          `Insufficient ETO balance. Available: ${consultant.etoBalance} hours, Requested: ${hours} hours`,
+        );
+      }
+
       // Create ETO transaction record (negative hours for usage)
       const transaction = await tx.eTOTransaction.create({
         data: {
           consultantId,
           date: new Date(date),
           hours: -hours, // Negative for usage
-          transactionType: 'Usage',
+          transactionType: ETOTransactionType.USAGE,
           description: description || 'ETO usage',
           projectName: projectName || null,
           synced: true,
@@ -103,7 +123,7 @@ export class ETOService {
         },
       });
 
-      this.logger.log(`Consultant ${consultantId} used ${hours} hours of ETO. New balance: ${currentBalance - hours}`);
+      this.logger.log(`Consultant ${consultantId} used ${hours} hours of ETO. New balance: ${consultant.etoBalance - hours}`);
       return transaction;
     });
 
@@ -118,7 +138,7 @@ export class ETOService {
    * @throws NotFoundException if consultant not found
    * @throws BadRequestException if adjustment would result in negative balance
    */
-  async adjustETO(input: AdjustETOInput) {
+  async adjustETO(input: AdjustETOInput): Promise<ETOTransaction> {
     const { consultantId, hours, transactionType, date, description } = input;
 
     // Validate that hours is positive
@@ -126,23 +146,30 @@ export class ETOService {
       throw new BadRequestException('Hours must be positive');
     }
 
-    // Validate consultant exists and get current balance
-    const currentBalance = await this.getBalance(consultantId);
-
     // Determine if this is adding or subtracting based on transactionType
-    const isAccrual = transactionType === 'Accrual';
+    const isAccrual = transactionType === ETOTransactionType.ACCRUAL;
     const actualHours = isAccrual ? hours : -hours;
-
-    // Check that adjustment won't result in negative balance
-    const newBalance = currentBalance + actualHours;
-    if (newBalance < 0) {
-      throw new BadRequestException(
-        `Adjustment would result in negative balance. Current: ${currentBalance} hours, Adjustment: ${actualHours} hours`,
-      );
-    }
 
     // Use a transaction to ensure atomic update
     const result = await this.prisma.$transaction(async (tx) => {
+      // Read consultant inside transaction to prevent race condition
+      const consultant = await tx.consultant.findUnique({
+        where: { id: consultantId },
+        select: { etoBalance: true },
+      });
+
+      if (!consultant) {
+        throw new NotFoundException(`Consultant with ID ${consultantId} not found`);
+      }
+
+      // Check that adjustment won't result in negative balance inside transaction
+      const newBalance = consultant.etoBalance + actualHours;
+      if (newBalance < 0) {
+        throw new BadRequestException(
+          `Adjustment would result in negative balance. Current: ${consultant.etoBalance} hours, Adjustment: ${actualHours} hours`,
+        );
+      }
+
       // Create ETO transaction record
       const transaction = await tx.eTOTransaction.create({
         data: {
@@ -155,26 +182,15 @@ export class ETOService {
         },
       });
 
-      // Update consultant's ETO balance
-      if (isAccrual) {
-        await tx.consultant.update({
-          where: { id: consultantId },
-          data: {
-            etoBalance: {
-              increment: hours,
-            },
+      // Update consultant's ETO balance with single update using increment
+      await tx.consultant.update({
+        where: { id: consultantId },
+        data: {
+          etoBalance: {
+            increment: actualHours, // actualHours is already positive or negative
           },
-        });
-      } else {
-        await tx.consultant.update({
-          where: { id: consultantId },
-          data: {
-            etoBalance: {
-              decrement: hours,
-            },
-          },
-        });
-      }
+        },
+      });
 
       this.logger.log(`Consultant ${consultantId} ETO adjusted by ${actualHours} hours (${transactionType})`);
       return transaction;

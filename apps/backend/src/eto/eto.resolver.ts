@@ -4,7 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ETOService } from './eto.service';
 import {
-  ETOTransactionType,
+  ETOTransactionObjectType,
   UseETOInput,
   AdjustETOInput,
 } from './dto';
@@ -16,7 +16,7 @@ import type { Consultant } from '../generated';
  * All operations are protected by JWT authentication
  * Users can only access their own ETO data
  */
-@Resolver(() => ETOTransactionType)
+@Resolver(() => ETOTransactionObjectType)
 @UseGuards(JwtAuthGuard)
 export class ETOResolver {
   constructor(private etoService: ETOService) {}
@@ -47,13 +47,13 @@ export class ETOResolver {
    * @param user - Current authenticated user
    * @returns Array of ETO transactions
    */
-  @Query(() => [ETOTransactionType], { description: 'Get ETO transactions for a consultant' })
+  @Query(() => [ETOTransactionObjectType], { description: 'Get ETO transactions for a consultant' })
   async etoTransactions(
     @Args('consultantId', { type: () => ID }) consultantId: string,
     @Args('limit', { type: () => Int, nullable: true }) limit?: number,
     @Args('offset', { type: () => Int, nullable: true }) offset?: number,
     @CurrentUser() user?: Consultant,
-  ): Promise<ETOTransactionType[]> {
+  ): Promise<ETOTransactionObjectType[]> {
     // TODO: Add authorization check - users should only query their own data OR be admin
     // For now, allow any authenticated user to query any consultant
     return this.etoService.getTransactions(consultantId, limit, offset);
@@ -67,11 +67,11 @@ export class ETOResolver {
    * @returns Created ETO transaction
    * @throws BadRequestException if insufficient balance
    */
-  @Mutation(() => ETOTransactionType, { description: 'Use ETO hours (take time off)' })
+  @Mutation(() => ETOTransactionObjectType, { description: 'Use ETO hours (take time off)' })
   async useETO(
     @Args('input') input: UseETOInput,
     @CurrentUser() user: Consultant,
-  ): Promise<ETOTransactionType> {
+  ): Promise<ETOTransactionObjectType> {
     return this.etoService.useETO(user.id, input);
   }
 
@@ -83,11 +83,11 @@ export class ETOResolver {
    * @param user - Current authenticated user
    * @returns Created ETO transaction
    */
-  @Mutation(() => ETOTransactionType, { description: 'Manually adjust ETO balance (accrual or admin adjustment)' })
+  @Mutation(() => ETOTransactionObjectType, { description: 'Manually adjust ETO balance (accrual or admin adjustment)' })
   async adjustETO(
     @Args('input') input: AdjustETOInput,
     @CurrentUser() user: Consultant,
-  ): Promise<ETOTransactionType> {
+  ): Promise<ETOTransactionObjectType> {
     // TODO: In production, add role-based authorization
     // Only allow admins or team leads to perform adjustments
     return this.etoService.adjustETO(input);
