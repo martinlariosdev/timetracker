@@ -490,6 +490,7 @@ describe('SyncService', () => {
           entityId,
         },
         orderBy: { syncedAt: 'desc' },
+        take: 100,
       });
     });
 
@@ -509,6 +510,7 @@ describe('SyncService', () => {
           entityId,
         },
         orderBy: { syncedAt: 'desc' },
+        take: 100,
       });
     });
 
@@ -768,7 +770,10 @@ describe('SyncService', () => {
       expect(result.finalData).toEqual(mockUpdatedTimeEntry);
       expect(result.message).toContain('Client data applied');
       expect(mockPrismaService.timeEntry.update).toHaveBeenCalledWith({
-        where: { id: entityId },
+        where: {
+          id: entityId,
+          consultantId: mockUserId, // Ownership verification
+        },
         data: {
           date: clientData.date,
           totalHours: clientData.totalHours,
@@ -978,6 +983,212 @@ describe('SyncService', () => {
       expect(result.success).toBe(true);
       expect(result.finalData).toEqual(serverData);
       expect(mockPrismaService.timeEntry.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('should enforce ownership verification when updating TimeEntry', async () => {
+      const mockServerTimeEntry = {
+        id: entityId,
+        consultantId: mockUserId,
+        date: new Date('2024-04-12'),
+        totalHours: 8,
+        description: 'Server version',
+      };
+
+      const clientData = {
+        id: entityId,
+        date: new Date('2024-04-12'),
+        totalHours: 9,
+        description: 'Client version',
+      };
+
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockServerTimeEntry);
+      // Simulate ownership verification failure - Prisma will return null
+      mockPrismaService.timeEntry.update.mockRejectedValue(
+        new Error('Record to update not found'),
+      );
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.TIME_ENTRY,
+        entityId,
+        strategy: ConflictResolutionStrategy.CLIENT_WINS,
+        clientData,
+      };
+
+      await expect(service.resolveConflict(mockUserId, input)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+
+      expect(mockPrismaService.timeEntry.update).toHaveBeenCalledWith({
+        where: {
+          id: entityId,
+          consultantId: mockUserId, // Ownership check enforced
+        },
+        data: expect.any(Object),
+      });
+    });
+
+    it('should filter out unauthorized fields from client data for TimeEntry', async () => {
+      const mockServerTimeEntry = {
+        id: entityId,
+        consultantId: mockUserId,
+        date: new Date('2024-04-12'),
+        totalHours: 8,
+      };
+
+      const clientDataWithUnauthorizedFields = {
+        id: entityId,
+        consultantId: 'attacker-id', // Should be filtered
+        date: new Date('2024-04-12'),
+        totalHours: 9,
+        description: 'Valid description',
+        synced: true, // Should be filtered
+        createdAt: new Date(), // Should be filtered
+        updatedAt: new Date(), // Should be filtered
+      };
+
+      const mockUpdatedTimeEntry = {
+        ...mockServerTimeEntry,
+        totalHours: 9,
+        description: 'Valid description',
+      };
+
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockServerTimeEntry);
+      mockPrismaService.timeEntry.update.mockResolvedValue(mockUpdatedTimeEntry);
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.TIME_ENTRY,
+        entityId,
+        strategy: ConflictResolutionStrategy.CLIENT_WINS,
+        clientData: clientDataWithUnauthorizedFields,
+      };
+
+      const result = await service.resolveConflict(mockUserId, input);
+
+      expect(result.success).toBe(true);
+      // Verify that only allowed fields were passed to update
+      expect(mockPrismaService.timeEntry.update).toHaveBeenCalledWith({
+        where: {
+          id: entityId,
+          consultantId: mockUserId,
+        },
+        data: {
+          date: clientDataWithUnauthorizedFields.date,
+          totalHours: clientDataWithUnauthorizedFields.totalHours,
+          description: clientDataWithUnauthorizedFields.description,
+          // synced, createdAt, updatedAt, consultantId should NOT be in data
+        },
+      });
+      // Explicitly verify unauthorized fields are NOT present
+      const updateCall = mockPrismaService.timeEntry.update.mock.calls[0][0];
+      expect(updateCall.data).not.toHaveProperty('synced');
+      expect(updateCall.data).not.toHaveProperty('createdAt');
+      expect(updateCall.data).not.toHaveProperty('updatedAt');
+      expect(updateCall.data).not.toHaveProperty('consultantId');
+    });
+
+    it('should filter out unauthorized fields from Consultant data', async () => {
+      const mockConsultant = {
+        id: mockUserId,
+        name: 'John Doe',
+        email: 'john@example.com',
+        etoBalance: 80, // Critical field
+      };
+
+      const clientDataWithUnauthorizedFields = {
+        id: mockUserId,
+        name: 'John Updated',
+        email: 'john.updated@example.com',
+        etoBalance: 1000, // Should be filtered - critical security field
+        paymentType: 'W2', // Should be filtered
+        workingHoursPerPeriod: 40, // Should be filtered
+      };
+
+      const mockUpdatedConsultant = {
+        ...mockConsultant,
+        name: 'John Updated',
+        email: 'john.updated@example.com',
+      };
+
+      mockPrismaService.consultant.findUnique.mockResolvedValue(mockConsultant);
+      mockPrismaService.consultant.update.mockResolvedValue(mockUpdatedConsultant);
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.CONSULTANT,
+        entityId: mockUserId,
+        strategy: ConflictResolutionStrategy.CLIENT_WINS,
+        clientData: clientDataWithUnauthorizedFields,
+      };
+
+      const result = await service.resolveConflict(mockUserId, input);
+
+      expect(result.success).toBe(true);
+      // Verify that only allowed fields (name, email) were passed to update
+      expect(mockPrismaService.consultant.update).toHaveBeenCalledWith({
+        where: { id: mockUserId },
+        data: {
+          name: 'John Updated',
+          email: 'john.updated@example.com',
+          // etoBalance, paymentType, workingHoursPerPeriod should NOT be in data
+        },
+      });
+      // Explicitly verify unauthorized fields are NOT present
+      const updateCall = mockPrismaService.consultant.update.mock.calls[0][0];
+      expect(updateCall.data).not.toHaveProperty('etoBalance');
+      expect(updateCall.data).not.toHaveProperty('paymentType');
+      expect(updateCall.data).not.toHaveProperty('workingHoursPerPeriod');
+    });
+
+    it('should filter out status field from TimesheetSubmission data', async () => {
+      const submissionId = 'submission-123';
+      const mockSubmission = {
+        id: submissionId,
+        consultantId: mockUserId,
+        payPeriodId: 'period-123',
+        status: 'pending',
+        comments: 'Original comments',
+      };
+
+      const clientDataWithUnauthorizedFields = {
+        id: submissionId,
+        consultantId: mockUserId,
+        comments: 'Updated comments',
+        status: 'approved', // Should be filtered - server-controlled
+        submittedAt: new Date(),
+      };
+
+      const mockUpdatedSubmission = {
+        ...mockSubmission,
+        comments: 'Updated comments',
+      };
+
+      mockPrismaService.timesheetSubmission.findFirst.mockResolvedValue(mockSubmission);
+      mockPrismaService.timesheetSubmission.update.mockResolvedValue(mockUpdatedSubmission);
+
+      const input: ResolveConflictInput = {
+        entityType: SyncEntityType.TIMESHEET_SUBMISSION,
+        entityId: submissionId,
+        strategy: ConflictResolutionStrategy.CLIENT_WINS,
+        clientData: clientDataWithUnauthorizedFields,
+      };
+
+      const result = await service.resolveConflict(mockUserId, input);
+
+      expect(result.success).toBe(true);
+      // Verify that only allowed fields were passed to update
+      expect(mockPrismaService.timesheetSubmission.update).toHaveBeenCalledWith({
+        where: {
+          id: submissionId,
+          consultantId: mockUserId,
+        },
+        data: {
+          submittedAt: clientDataWithUnauthorizedFields.submittedAt,
+          comments: 'Updated comments',
+          // status should NOT be in data
+        },
+      });
+      // Explicitly verify status is NOT present
+      const updateCall = mockPrismaService.timesheetSubmission.update.mock.calls[0][0];
+      expect(updateCall.data).not.toHaveProperty('status');
     });
   });
 });

@@ -180,6 +180,7 @@ export class SyncService {
           entityId,
         },
         orderBy: { syncedAt: 'desc' },
+        take: DEFAULT_SYNC_LOG_LIMIT,
       });
 
       return syncLogs as SyncLogObjectType[];
@@ -326,11 +327,6 @@ export class SyncService {
           throw new BadRequestException(`Unknown conflict resolution strategy: ${strategy}`);
       }
 
-      // Log the conflict resolution
-      this.logger.log(
-        `Conflict resolution logged: ${strategy} for ${entityType} ${entityId} by user ${userId}`,
-      );
-
       return {
         success: true,
         finalData,
@@ -392,7 +388,7 @@ export class SyncService {
    */
   private checkConflictByEntityType(
     entityType: SyncEntityType,
-    serverEntity: any,
+    serverEntity: Record<string, any>,
     lastSyncedAt: Date,
   ): boolean {
     switch (entityType) {
@@ -420,16 +416,16 @@ export class SyncService {
    */
   private getEntityTimestamp(
     entityType: SyncEntityType,
-    serverEntity: any,
+    serverEntity: Record<string, any>,
   ): Date | null {
     switch (entityType) {
       case SyncEntityType.TIME_ENTRY:
       case SyncEntityType.CONSULTANT:
       case SyncEntityType.TIMESHEET_SUBMISSION:
-        return serverEntity.updatedAt;
+        return serverEntity.updatedAt as Date;
 
       case SyncEntityType.ETO_TRANSACTION:
-        return serverEntity.createdAt;
+        return serverEntity.createdAt as Date;
 
       default:
         return null;
@@ -437,7 +433,60 @@ export class SyncService {
   }
 
   /**
+   * Filter client data to only include allowed fields for each entity type
+   * Prevents unauthorized field modification (e.g., etoBalance, status, synced)
+   * @private
+   */
+  private filterAllowedFields(
+    entityType: SyncEntityType,
+    clientData: Record<string, any>,
+  ): Record<string, any> {
+    const allowedFields: Record<SyncEntityType, string[]> = {
+      [SyncEntityType.TIME_ENTRY]: [
+        'date',
+        'projectTaskNumber',
+        'clientName',
+        'description',
+        'inTime1',
+        'outTime1',
+        'inTime2',
+        'outTime2',
+        'totalHours',
+      ],
+      [SyncEntityType.ETO_TRANSACTION]: [
+        'date',
+        'hours',
+        'transactionType',
+        'description',
+        'projectName',
+      ],
+      [SyncEntityType.CONSULTANT]: [
+        'name',
+        'email',
+        // Explicitly exclude: etoBalance, paymentType, workingHoursPerPeriod
+      ],
+      [SyncEntityType.TIMESHEET_SUBMISSION]: [
+        'submittedAt',
+        'comments',
+        // Explicitly exclude: status (server-controlled)
+      ],
+    };
+
+    const allowed = allowedFields[entityType];
+    const filteredData: Record<string, any> = {};
+
+    for (const field of allowed) {
+      if (clientData[field] !== undefined) {
+        filteredData[field] = clientData[field];
+      }
+    }
+
+    return filteredData;
+  }
+
+  /**
    * Update entity by type with client data
+   * Enforces ownership verification and field allowlists for security
    * @private
    */
   private async updateEntityByType(
@@ -446,23 +495,30 @@ export class SyncService {
     entityId: string,
     clientData: Record<string, any>,
   ): Promise<Record<string, any>> {
-    // Remove fields that shouldn't be updated
-    const { id, createdAt, updatedAt, consultantId, ...updateData } = clientData;
+    // Filter to only allowed fields to prevent unauthorized modifications
+    const updateData = this.filterAllowedFields(entityType, clientData);
 
     switch (entityType) {
       case SyncEntityType.TIME_ENTRY:
         return await this.prisma.timeEntry.update({
-          where: { id: entityId },
+          where: {
+            id: entityId,
+            consultantId: userId, // Ownership verification
+          },
           data: updateData as Prisma.TimeEntryUpdateInput,
         });
 
       case SyncEntityType.ETO_TRANSACTION:
         return await this.prisma.eTOTransaction.update({
-          where: { id: entityId },
+          where: {
+            id: entityId,
+            consultantId: userId, // Ownership verification
+          },
           data: updateData as Prisma.ETOTransactionUpdateInput,
         });
 
       case SyncEntityType.CONSULTANT:
+        // Only allow self-update for Consultant
         return await this.prisma.consultant.update({
           where: { id: entityId },
           data: updateData as Prisma.ConsultantUpdateInput,
@@ -470,7 +526,10 @@ export class SyncService {
 
       case SyncEntityType.TIMESHEET_SUBMISSION:
         return await this.prisma.timesheetSubmission.update({
-          where: { id: entityId },
+          where: {
+            id: entityId,
+            consultantId: userId, // Ownership verification
+          },
           data: updateData as Prisma.TimesheetSubmissionUpdateInput,
         });
 
