@@ -30,21 +30,7 @@ import {
   UPDATE_TIME_ENTRY_MUTATION,
 } from '@/lib/graphql/mutations';
 import { TIME_ENTRY_QUERY } from '@/lib/graphql/queries';
-
-// --- Types ---
-
-interface TimeEntryPairData {
-  id: string;
-  inTime: string; // HH:MM format
-  outTime: string; // HH:MM format
-}
-
-interface FormErrors {
-  client?: string;
-  description?: string;
-  timeEntries?: string;
-  general?: string;
-}
+import { TimeEntryPairData, FormErrors } from '@/types/add-entry';
 
 // --- Constants ---
 
