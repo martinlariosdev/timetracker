@@ -29,6 +29,7 @@ import { DateSelectorCard } from '@/components/add-entry/DateSelectorCard';
 import { WeekStripCard } from '@/components/add-entry/WeekStripCard';
 import { ClientCard } from '@/components/add-entry/ClientCard';
 import { TimeEntryPairRow } from '@/components/add-entry/TimeEntryPairRow';
+import { TotalHoursDisplay } from '@/components/add-entry/TotalHoursDisplay';
 import {
   CREATE_TIME_ENTRY_MUTATION,
   UPDATE_TIME_ENTRY_MUTATION,
@@ -58,44 +59,6 @@ import {
 } from '@/utils/add-entry';
 
 // --- Sub-Components ---
-
-function TotalHoursDisplay({ hours }: { hours: number }) {
-  const hoursColor =
-    hours <= 0
-      ? '#EF4444'
-      : hours < 4
-        ? '#F59E0B'
-        : hours > 12
-          ? '#F59E0B'
-          : '#2563EB';
-
-  return (
-    <View
-      className="mx-md mt-md items-center justify-center"
-      style={{
-        height: 64,
-        borderRadius: 12,
-        borderWidth: 2,
-        borderColor: hoursColor,
-        backgroundColor: '#F9FAFB',
-        paddingHorizontal: 16,
-      }}
-      accessibilityLabel={`Total ${formatHours(hours)} hours`}
-      accessibilityRole="text"
-    >
-      <View className="flex-row items-center">
-        <Ionicons name="time" size={20} color={hoursColor} />
-        <Text
-          className="text-h2 font-bold ml-2"
-          style={{ color: hoursColor }}
-        >
-          {formatHours(hours)}
-        </Text>
-      </View>
-      <Text className="text-body-small text-gray-600">hours</Text>
-    </View>
-  );
-}
 
 function DuplicateYesterdayButton({
   onPress,
