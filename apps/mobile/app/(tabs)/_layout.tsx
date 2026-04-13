@@ -14,7 +14,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Timesheets',
-          headerTitle: 'My Timesheets',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" size={size} color={color} />
           ),

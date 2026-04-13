@@ -105,6 +105,38 @@ export const ETO_REQUESTS_QUERY = gql`
 `;
 
 /**
+ * Get time entries for a date range (week view) - requires authentication
+ */
+export const WEEK_TIME_ENTRIES_QUERY = gql`
+  query WeekTimeEntries($startDate: String!, $endDate: String!) {
+    timeEntries(filters: { startDate: $startDate, endDate: $endDate }) {
+      id
+      consultantId
+      date
+      hours
+      description
+      category
+      project
+      syncStatus
+      lastModified
+    }
+  }
+`;
+
+/**
+ * Get timesheet metrics for current pay period - requires authentication
+ */
+export const TIMESHEET_METRICS_QUERY = gql`
+  query TimesheetMetrics {
+    me {
+      id
+      etoBalance
+      workingHoursPerPeriod
+    }
+  }
+`;
+
+/**
  * Get pending sync items - requires authentication
  */
 export const PENDING_SYNC_QUERY = gql`
