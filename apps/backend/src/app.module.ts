@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { ScheduleModule } from '@nestjs/schedule';
 import GraphQLJSON from 'graphql-type-json';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -11,9 +12,11 @@ import { TimesheetModule } from './timesheet.module';
 import { ETOModule } from './eto/eto.module';
 import { SyncModule } from './sync/sync.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { RemindersModule } from './reminders/reminders.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: 'src/schema.gql',
@@ -28,6 +31,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     ETOModule,
     SyncModule,
     NotificationsModule,
+    RemindersModule,
   ],
   controllers: [AppController],
   providers: [AppService, HealthResolver],
