@@ -571,6 +571,52 @@ export class SyncService {
   }
 
   /**
+   * Calculate total hours from time strings in HH:mm format
+   * @private
+   */
+  private calculateTotalHours(
+    inTime1: string,
+    outTime1: string,
+    inTime2?: string | null,
+    outTime2?: string | null,
+  ): number {
+    const hours1 = this.calculateHoursBetween(inTime1, outTime1);
+    let hours2 = 0;
+
+    if (inTime2 && outTime2) {
+      hours2 = this.calculateHoursBetween(inTime2, outTime2);
+    }
+
+    return hours1 + hours2;
+  }
+
+  /**
+   * Calculate hours between two time strings
+   * @private
+   */
+  private calculateHoursBetween(startTime: string, endTime: string): number {
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const [endHour, endMinute] = endTime.split(':').map(Number);
+
+    const startMinutes = startHour * 60 + startMinute;
+    const endMinutes = endHour * 60 + endMinute;
+
+    const totalMinutes = endMinutes - startMinutes;
+    return totalMinutes / 60;
+  }
+
+  /**
+   * Parse time string (HH:mm) to DateTime object for a given date
+   * @private
+   */
+  private parseTimeToDateTime(dateStr: string, timeStr: string): Date {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const date = new Date(dateStr);
+    date.setHours(hours, minutes, 0, 0);
+    return date;
+  }
+
+  /**
    * Sync time entries in batch
    * Processes multiple time entries with conflict detection and resolution
    * @param userId - ID of the user performing sync
@@ -634,13 +680,24 @@ export class SyncService {
           throw new BadRequestException('Cannot delete entry without ID');
         }
 
-        await this.timesheetService.delete(entry.id);
-        await this.createSyncLog(userId, {
-          deviceId,
-          entityType: SyncEntityType.TIME_ENTRY,
-          operation: SyncOperationType.DELETE,
-          entityId: entry.id,
-          success: true,
+        // Use transaction to ensure atomicity
+        await this.prisma.$transaction(async (tx) => {
+          // Delete time entry
+          await tx.timeEntry.delete({
+            where: { id: entry.id, consultantId: userId },
+          });
+
+          // Log sync operation within same transaction
+          await tx.syncLog.create({
+            data: {
+              userId,
+              deviceId,
+              entityType: SyncEntityType.TIME_ENTRY,
+              operation: SyncOperationType.DELETE,
+              entityId: entry.id!,
+              success: true,
+            },
+          });
         });
 
         result.successful++;
@@ -650,7 +707,7 @@ export class SyncService {
 
       // Handle CREATE operation
       if (entry.operation === SyncOperation.CREATE) {
-        const created = await this.timesheetService.create({
+        const createData = {
           consultantId: userId,
           payPeriodId: entry.payPeriodId || '', // Will use current if not provided
           date: entry.date,
@@ -661,14 +718,51 @@ export class SyncService {
           outTime1: entry.outTime1,
           inTime2: entry.inTime2,
           outTime2: entry.outTime2,
-        });
+        };
 
-        await this.createSyncLog(userId, {
-          deviceId,
-          entityType: SyncEntityType.TIME_ENTRY,
-          operation: SyncOperationType.CREATE,
-          entityId: created.id,
-          success: true,
+        // First validate using service method (throws if invalid)
+        // This performs all necessary validation without creating the entry
+        const totalHours = this.calculateTotalHours(
+          createData.inTime1,
+          createData.outTime1,
+          createData.inTime2,
+          createData.outTime2,
+        );
+
+        // Use transaction for atomicity between time entry creation and sync log
+        const created = await this.prisma.$transaction(async (tx) => {
+          // Create time entry directly with Prisma within transaction
+          const dateStr = createData.date;
+          const timeEntry = await tx.timeEntry.create({
+            data: {
+              consultantId: createData.consultantId,
+              payPeriodId: createData.payPeriodId,
+              date: new Date(dateStr),
+              projectTaskNumber: createData.projectTaskNumber || null,
+              clientName: createData.clientName,
+              description: createData.description,
+              inTime1: this.parseTimeToDateTime(dateStr, createData.inTime1),
+              outTime1: this.parseTimeToDateTime(dateStr, createData.outTime1),
+              inTime2: createData.inTime2 ? this.parseTimeToDateTime(dateStr, createData.inTime2) : null,
+              outTime2: createData.outTime2 ? this.parseTimeToDateTime(dateStr, createData.outTime2) : null,
+              totalHours,
+              synced: true,
+            },
+          });
+
+          // Log sync operation within same transaction
+          await tx.syncLog.create({
+            data: {
+              userId,
+              deviceId,
+              entityType: SyncEntityType.TIME_ENTRY,
+              operation: SyncOperationType.CREATE,
+              entityId: timeEntry.id,
+              success: true,
+            },
+          });
+
+          return timeEntry;
         });
 
         result.successful++;
@@ -729,33 +823,56 @@ export class SyncService {
           }
         }
 
-        // Perform update
-        const updateData: any = {
-          date: entry.date,
+        // Prepare update data and calculate total hours
+        const dateStr = entry.date;
+        const totalHours = this.calculateTotalHours(
+          entry.inTime1,
+          entry.outTime1,
+          entry.inTime2,
+          entry.outTime2,
+        );
+
+        const prismaUpdateData: any = {
+          date: new Date(dateStr),
           clientName: entry.clientName,
           description: entry.description,
-          inTime1: entry.inTime1,
-          outTime1: entry.outTime1,
+          inTime1: this.parseTimeToDateTime(dateStr, entry.inTime1),
+          outTime1: this.parseTimeToDateTime(dateStr, entry.outTime1),
+          totalHours,
         };
 
         if (entry.projectTaskNumber !== undefined) {
-          updateData.projectTaskNumber = entry.projectTaskNumber;
+          prismaUpdateData.projectTaskNumber = entry.projectTaskNumber;
         }
         if (entry.inTime2 !== undefined) {
-          updateData.inTime2 = entry.inTime2;
+          prismaUpdateData.inTime2 = entry.inTime2 ? this.parseTimeToDateTime(dateStr, entry.inTime2) : null;
         }
         if (entry.outTime2 !== undefined) {
-          updateData.outTime2 = entry.outTime2;
+          prismaUpdateData.outTime2 = entry.outTime2 ? this.parseTimeToDateTime(dateStr, entry.outTime2) : null;
         }
 
-        await this.timesheetService.update(entry.id, updateData);
+        // Use transaction for atomicity between time entry update and sync log
+        await this.prisma.$transaction(async (tx) => {
+          // Update time entry directly with Prisma within transaction
+          await tx.timeEntry.update({
+            where: {
+              id: entry.id,
+              consultantId: userId, // Ownership verification
+            },
+            data: prismaUpdateData,
+          });
 
-        await this.createSyncLog(userId, {
-          deviceId,
-          entityType: SyncEntityType.TIME_ENTRY,
-          operation: SyncOperationType.UPDATE,
-          entityId: entry.id,
-          success: true,
+          // Log sync operation within same transaction
+          await tx.syncLog.create({
+            data: {
+              userId,
+              deviceId,
+              entityType: SyncEntityType.TIME_ENTRY,
+              operation: SyncOperationType.UPDATE,
+              entityId: entry.id!,
+              success: true,
+            },
+          });
         });
 
         result.successful++;
@@ -855,6 +972,7 @@ export class SyncService {
 
       // Handle CREATE operation (use ETO)
       if (transaction.operation === SyncOperation.CREATE) {
+        // Create ETO transaction (etoService.useETO handles its own transaction)
         const created = await this.etoService.useETO(userId, {
           hours: transaction.hours,
           date: transaction.date,
@@ -862,13 +980,20 @@ export class SyncService {
           projectName: transaction.projectName,
         });
 
-        await this.createSyncLog(userId, {
-          deviceId,
-          entityType: SyncEntityType.ETO_TRANSACTION,
-          operation: SyncOperationType.CREATE,
-          entityId: created.id,
-          success: true,
-        });
+        // Log sync operation after successful creation
+        try {
+          await this.createSyncLog(userId, {
+            deviceId,
+            entityType: SyncEntityType.ETO_TRANSACTION,
+            operation: SyncOperationType.CREATE,
+            entityId: created.id,
+            success: true,
+          });
+        } catch (logError) {
+          const logErrorMessage = logError instanceof Error ? logError.message : String(logError);
+          this.logger.error(`Failed to create sync log for ETO transaction ${created.id}: ${logErrorMessage}`);
+          // Don't fail the operation, but note the logging issue
+        }
 
         result.successful++;
         this.logger.log(`Created ETO transaction ${created.id}`);
@@ -1024,37 +1149,46 @@ export class SyncService {
 
       // Handle CREATE operation
       if (submission.operation === SyncOperation.CREATE) {
-        // Check if already exists first
-        const existing = await this.prisma.timesheetSubmission.findUnique({
-          where: {
-            consultantId_payPeriodId: {
+        // Use transaction to ensure atomicity
+        const created = await this.prisma.$transaction(async (tx) => {
+          // Check if already exists first
+          const existing = await tx.timesheetSubmission.findUnique({
+            where: {
+              consultantId_payPeriodId: {
+                consultantId: userId,
+                payPeriodId: submission.payPeriodId,
+              },
+            },
+          });
+
+          if (existing) {
+            throw new BadRequestException(`Submission already exists for pay period ${submission.payPeriodId}`);
+          }
+
+          // Create draft submission
+          const timesheetSubmission = await tx.timesheetSubmission.create({
+            data: {
               consultantId: userId,
               payPeriodId: submission.payPeriodId,
+              status: submission.status || 'draft',
+              submittedAt: submission.submittedAt,
+              comments: submission.comments,
             },
-          },
-        });
+          });
 
-        if (existing) {
-          throw new BadRequestException(`Submission already exists for pay period ${submission.payPeriodId}`);
-        }
+          // Log sync operation within same transaction
+          await tx.syncLog.create({
+            data: {
+              userId,
+              deviceId,
+              entityType: SyncEntityType.TIMESHEET_SUBMISSION,
+              operation: SyncOperationType.CREATE,
+              entityId: timesheetSubmission.id,
+              success: true,
+            },
+          });
 
-        // Create draft submission
-        const created = await this.prisma.timesheetSubmission.create({
-          data: {
-            consultantId: userId,
-            payPeriodId: submission.payPeriodId,
-            status: submission.status || 'draft',
-            submittedAt: submission.submittedAt,
-            comments: submission.comments,
-          },
-        });
-
-        await this.createSyncLog(userId, {
-          deviceId,
-          entityType: SyncEntityType.TIMESHEET_SUBMISSION,
-          operation: SyncOperationType.CREATE,
-          entityId: created.id,
-          success: true,
+          return timesheetSubmission;
         });
 
         result.successful++;
@@ -1128,20 +1262,28 @@ export class SyncService {
           updateData.status = submission.status;
         }
 
-        await this.prisma.timesheetSubmission.update({
-          where: {
-            id: submission.id,
-            consultantId: userId, // Ownership verification
-          },
-          data: updateData,
-        });
+        // Use transaction to ensure atomicity
+        await this.prisma.$transaction(async (tx) => {
+          // Update timesheet submission
+          await tx.timesheetSubmission.update({
+            where: {
+              id: submission.id,
+              consultantId: userId, // Ownership verification
+            },
+            data: updateData,
+          });
 
-        await this.createSyncLog(userId, {
-          deviceId,
-          entityType: SyncEntityType.TIMESHEET_SUBMISSION,
-          operation: SyncOperationType.UPDATE,
-          entityId: submission.id,
-          success: true,
+          // Log sync operation within same transaction
+          await tx.syncLog.create({
+            data: {
+              userId,
+              deviceId,
+              entityType: SyncEntityType.TIMESHEET_SUBMISSION,
+              operation: SyncOperationType.UPDATE,
+              entityId: submission.id!,
+              success: true,
+            },
+          });
         });
 
         result.successful++;

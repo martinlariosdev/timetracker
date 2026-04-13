@@ -32,7 +32,9 @@ describe('SyncService', () => {
     },
     timeEntry: {
       findFirst: jest.fn(),
+      create: jest.fn(),
       update: jest.fn(),
+      delete: jest.fn(),
     },
     eTOTransaction: {
       findFirst: jest.fn(),
@@ -48,6 +50,7 @@ describe('SyncService', () => {
       create: jest.fn(),
       update: jest.fn(),
     },
+    $transaction: jest.fn(),
   };
 
   const mockTimesheetService = {
@@ -1259,11 +1262,18 @@ describe('SyncService', () => {
       const mockCreatedEntry1 = { id: 'entry-1', consultantId: mockUserId };
       const mockCreatedEntry2 = { id: 'entry-2', consultantId: mockUserId };
 
-      mockTimesheetService.create
+      // Mock transaction to execute callback with mocked tx client
+      const mockTx = {
+        timeEntry: { create: jest.fn() },
+        syncLog: { create: jest.fn() },
+      };
+
+      mockTx.timeEntry.create
         .mockResolvedValueOnce(mockCreatedEntry1)
         .mockResolvedValueOnce(mockCreatedEntry2);
+      mockTx.syncLog.create.mockResolvedValue({} as any);
 
-      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+      mockPrismaService.$transaction.mockImplementation((callback: any) => callback(mockTx));
 
       const result = await service.syncTimeEntries(mockUserId, entries, mockDeviceId);
 
@@ -1271,8 +1281,9 @@ describe('SyncService', () => {
       expect(result.failed).toBe(0);
       expect(result.conflicts).toHaveLength(0);
       expect(result.errors).toHaveLength(0);
-      expect(mockTimesheetService.create).toHaveBeenCalledTimes(2);
-      expect(mockPrismaService.syncLog.create).toHaveBeenCalledTimes(2);
+      expect(mockPrismaService.$transaction).toHaveBeenCalledTimes(2);
+      expect(mockTx.timeEntry.create).toHaveBeenCalledTimes(2);
+      expect(mockTx.syncLog.create).toHaveBeenCalledTimes(2);
     });
 
     it('should successfully sync UPDATE operation without conflict', async () => {
@@ -1290,14 +1301,25 @@ describe('SyncService', () => {
       ];
 
       const mockUpdatedEntry = { id: 'entry-1', consultantId: mockUserId };
-      mockTimesheetService.update.mockResolvedValue(mockUpdatedEntry);
-      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+
+      // Mock transaction to execute callback with mocked tx client
+      const mockTx = {
+        timeEntry: { update: jest.fn() },
+        syncLog: { create: jest.fn() },
+      };
+
+      mockTx.timeEntry.update.mockResolvedValue(mockUpdatedEntry);
+      mockTx.syncLog.create.mockResolvedValue({} as any);
+
+      mockPrismaService.$transaction.mockImplementation((callback: any) => callback(mockTx));
 
       const result = await service.syncTimeEntries(mockUserId, entries, mockDeviceId);
 
       expect(result.successful).toBe(1);
       expect(result.failed).toBe(0);
-      expect(mockTimesheetService.update).toHaveBeenCalledWith('entry-1', expect.any(Object));
+      expect(mockPrismaService.$transaction).toHaveBeenCalledTimes(1);
+      expect(mockTx.timeEntry.update).toHaveBeenCalledTimes(1);
+      expect(mockTx.syncLog.create).toHaveBeenCalledTimes(1);
     });
 
     it('should successfully sync DELETE operation', async () => {
@@ -1314,14 +1336,24 @@ describe('SyncService', () => {
         },
       ];
 
-      mockTimesheetService.delete.mockResolvedValue({} as any);
-      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+      // Mock transaction to execute callback with mocked tx client
+      const mockTx = {
+        timeEntry: { delete: jest.fn() },
+        syncLog: { create: jest.fn() },
+      };
+
+      mockTx.timeEntry.delete.mockResolvedValue({} as any);
+      mockTx.syncLog.create.mockResolvedValue({} as any);
+
+      mockPrismaService.$transaction.mockImplementation((callback: any) => callback(mockTx));
 
       const result = await service.syncTimeEntries(mockUserId, entries, mockDeviceId);
 
       expect(result.successful).toBe(1);
       expect(result.failed).toBe(0);
-      expect(mockTimesheetService.delete).toHaveBeenCalledWith('entry-1');
+      expect(mockPrismaService.$transaction).toHaveBeenCalledTimes(1);
+      expect(mockTx.timeEntry.delete).toHaveBeenCalledTimes(1);
+      expect(mockTx.syncLog.create).toHaveBeenCalledTimes(1);
     });
 
     it('should handle conflict with SERVER_WINS resolution', async () => {
@@ -1414,11 +1446,23 @@ describe('SyncService', () => {
 
       const mockCreatedEntry = { id: 'entry-2', consultantId: mockUserId };
 
-      mockTimesheetService.create
-        .mockRejectedValueOnce(new Error('Validation failed'))
-        .mockResolvedValueOnce(mockCreatedEntry);
+      // Mock transaction - first fails, second succeeds
+      const mockTx1 = {
+        timeEntry: { create: jest.fn() },
+        syncLog: { create: jest.fn() },
+      };
+      const mockTx2 = {
+        timeEntry: { create: jest.fn() },
+        syncLog: { create: jest.fn() },
+      };
 
-      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+      mockTx1.timeEntry.create.mockRejectedValue(new Error('Validation failed'));
+      mockTx2.timeEntry.create.mockResolvedValue(mockCreatedEntry);
+      mockTx2.syncLog.create.mockResolvedValue({} as any);
+
+      mockPrismaService.$transaction
+        .mockImplementationOnce((callback: any) => callback(mockTx1))
+        .mockImplementationOnce((callback: any) => callback(mockTx2));
 
       const result = await service.syncTimeEntries(mockUserId, entries, mockDeviceId);
 
@@ -1518,15 +1562,28 @@ describe('SyncService', () => {
       ];
 
       const mockCreatedSubmission = { id: 'submission-1', consultantId: mockUserId };
-      mockPrismaService.timesheetSubmission.findUnique.mockResolvedValue(null); // Not exists
-      mockPrismaService.timesheetSubmission.create.mockResolvedValue(mockCreatedSubmission);
-      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+
+      // Mock transaction to execute callback with mocked tx client
+      const mockTx = {
+        timesheetSubmission: {
+          findUnique: jest.fn(),
+          create: jest.fn(),
+        },
+        syncLog: { create: jest.fn() },
+      };
+
+      mockTx.timesheetSubmission.findUnique.mockResolvedValue(null); // Not exists
+      mockTx.timesheetSubmission.create.mockResolvedValue(mockCreatedSubmission);
+      mockTx.syncLog.create.mockResolvedValue({} as any);
+
+      mockPrismaService.$transaction.mockImplementation((callback: any) => callback(mockTx));
 
       const result = await service.syncTimesheetSubmissions(mockUserId, submissions, mockDeviceId);
 
       expect(result.successful).toBe(1);
       expect(result.failed).toBe(0);
-      expect(mockPrismaService.timesheetSubmission.create).toHaveBeenCalledWith({
+      expect(mockPrismaService.$transaction).toHaveBeenCalledTimes(1);
+      expect(mockTx.timesheetSubmission.create).toHaveBeenCalledWith({
         data: {
           consultantId: mockUserId,
           payPeriodId: 'period-1',
@@ -1547,8 +1604,19 @@ describe('SyncService', () => {
       ];
 
       const mockExistingSubmission = { id: 'submission-1', consultantId: mockUserId };
-      mockPrismaService.timesheetSubmission.findUnique.mockResolvedValue(mockExistingSubmission);
-      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+
+      // Mock transaction to execute callback with mocked tx client
+      const mockTx = {
+        timesheetSubmission: {
+          findUnique: jest.fn(),
+          create: jest.fn(),
+        },
+        syncLog: { create: jest.fn() },
+      };
+
+      mockTx.timesheetSubmission.findUnique.mockResolvedValue(mockExistingSubmission);
+
+      mockPrismaService.$transaction.mockImplementation((callback: any) => callback(mockTx));
 
       const result = await service.syncTimesheetSubmissions(mockUserId, submissions, mockDeviceId);
 
@@ -1569,14 +1637,26 @@ describe('SyncService', () => {
       ];
 
       const mockUpdatedSubmission = { id: 'submission-1', consultantId: mockUserId };
-      mockPrismaService.timesheetSubmission.update.mockResolvedValue(mockUpdatedSubmission);
-      mockPrismaService.syncLog.create.mockResolvedValue({} as any);
+
+      // Mock transaction to execute callback with mocked tx client
+      const mockTx = {
+        timesheetSubmission: {
+          update: jest.fn(),
+        },
+        syncLog: { create: jest.fn() },
+      };
+
+      mockTx.timesheetSubmission.update.mockResolvedValue(mockUpdatedSubmission);
+      mockTx.syncLog.create.mockResolvedValue({} as any);
+
+      mockPrismaService.$transaction.mockImplementation((callback: any) => callback(mockTx));
 
       const result = await service.syncTimesheetSubmissions(mockUserId, submissions, mockDeviceId);
 
       expect(result.successful).toBe(1);
       expect(result.failed).toBe(0);
-      expect(mockPrismaService.timesheetSubmission.update).toHaveBeenCalledWith({
+      expect(mockPrismaService.$transaction).toHaveBeenCalledTimes(1);
+      expect(mockTx.timesheetSubmission.update).toHaveBeenCalledWith({
         where: {
           id: 'submission-1',
           consultantId: mockUserId,
