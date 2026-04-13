@@ -182,3 +182,81 @@ export const SYNC_CHANGES_MUTATION = gql`
     }
   }
 `;
+
+/**
+ * Batch sync time entries - requires authentication
+ */
+export const SYNC_TIME_ENTRIES_MUTATION = gql`
+  mutation SyncTimeEntries($entries: [SyncTimeEntryInput!]!, $deviceId: String!) {
+    syncTimeEntries(entries: $entries, deviceId: $deviceId) {
+      successful
+      failed
+      conflicts {
+        hasConflict
+        serverVersion
+        clientVersion
+        serverUpdatedAt
+        clientLastSyncedAt
+        conflictDetails
+      }
+      errors {
+        entityId
+        entityType
+        operation
+        error
+      }
+    }
+  }
+`;
+
+/**
+ * Batch sync ETO transactions - requires authentication
+ */
+export const SYNC_ETO_TRANSACTIONS_MUTATION = gql`
+  mutation SyncETOTransactions($transactions: [SyncETOTransactionInput!]!, $deviceId: String!) {
+    syncETOTransactions(transactions: $transactions, deviceId: $deviceId) {
+      successful
+      failed
+      conflicts {
+        hasConflict
+        serverVersion
+        clientVersion
+        serverUpdatedAt
+        clientLastSyncedAt
+        conflictDetails
+      }
+      errors {
+        entityId
+        entityType
+        operation
+        error
+      }
+    }
+  }
+`;
+
+/**
+ * Batch sync timesheet submissions - requires authentication
+ */
+export const SYNC_TIMESHEET_SUBMISSIONS_MUTATION = gql`
+  mutation SyncTimesheetSubmissions($submissions: [SyncTimesheetSubmissionInput!]!, $deviceId: String!) {
+    syncTimesheetSubmissions(submissions: $submissions, deviceId: $deviceId) {
+      successful
+      failed
+      conflicts {
+        hasConflict
+        serverVersion
+        clientVersion
+        serverUpdatedAt
+        clientLastSyncedAt
+        conflictDetails
+      }
+      errors {
+        entityId
+        entityType
+        operation
+        error
+      }
+    }
+  }
+`;
