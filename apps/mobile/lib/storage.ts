@@ -77,7 +77,8 @@ export class Storage {
    */
   static async getAllKeys(): Promise<string[]> {
     try {
-      return await AsyncStorage.getAllKeys();
+      const keys = await AsyncStorage.getAllKeys();
+      return keys as string[]; // Cast readonly to mutable for compatibility
     } catch (error) {
       throw new StorageError('Failed to get all keys', error as Error);
     }
@@ -88,11 +89,11 @@ export class Storage {
    */
   static async multiGet<T>(keys: string[]): Promise<Record<string, T | null>> {
     try {
-      const results = await AsyncStorage.getMany(keys);
+      const results = await AsyncStorage.multiGet(keys);
       const parsed: Record<string, T | null> = {};
 
-      for (const [key, value] of Object.entries(results)) {
-        if (value !== null) {
+      for (const [key, value] of results) {
+        if (value !== null && value !== undefined) {
           try {
             parsed[key] = JSON.parse(value) as T;
           } catch {
