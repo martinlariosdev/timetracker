@@ -3,6 +3,12 @@ import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
+interface NotificationPreferences {
+  deadlineReminders?: boolean;
+  submissionConfirmations?: boolean;
+  approvalNotifications?: boolean;
+}
+
 @Injectable()
 export class RemindersService {
   private readonly logger = new Logger(RemindersService.name);
@@ -94,7 +100,7 @@ export class RemindersService {
       // Filter consultants who need reminders
       const consultantsNeedingReminders = consultants.filter((consultant) => {
         // Check notification preferences - respect opt-out
-        const prefs = consultant.notificationPreferences as any;
+        const prefs = consultant.notificationPreferences as NotificationPreferences | null;
         if (prefs && prefs.timesheetReminders === false) {
           this.logger.debug(
             `Consultant ${consultant.name} has opted out of timesheet reminders`,
