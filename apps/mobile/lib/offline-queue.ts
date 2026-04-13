@@ -23,9 +23,13 @@ export interface QueueItem {
   id: string;
   type: QueueItemType;
   operation: QueueOperation;
+  /** ID of the entity (undefined for CREATE operations) */
+  entityId?: string;
   data: any;
   timestamp: number;
   retryCount: number;
+  /** Last error message if a sync attempt failed */
+  lastError?: string;
 }
 
 /**
@@ -138,6 +142,22 @@ export class OfflineQueue {
     }
 
     return false;
+  }
+
+  /**
+   * Remove multiple items by their IDs in a single operation
+   */
+  static async removeByIds(ids: string[]): Promise<number> {
+    const queue = await this.getAll();
+    const idSet = new Set(ids);
+    const filteredQueue = queue.filter((item) => !idSet.has(item.id));
+    const removedCount = queue.length - filteredQueue.length;
+
+    if (removedCount > 0) {
+      await this.saveQueue(filteredQueue);
+    }
+
+    return removedCount;
   }
 
   /**
