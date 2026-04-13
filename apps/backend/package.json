@@ -95,5 +95,8 @@
     "transformIgnorePatterns": [
       "node_modules/(?!(@prisma)/)"
     ]
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }

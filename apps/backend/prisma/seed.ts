@@ -1,0 +1,447 @@
+import { PrismaClient } from '../src/generated';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log('🌱 Starting database seed...');
+
+  // Clear existing data
+  console.log('🗑️  Clearing existing data...');
+  await prisma.syncLog.deleteMany();
+  await prisma.timesheetSubmission.deleteMany();
+  await prisma.eTOTransaction.deleteMany();
+  await prisma.timeEntry.deleteMany();
+  await prisma.payPeriod.deleteMany();
+  await prisma.consultant.deleteMany();
+
+  // Create consultants
+  console.log('👥 Creating consultants...');
+  const consultants = await Promise.all([
+    prisma.consultant.create({
+      data: {
+        externalId: 'mock-user-1',
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        teamLeadId: 'lead-001',
+        teamLeadName: 'Sarah Johnson',
+        teamLeadEmail: 'sarah.johnson@example.com',
+        etoBalance: 80.0,
+        workingHoursPerPeriod: 88.0,
+        paymentType: 'Hourly',
+        pushToken: null,
+        notificationPreferences: {
+          deadlineReminders: true,
+          submissionConfirmations: true,
+          approvalNotifications: true,
+        },
+      },
+    }),
+    prisma.consultant.create({
+      data: {
+        externalId: 'mock-user-2',
+        name: 'Jane Smith',
+        email: 'jane.smith@example.com',
+        teamLeadId: 'lead-002',
+        teamLeadName: 'Michael Brown',
+        teamLeadEmail: 'michael.brown@example.com',
+        etoBalance: 120.0,
+        workingHoursPerPeriod: 88.0,
+        paymentType: 'Fixed',
+        pushToken: null,
+        notificationPreferences: {
+          deadlineReminders: true,
+          submissionConfirmations: false,
+          approvalNotifications: true,
+        },
+      },
+    }),
+    prisma.consultant.create({
+      data: {
+        externalId: 'mock-user-3',
+        name: 'Mike Wilson',
+        email: 'mike.wilson@example.com',
+        teamLeadId: 'lead-001',
+        teamLeadName: 'Sarah Johnson',
+        teamLeadEmail: 'sarah.johnson@example.com',
+        etoBalance: 40.5,
+        workingHoursPerPeriod: 88.0,
+        paymentType: 'Hourly',
+        pushToken: null,
+        notificationPreferences: {
+          deadlineReminders: false,
+          submissionConfirmations: true,
+          approvalNotifications: true,
+        },
+      },
+    }),
+    prisma.consultant.create({
+      data: {
+        externalId: 'mock-user-4',
+        name: 'Emily Davis',
+        email: 'emily.davis@example.com',
+        teamLeadId: 'lead-002',
+        teamLeadName: 'Michael Brown',
+        teamLeadEmail: 'michael.brown@example.com',
+        etoBalance: 96.0,
+        workingHoursPerPeriod: 88.0,
+        paymentType: 'Hybrid',
+        pushToken: null,
+        notificationPreferences: {
+          deadlineReminders: true,
+          submissionConfirmations: true,
+          approvalNotifications: false,
+        },
+      },
+    }),
+    prisma.consultant.create({
+      data: {
+        externalId: 'mock-user-5',
+        name: 'Chris Anderson',
+        email: 'chris.anderson@example.com',
+        teamLeadId: 'lead-001',
+        teamLeadName: 'Sarah Johnson',
+        teamLeadEmail: 'sarah.johnson@example.com',
+        etoBalance: 64.0,
+        workingHoursPerPeriod: 88.0,
+        paymentType: 'Hourly',
+        pushToken: null,
+        notificationPreferences: {
+          deadlineReminders: true,
+          submissionConfirmations: true,
+          approvalNotifications: true,
+        },
+      },
+    }),
+  ]);
+
+  console.log(`✅ Created ${consultants.length} consultants`);
+
+  // Create pay periods
+  console.log('📅 Creating pay periods...');
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  // Helper to create date
+  const createDate = (year: number, month: number, day: number) =>
+    new Date(year, month, day);
+
+  const payPeriods = await Promise.all([
+    // Previous period
+    prisma.payPeriod.create({
+      data: {
+        startDate: createDate(currentYear, currentMonth - 1, 1),
+        endDate: createDate(currentYear, currentMonth - 1, 15),
+        displayText: `${new Date(currentYear, currentMonth - 1).toLocaleString('default', { month: 'long' })} 1-15, ${currentYear}`,
+        isCurrent: false,
+        deadlineDate: createDate(currentYear, currentMonth - 1, 20),
+      },
+    }),
+    prisma.payPeriod.create({
+      data: {
+        startDate: createDate(currentYear, currentMonth - 1, 16),
+        endDate: createDate(currentYear, currentMonth, 0), // Last day of previous month
+        displayText: `${new Date(currentYear, currentMonth - 1).toLocaleString('default', { month: 'long' })} 16-${new Date(currentYear, currentMonth, 0).getDate()}, ${currentYear}`,
+        isCurrent: false,
+        deadlineDate: createDate(currentYear, currentMonth, 5),
+      },
+    }),
+    // Current period
+    prisma.payPeriod.create({
+      data: {
+        startDate: createDate(currentYear, currentMonth, 1),
+        endDate: createDate(currentYear, currentMonth, 15),
+        displayText: `${new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })} 1-15, ${currentYear}`,
+        isCurrent: now.getDate() <= 15,
+        deadlineDate: createDate(currentYear, currentMonth, 20),
+      },
+    }),
+    prisma.payPeriod.create({
+      data: {
+        startDate: createDate(currentYear, currentMonth, 16),
+        endDate: createDate(currentYear, currentMonth + 1, 0), // Last day of current month
+        displayText: `${new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' })} 16-${new Date(currentYear, currentMonth + 1, 0).getDate()}, ${currentYear}`,
+        isCurrent: now.getDate() > 15,
+        deadlineDate: createDate(currentYear, currentMonth + 1, 5),
+      },
+    }),
+  ]);
+
+  console.log(`✅ Created ${payPeriods.length} pay periods`);
+
+  // Get current pay period
+  const currentPayPeriod = payPeriods.find((p) => p.isCurrent) || payPeriods[2];
+
+  // Create time entries
+  console.log('⏰ Creating time entries...');
+  const timeEntries = [];
+
+  for (const consultant of consultants.slice(0, 3)) {
+    // For each of the first 3 consultants
+    // Create entries for last week (complete)
+    for (let dayOffset = 7; dayOffset >= 1; dayOffset--) {
+      const entryDate = new Date();
+      entryDate.setDate(entryDate.getDate() - dayOffset);
+
+      // Skip weekends
+      if (entryDate.getDay() === 0 || entryDate.getDay() === 6) continue;
+
+      const entry = await prisma.timeEntry.create({
+        data: {
+          consultantId: consultant.id,
+          payPeriodId: currentPayPeriod.id,
+          date: entryDate,
+          projectTaskNumber: `PROJ-${100 + dayOffset}`,
+          clientName: ['Acme Corp', 'TechStart Inc', 'Global Solutions'][
+            dayOffset % 3
+          ],
+          description: [
+            'Backend development',
+            'Frontend integration',
+            'Database optimization',
+            'Code review and testing',
+            'Sprint planning',
+          ][dayOffset % 5],
+          inTime1: new Date(
+            entryDate.getFullYear(),
+            entryDate.getMonth(),
+            entryDate.getDate(),
+            9,
+            0
+          ),
+          outTime1: new Date(
+            entryDate.getFullYear(),
+            entryDate.getMonth(),
+            entryDate.getDate(),
+            12,
+            30
+          ),
+          inTime2: new Date(
+            entryDate.getFullYear(),
+            entryDate.getMonth(),
+            entryDate.getDate(),
+            13,
+            30
+          ),
+          outTime2: new Date(
+            entryDate.getFullYear(),
+            entryDate.getMonth(),
+            entryDate.getDate(),
+            18,
+            0
+          ),
+          totalHours: 8.0,
+          synced: true,
+        },
+      });
+      timeEntries.push(entry);
+    }
+
+    // Create partial entries for this week (some missing)
+    for (let dayOffset = 0; dayOffset >= -2; dayOffset--) {
+      const entryDate = new Date();
+      entryDate.setDate(entryDate.getDate() + dayOffset);
+
+      // Skip weekends
+      if (entryDate.getDay() === 0 || entryDate.getDay() === 6) continue;
+
+      // Only create entry for every other day to simulate incomplete week
+      if (dayOffset % 2 === 0) {
+        const entry = await prisma.timeEntry.create({
+          data: {
+            consultantId: consultant.id,
+            payPeriodId: currentPayPeriod.id,
+            date: entryDate,
+            projectTaskNumber: `PROJ-${200 + Math.abs(dayOffset)}`,
+            clientName: 'Current Client',
+            description: 'Ongoing development work',
+            inTime1: new Date(
+              entryDate.getFullYear(),
+              entryDate.getMonth(),
+              entryDate.getDate(),
+              9,
+              0
+            ),
+            outTime1: new Date(
+              entryDate.getFullYear(),
+              entryDate.getMonth(),
+              entryDate.getDate(),
+              17,
+              30
+            ),
+            inTime2: null,
+            outTime2: null,
+            totalHours: 8.5,
+            synced: true,
+          },
+        });
+        timeEntries.push(entry);
+      }
+    }
+  }
+
+  console.log(`✅ Created ${timeEntries.length} time entries`);
+
+  // Create ETO transactions
+  console.log('🏖️  Creating ETO transactions...');
+  const etoTransactions = [];
+
+  for (const consultant of consultants) {
+    // Accrual at start of period
+    const accrual = await prisma.eTOTransaction.create({
+      data: {
+        consultantId: consultant.id,
+        date: payPeriods[0].startDate,
+        hours: 8.0,
+        transactionType: 'Accrual',
+        description: 'Bi-weekly accrual',
+        synced: true,
+      },
+    });
+    etoTransactions.push(accrual);
+
+    // Random usage for some consultants
+    if (consultant.etoBalance < 100) {
+      const usage = await prisma.eTOTransaction.create({
+        data: {
+          consultantId: consultant.id,
+          date: new Date(
+            currentYear,
+            currentMonth,
+            Math.floor(Math.random() * 14) + 1
+          ),
+          hours: -8.0,
+          transactionType: 'Usage',
+          description: 'Sick day',
+          projectName: 'ETO',
+          synced: true,
+        },
+      });
+      etoTransactions.push(usage);
+    }
+  }
+
+  console.log(`✅ Created ${etoTransactions.length} ETO transactions`);
+
+  // Create timesheet submissions
+  console.log('📝 Creating timesheet submissions...');
+  const submissions = [];
+
+  // Previous period submissions (all approved)
+  for (const consultant of consultants.slice(0, 3)) {
+    const submission = await prisma.timesheetSubmission.create({
+      data: {
+        consultantId: consultant.id,
+        payPeriodId: payPeriods[0].id,
+        status: 'approved',
+        submittedAt: new Date(payPeriods[0].endDate.getTime() + 86400000), // Day after end
+        approvedAt: new Date(payPeriods[0].endDate.getTime() + 172800000), // 2 days after end
+        approvedBy: consultant.teamLeadId,
+        comments: 'Approved - all hours accounted for',
+      },
+    });
+    submissions.push(submission);
+  }
+
+  // Current period submissions (various states)
+  const currentSubmission1 = await prisma.timesheetSubmission.create({
+    data: {
+      consultantId: consultants[0].id,
+      payPeriodId: currentPayPeriod.id,
+      status: 'draft',
+      comments: null,
+    },
+  });
+  submissions.push(currentSubmission1);
+
+  const currentSubmission2 = await prisma.timesheetSubmission.create({
+    data: {
+      consultantId: consultants[1].id,
+      payPeriodId: currentPayPeriod.id,
+      status: 'submitted',
+      submittedAt: new Date(),
+      comments: 'Ready for review',
+    },
+  });
+  submissions.push(currentSubmission2);
+
+  const currentSubmission3 = await prisma.timesheetSubmission.create({
+    data: {
+      consultantId: consultants[2].id,
+      payPeriodId: payPeriods[1].id,
+      status: 'rejected',
+      submittedAt: new Date(Date.now() - 3 * 86400000), // 3 days ago
+      rejectedAt: new Date(Date.now() - 86400000), // 1 day ago
+      rejectedBy: consultants[2].teamLeadId,
+      comments: 'Please add descriptions for all entries',
+    },
+  });
+  submissions.push(currentSubmission3);
+
+  console.log(`✅ Created ${submissions.length} timesheet submissions`);
+
+  // Create sync logs
+  console.log('🔄 Creating sync logs...');
+  const syncLogs = [];
+
+  for (const consultant of consultants.slice(0, 2)) {
+    // Successful syncs
+    for (let i = 0; i < 5; i++) {
+      const log = await prisma.syncLog.create({
+        data: {
+          userId: consultant.externalId,
+          deviceId: `device-${consultant.externalId}`,
+          entityType: ['TimeEntry', 'ETOTransaction'][i % 2],
+          operation: 'create',
+          entityId: timeEntries[i]?.id || etoTransactions[i]?.id || 'test-id',
+          syncedAt: new Date(Date.now() - i * 3600000), // Spread over hours
+          success: true,
+        },
+      });
+      syncLogs.push(log);
+    }
+
+    // One failed sync
+    const failedLog = await prisma.syncLog.create({
+      data: {
+        userId: consultant.externalId,
+        deviceId: `device-${consultant.externalId}`,
+        entityType: 'TimeEntry',
+        operation: 'update',
+        entityId: 'failed-entry-id',
+        syncedAt: new Date(Date.now() - 7200000), // 2 hours ago
+        success: false,
+        error: 'Network timeout',
+      },
+    });
+    syncLogs.push(failedLog);
+  }
+
+  console.log(`✅ Created ${syncLogs.length} sync logs`);
+
+  // Print summary
+  console.log('\n✨ Seed completed successfully!\n');
+  console.log('📊 Summary:');
+  console.log(`   ${consultants.length} consultants`);
+  console.log(`   ${payPeriods.length} pay periods`);
+  console.log(`   ${timeEntries.length} time entries`);
+  console.log(`   ${etoTransactions.length} ETO transactions`);
+  console.log(`   ${submissions.length} timesheet submissions`);
+  console.log(`   ${syncLogs.length} sync logs`);
+  console.log('\n🔑 Mock user credentials:');
+  console.log('   Email: john.doe@example.com');
+  console.log('   Email: jane.smith@example.com');
+  console.log('   Email: mike.wilson@example.com');
+  console.log('   Email: emily.davis@example.com');
+  console.log('   Email: chris.anderson@example.com');
+  console.log('\n💡 Use mockLogin mutation with any of these emails');
+}
+
+main()
+  .catch((e) => {
+    console.error('❌ Seed failed:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
