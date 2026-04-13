@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  # MongoDB database
+  mongodb:
+    image: mongo:7
+    container_name: timetrack-mongodb
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: timetrack
+      MONGO_INITDB_ROOT_PASSWORD: timetrack_dev_password
+      MONGO_INITDB_DATABASE: timetrack
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - timetrack-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh mongodb://localhost:27017/timetrack --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  # Backend API (development)
+  backend-dev:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile.dev
+    container_name: timetrack-backend-dev
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: mongodb://timetrack:timetrack_dev_password@mongodb:27017/timetrack?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
+      JWT_EXPIRES_IN: 7d
+      ENABLE_MOCK_AUTH: ${ENABLE_MOCK_AUTH:-true}
+      PORT: 3000
+      # Optional Okta configuration
+      OKTA_ISSUER: ${OKTA_ISSUER:-}
+      OKTA_CLIENT_ID: ${OKTA_CLIENT_ID:-}
+      OKTA_CLIENT_SECRET: ${OKTA_CLIENT_SECRET:-}
+      # Optional Expo push notifications
+      EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
+    volumes:
+      # Mount source code for hot reload
+      - ./apps/backend/src:/app/apps/backend/src
+      - ./apps/backend/prisma:/app/apps/backend/prisma
+      - ./packages:/app/packages
+      # Exclude node_modules from mount (use container's version)
+      - /app/node_modules
+      - /app/apps/backend/node_modules
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - timetrack-network
+    command: >
+      sh -c "npx prisma db push --skip-generate &&
+             npx prisma db seed &&
+             pnpm run start:dev"
+
+  # Backend API (production)
+  backend-prod:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: timetrack-backend-prod
+    restart: unless-stopped
+    ports:
+      - '3001:3000'
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: mongodb://timetrack:timetrack_dev_password@mongodb:27017/timetrack?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-}
+      JWT_EXPIRES_IN: 7d
+      ENABLE_MOCK_AUTH: false
+      PORT: 3000
+      OKTA_ISSUER: ${OKTA_ISSUER:-}
+      OKTA_CLIENT_ID: ${OKTA_CLIENT_ID:-}
+      OKTA_CLIENT_SECRET: ${OKTA_CLIENT_SECRET:-}
+      EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - timetrack-network
+    profiles:
+      - production
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+
+networks:
+  timetrack-network:
+    driver: bridge

@@ -15,7 +15,14 @@
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "mobile": "pnpm --filter @timetrack/mobile",
-    "backend": "pnpm --filter @timetrack/backend"
+    "backend": "pnpm --filter @timetrack/backend",
+    "docker:up": "docker-compose up -d",
+    "docker:up:dev": "docker-compose up backend-dev -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f backend-dev",
+    "docker:logs:db": "docker-compose logs -f mongodb",
+    "docker:clean": "docker-compose down -v",
+    "docker:rebuild": "docker-compose build --no-cache backend-dev"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
