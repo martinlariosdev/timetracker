@@ -11,6 +11,10 @@ build/
 .next/
 .turbo/
 
+# Generated files
+**/generated/
+**/coverage/
+
 # Environment files
 .env
 .env*.local
