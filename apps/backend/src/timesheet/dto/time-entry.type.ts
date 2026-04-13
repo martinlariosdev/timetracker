@@ -16,39 +16,39 @@ export class TimeEntryType {
   @Field(() => ID, { description: 'ID of the pay period this entry belongs to' })
   payPeriodId: string;
 
-  @Field({ description: 'Entry date in YYYY-MM-DD format' })
+  @Field(() => Date, { description: 'Entry date in YYYY-MM-DD format' })
   date: Date;
 
-  @Field({ nullable: true, description: 'Project or task number (e.g., PROJ-123)' })
+  @Field(() => String, { nullable: true, description: 'Project or task number (e.g., PROJ-123)' })
   projectTaskNumber?: string;
 
-  @Field({ nullable: true, description: 'Name of the client' })
+  @Field(() => String, { nullable: true, description: 'Name of the client' })
   clientName?: string;
 
-  @Field({ nullable: true, description: 'Description of work performed' })
+  @Field(() => String, { nullable: true, description: 'Description of work performed' })
   description?: string;
 
-  @Field({ nullable: true, description: 'First clock-in time (ISO 8601 format)' })
+  @Field(() => Date, { nullable: true, description: 'First clock-in time (ISO 8601 format)' })
   inTime1?: Date;
 
-  @Field({ nullable: true, description: 'First clock-out time (ISO 8601 format)' })
+  @Field(() => Date, { nullable: true, description: 'First clock-out time (ISO 8601 format)' })
   outTime1?: Date;
 
-  @Field({ nullable: true, description: 'Second clock-in time (ISO 8601 format), for split shifts' })
+  @Field(() => Date, { nullable: true, description: 'Second clock-in time (ISO 8601 format), for split shifts' })
   inTime2?: Date;
 
-  @Field({ nullable: true, description: 'Second clock-out time (ISO 8601 format), for split shifts' })
+  @Field(() => Date, { nullable: true, description: 'Second clock-out time (ISO 8601 format), for split shifts' })
   outTime2?: Date;
 
   @Field(() => Float, { description: 'Total hours worked in this entry' })
   totalHours: number;
 
-  @Field({ description: 'Whether this entry has been synced with the backend' })
+  @Field(() => Boolean, { description: 'Whether this entry has been synced with the backend' })
   synced: boolean;
 
-  @Field({ description: 'Timestamp when this entry was created' })
+  @Field(() => Date, { description: 'Timestamp when this entry was created' })
   createdAt: Date;
 
-  @Field({ description: 'Timestamp when this entry was last updated' })
+  @Field(() => Date, { description: 'Timestamp when this entry was last updated' })
   updatedAt: Date;
 }

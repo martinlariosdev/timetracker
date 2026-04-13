@@ -42,7 +42,7 @@ export class SyncLogObjectType {
   @Field(() => ID, { description: 'ID of the user who performed the sync' })
   userId: string;
 
-  @Field({ description: 'Device identifier that performed the sync' })
+  @Field(() => String, { description: 'Device identifier that performed the sync' })
   deviceId: string;
 
   @Field(() => SyncEntityType, { description: 'Type of entity being synced' })
@@ -54,12 +54,12 @@ export class SyncLogObjectType {
   @Field(() => ID, { description: 'ID of the entity that was synced' })
   entityId: string;
 
-  @Field({ description: 'Timestamp when the sync occurred' })
+  @Field(() => Date, { description: 'Timestamp when the sync occurred' })
   syncedAt: Date;
 
-  @Field({ description: 'Whether the sync operation was successful' })
+  @Field(() => Boolean, { description: 'Whether the sync operation was successful' })
   success: boolean;
 
-  @Field({ nullable: true, description: 'Error message if sync failed' })
+  @Field(() => String, { nullable: true, description: 'Error message if sync failed' })
   error?: string | null;
 }

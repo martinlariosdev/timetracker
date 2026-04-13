@@ -6,15 +6,15 @@ import { ObjectType, Field } from '@nestjs/graphql';
  */
 @ObjectType({ description: 'Error information for a failed sync operation' })
 export class SyncError {
-  @Field({ description: 'ID of the entity that failed to sync' })
+  @Field(() => String, { description: 'ID of the entity that failed to sync' })
   entityId: string;
 
-  @Field({ description: 'Type of entity (TimeEntry, ETOTransaction, etc.)' })
+  @Field(() => String, { description: 'Type of entity (TimeEntry, ETOTransaction, etc.)' })
   entityType: string;
 
-  @Field({ description: 'Operation that was attempted (CREATE, UPDATE, DELETE)' })
+  @Field(() => String, { description: 'Operation that was attempted (CREATE, UPDATE, DELETE)' })
   operation: string;
 
-  @Field({ description: 'Error message describing what went wrong' })
+  @Field(() => String, { description: 'Error message describing what went wrong' })
   error: string;
 }

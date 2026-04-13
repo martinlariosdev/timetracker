@@ -8,7 +8,7 @@ import { ConflictResolutionStrategy } from './conflict-resolution-strategy.enum'
  */
 @ObjectType({ description: 'Result of applying a conflict resolution strategy' })
 export class ResolvedConflict {
-  @Field({ description: 'Whether the conflict was successfully resolved' })
+  @Field(() => Boolean, { description: 'Whether the conflict was successfully resolved' })
   success: boolean;
 
   @Field(() => GraphQLJSONObject, { description: 'Final data after conflict resolution' })
@@ -17,6 +17,6 @@ export class ResolvedConflict {
   @Field(() => ConflictResolutionStrategy, { description: 'Strategy that was applied' })
   strategy: ConflictResolutionStrategy;
 
-  @Field({ nullable: true, description: 'Additional details about the resolution' })
+  @Field(() => String, { nullable: true, description: 'Additional details about the resolution' })
   message?: string | null;
 }
