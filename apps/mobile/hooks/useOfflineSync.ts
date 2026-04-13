@@ -89,12 +89,16 @@ function enrichConflicts(
     if (!raw.hasConflict) continue;
 
     const queueItem = queueItems[i];
+    if (!queueItem) {
+      console.warn(`[enrichConflicts] No queue item at index ${i} for conflict, skipping`);
+      continue;
+    }
     const serverData = raw.serverVersion ?? {};
-    const localData = raw.clientVersion ?? queueItem?.data ?? {};
+    const localData = raw.clientVersion ?? queueItem.data ?? {};
     enriched.push({
-      id: queueItem?.id ?? `conflict-${Date.now()}-${i}`,
+      id: queueItem.id,
       entityType,
-      entityId: queueItem?.entityId ?? '',
+      entityId: queueItem.entityId ?? '',
       serverData,
       localData,
       conflictingFields: getConflictingFields(serverData, localData),
