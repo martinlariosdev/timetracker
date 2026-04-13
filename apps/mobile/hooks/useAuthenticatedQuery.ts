@@ -1,9 +1,10 @@
-import { useQuery } from '@apollo/client/react';
+import { useQuery, type QueryResult } from '@apollo/client/react';
 import type {
   DocumentNode,
   OperationVariables,
   TypedDocumentNode,
 } from '@apollo/client';
+import type { GraphQLError } from 'graphql';
 
 /**
  * Custom hook that wraps Apollo's useQuery with authentication handling
@@ -46,20 +47,23 @@ export function useAuthenticatedQuery<
   TVariables extends OperationVariables = OperationVariables,
 >(
   query: DocumentNode | TypedDocumentNode<TData, TVariables>,
-  options?: any,
-) {
+  options?: Record<string, unknown>,
+): QueryResult<TData, TVariables> {
+  // Type assertion needed here because Apollo's useQuery has complex conditional types
+  // for the options parameter that are difficult to satisfy when wrapping the hook
   const result = useQuery<TData, TVariables>(query, {
     ...options,
     // Override fetch policy if needed
     fetchPolicy: options?.fetchPolicy || 'cache-and-network',
     // Ensure errors are returned along with data
     errorPolicy: 'all',
-  });
+  } as never);
 
   // Handle authentication errors
-  if (result.error) {
-    const authError = (result.error as any).graphQLErrors?.find(
-      (err: any) => err.extensions?.code === 'UNAUTHENTICATED',
+  if (result.error && 'graphQLErrors' in result.error) {
+    const graphQLErrors = (result.error as { graphQLErrors?: readonly GraphQLError[] }).graphQLErrors;
+    const authError = graphQLErrors?.find(
+      (err: GraphQLError) => err.extensions?.code === 'UNAUTHENTICATED',
     );
 
     if (authError) {
