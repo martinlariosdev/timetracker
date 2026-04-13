@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-function DuplicateYesterdayButton({
+export function DuplicateYesterdayButton({
   onPress,
   isAvailable,
 }: {
@@ -40,5 +40,3 @@ function DuplicateYesterdayButton({
     </TouchableOpacity>
   );
 }
-
-export default DuplicateYesterdayButton;

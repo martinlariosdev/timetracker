@@ -30,7 +30,7 @@ import { WeekStripCard } from '@/components/add-entry/WeekStripCard';
 import { ClientCard } from '@/components/add-entry/ClientCard';
 import { TimeEntryPairRow } from '@/components/add-entry/TimeEntryPairRow';
 import { TotalHoursDisplay } from '@/components/add-entry/TotalHoursDisplay';
-import DuplicateYesterdayButton from '@/components/add-entry/DuplicateYesterdayButton';
+import { DuplicateYesterdayButton } from '@/components/add-entry/DuplicateYesterdayButton';
 import {
   CREATE_TIME_ENTRY_MUTATION,
   UPDATE_TIME_ENTRY_MUTATION,
