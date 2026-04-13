@@ -105,7 +105,7 @@ export interface SyncQueueItem {
   operation: 'CREATE' | 'UPDATE' | 'DELETE' | 'SUBMIT';
 
   /** Entity data to sync */
-  data: any;
+  data: Record<string, unknown>;
 
   /** Number of retry attempts */
   retryCount: number;
@@ -131,10 +131,10 @@ export interface SyncConflict {
   entityId: number | string;
 
   /** Local version of the data */
-  localVersion: any;
+  localVersion: Record<string, unknown>;
 
   /** Server version of the data */
-  serverVersion: any;
+  serverVersion: Record<string, unknown>;
 
   /** Timestamp when conflict was resolved (null if unresolved) */
   resolvedAt: Date | null;
