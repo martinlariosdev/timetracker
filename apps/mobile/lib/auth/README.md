@@ -333,7 +333,84 @@ Apollo automatically includes JWT token in all GraphQL requests.
 
 ### Mock Authentication
 
-For testing without Okta:
+For development without Okta credentials, use the backend's mock authentication:
+
+#### Backend Setup
+
+1. Enable mock auth in backend `.env`:
+   ```bash
+   ENABLE_MOCK_AUTH="true"
+   ```
+
+2. Seed database with test users:
+   ```bash
+   cd apps/backend
+   npx prisma db seed
+   ```
+
+#### Get JWT Token
+
+Use the `mockLogin` mutation in GraphQL Playground (http://localhost:3000/graphql):
+
+```graphql
+mutation {
+  mockLogin(input: { email: "john.doe@example.com" }) {
+    accessToken
+    expiresIn
+    user {
+      id
+      externalId
+      name
+      email
+      etoBalance
+    }
+  }
+}
+```
+
+**Available Test Emails:**
+- john.doe@example.com (80 ETO hours)
+- jane.smith@example.com (120 ETO hours)
+- mike.wilson@example.com (40.5 ETO hours)
+- emily.davis@example.com (96 ETO hours)
+- chris.anderson@example.com (64 ETO hours)
+
+#### Store Token in Mobile App
+
+```typescript
+import { Storage } from '../storage';
+
+// Copy accessToken from mockLogin response
+const mockToken = '<access-token-from-mutation>';
+
+await Storage.setItem('auth_tokens', {
+  jwtToken: mockToken,
+  jwtExpiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
+  oktaIdToken: 'mock-id-token',
+  user: {
+    id: '1',
+    externalId: 'mock-user-1',
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    etoBalance: 80,
+  },
+});
+
+// Restart app - should be authenticated
+```
+
+#### Security Warning
+
+⚠️ **DEVELOPMENT ONLY** - Mock authentication completely bypasses Okta validation.
+
+- Only works when `ENABLE_MOCK_AUTH=true` in backend
+- Backend returns 401 when mock auth is disabled
+- Never enable mock auth in production environments
+- JWT tokens from mock login are real and work with all protected endpoints
+
+#### Alternative: Manual Token Storage
+
+For quick testing without backend mockLogin:
 
 ```typescript
 import { Storage } from '../storage';
@@ -351,6 +428,8 @@ await Storage.setItem('auth_tokens', {
   },
 });
 ```
+
+⚠️ **Note:** This will fail when making API calls because the JWT is not valid. Use backend's `mockLogin` for functional testing.
 
 ## Performance Considerations
 
