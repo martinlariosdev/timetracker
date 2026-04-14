@@ -185,21 +185,25 @@ function MetricCard({
   value,
   subtext,
   valueColor,
+  style,
 }: {
   label: string;
   value: string;
   subtext: string;
   valueColor?: string;
+  style?: any;
 }) {
   return (
     <View
-      className="rounded-xl p-3 mr-3"
-      style={{
-        width: 120,
-        backgroundColor: 'rgba(255,255,255,0.15)',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.25)',
-      }}
+      className="rounded-xl p-3"
+      style={[
+        {
+          backgroundColor: 'rgba(255,255,255,0.15)',
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.25)',
+        },
+        style,
+      ]}
     >
       <Text
         className="font-medium mb-1"
@@ -671,6 +675,7 @@ export default function TimesheetListScreen() {
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
   const chipWidth = (screenWidth - 16) / 7.2;
+  const cardWidth = screenWidth * 0.7; // 70% width shows edge of next card
 
   const today = useMemo(() => new Date(), []);
 
@@ -930,10 +935,10 @@ export default function TimesheetListScreen() {
 
   const handleMetricsScroll = useCallback(
     (event: { nativeEvent: { contentOffset: { x: number } } }) => {
-      const idx = Math.round(event.nativeEvent.contentOffset.x / 132); // 120 + 12 margin
+      const idx = Math.round(event.nativeEvent.contentOffset.x / (cardWidth + 12));
       setMetricsScrollIndex(idx);
     },
-    [],
+    [cardWidth],
   );
 
   return (
@@ -997,23 +1002,27 @@ export default function TimesheetListScreen() {
             label="Total Hours"
             value={metrics.totalHours.toFixed(2)}
             subtext="this period"
+            style={{ width: cardWidth, marginRight: 12 }}
           />
           <MetricCard
             label="ETO"
             value={metrics.etoHours.toFixed(2)}
             subtext="hours used"
             valueColor="#0EA5E9"
+            style={{ width: cardWidth, marginRight: 12 }}
           />
           <MetricCard
             label="Pending"
             value={String(metrics.pendingDays)}
             subtext="days left"
             valueColor="#F59E0B"
+            style={{ width: cardWidth, marginRight: 12 }}
           />
           <MetricCard
             label="This Week"
             value={metrics.thisWeekHours.toFixed(2)}
             subtext="hours logged"
+            style={{ width: cardWidth, marginRight: 12 }}
           />
         </ScrollView>
 
@@ -1024,12 +1033,12 @@ export default function TimesheetListScreen() {
               key={i}
               className="rounded-full mx-1"
               style={{
-                width: 6,
-                height: 6,
+                width: 8,
+                height: 8,
                 backgroundColor:
                   i === metricsScrollIndex
                     ? '#FFFFFF'
-                    : 'rgba(255,255,255,0.4)',
+                    : 'rgba(255,255,255,0.5)',
               }}
             />
           ))}
