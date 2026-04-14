@@ -77,7 +77,7 @@ export class ETOService {
         select: { hours: true },
       });
       const skippedHours = skippedTransactions.reduce((sum, tx) => sum + tx.hours, 0);
-      runningBalance -= skippedHours;
+      runningBalance = Math.round((runningBalance - skippedHours) * 100) / 100;
     }
     const withRunningBalance = transactions.map((tx) => {
       const result = {
@@ -85,7 +85,7 @@ export class ETOService {
         runningBalance,
       };
       // Subtract this transaction's hours to get the balance before it
-      runningBalance = runningBalance - tx.hours;
+      runningBalance = Math.round((runningBalance - tx.hours) * 100) / 100;
       return result;
     });
 
