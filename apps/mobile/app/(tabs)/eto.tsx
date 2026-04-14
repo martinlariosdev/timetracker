@@ -11,8 +11,10 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '@/hooks/useAuth';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
 import { ME_QUERY, ETO_TRANSACTIONS_QUERY } from '@/lib/graphql/queries';
+import { ErrorView } from '@/components/ErrorView';
 import ETOBalanceDetailModal from '@/components/ETOBalanceDetailModal';
 import UseETOModal from '@/components/UseETOModal';
 import ETOStatsModal from '@/components/ETOStatsModal';
@@ -364,6 +366,7 @@ function TransactionCard({
 
 export default function ETOScreen() {
   const insets = useSafeAreaInsets();
+  const { logout } = useAuth();
 
   // --- Modal State ---
   const [balanceDetailVisible, setBalanceDetailVisible] = useState(false);
@@ -490,23 +493,11 @@ export default function ETOScreen() {
           <Text className="text-sm text-gray-500 mt-3">Loading ETO data...</Text>
         </View>
       ) : error && !transactions.length ? (
-        <View className="flex-1 items-center justify-center p-4">
-          <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
-          <Text className="text-base font-semibold text-gray-800 mt-3">
-            Failed to load ETO data
-          </Text>
-          <Text className="text-sm text-gray-500 mt-1 text-center">
-            {error.message}
-          </Text>
-          <TouchableOpacity
-            onPress={handleRefresh}
-            className="bg-primary rounded-lg px-4 py-2 mt-4"
-            accessibilityLabel="Retry loading ETO data"
-            accessibilityRole="button"
-          >
-            <Text className="text-white font-semibold">Retry</Text>
-          </TouchableOpacity>
-        </View>
+        <ErrorView
+          error={error}
+          onRetry={() => Promise.all([refetchMe(), refetchTransactions()])}
+          onLogout={logout}
+        />
       ) : (
         <ScrollView
           className="flex-1"

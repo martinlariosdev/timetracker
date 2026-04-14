@@ -18,10 +18,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '@/hooks/useAuth';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
 import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
 import { WEEK_TIME_ENTRIES_QUERY, TIMESHEET_SUBMISSION_QUERY } from '@/lib/graphql/queries';
 import { SUBMIT_TIMESHEET_MUTATION, DELETE_TIME_ENTRY_MUTATION } from '@/lib/graphql/mutations';
+import { ErrorView } from '@/components/ErrorView';
 
 // --- Types ---
 
@@ -675,6 +677,7 @@ function ConfirmSubmitModal({
 export default function TimesheetListScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { logout } = useAuth();
   const { width: screenWidth } = useWindowDimensions();
   const chipWidth = (screenWidth - 16) / 7.2;
   const cardWidth = screenWidth * 0.7; // 70% width shows edge of next card
@@ -1117,21 +1120,11 @@ export default function TimesheetListScreen() {
           <Text className="text-sm text-gray-500 mt-3">Loading entries...</Text>
         </View>
       ) : error && !entries.length ? (
-        <View className="flex-1 items-center justify-center p-4">
-          <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
-          <Text className="text-base font-semibold text-gray-800 mt-3">
-            Failed to load entries
-          </Text>
-          <Text className="text-sm text-gray-500 mt-1 text-center">
-            {error.message}
-          </Text>
-          <TouchableOpacity
-            onPress={handleRefresh}
-            className="bg-primary rounded-lg px-4 py-2 mt-4"
-          >
-            <Text className="text-white font-semibold">Retry</Text>
-          </TouchableOpacity>
-        </View>
+        <ErrorView
+          error={error}
+          onRetry={refetch}
+          onLogout={logout}
+        />
       ) : (
         <ScrollView
           className="flex-1 px-4 pt-3"
