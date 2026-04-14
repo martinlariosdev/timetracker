@@ -10,6 +10,8 @@ import {
   Modal,
   Alert,
   Platform,
+  type ViewStyle,
+  type StyleProp,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -191,7 +193,7 @@ function MetricCard({
   value: string;
   subtext: string;
   valueColor?: string;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
     <View
@@ -997,6 +999,8 @@ export default function TimesheetListScreen() {
           showsHorizontalScrollIndicator={false}
           onScroll={handleMetricsScroll}
           scrollEventThrottle={32}
+          snapToInterval={cardWidth + 12}
+          decelerationRate="fast"
         >
           <MetricCard
             label="Total Hours"
