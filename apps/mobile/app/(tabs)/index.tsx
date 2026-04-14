@@ -10,16 +10,23 @@ import {
   Modal,
   Alert,
   Platform,
+  type ViewStyle,
+  type StyleProp,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/contexts/ThemeContext';
+import { usePreferences } from '@/contexts/PreferencesContext';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
 import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
 import { WEEK_TIME_ENTRIES_QUERY, TIMESHEET_SUBMISSION_QUERY } from '@/lib/graphql/queries';
-import { SUBMIT_TIMESHEET_MUTATION } from '@/lib/graphql/mutations';
+import { SUBMIT_TIMESHEET_MUTATION, DELETE_TIME_ENTRY_MUTATION } from '@/lib/graphql/mutations';
+import { ErrorView } from '@/components/ErrorView';
+import { DayCardSkeletonList } from '@/components/skeletons/DayCardSkeleton';
 
 // --- Types ---
 
@@ -59,15 +66,19 @@ interface TimesheetSubmission {
   rejectedAt: string | null;
   rejectedBy: string | null;
   comments: string | null;
-  totalHours: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // --- Date Utilities ---
 
-function getWeekStart(date: Date): Date {
+function getWeekStart(date: Date, weekStartDay: 'sunday' | 'monday' = 'sunday'): Date {
   const d = new Date(date);
   const day = d.getDay(); // 0 = Sunday
-  d.setDate(d.getDate() - day);
+  const startOffset = weekStartDay === 'monday' ? 1 : 0;
+  let diff = day - startOffset;
+  if (diff < 0) diff += 7;
+  d.setDate(d.getDate() - diff);
   d.setHours(0, 0, 0, 0);
   return d;
 }
@@ -184,21 +195,25 @@ function MetricCard({
   value,
   subtext,
   valueColor,
+  style,
 }: {
   label: string;
   value: string;
   subtext: string;
   valueColor?: string;
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
     <View
-      className="rounded-xl p-3 mr-3"
-      style={{
-        width: 120,
-        backgroundColor: 'rgba(255,255,255,0.15)',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.25)',
-      }}
+      className="rounded-xl p-3"
+      style={[
+        {
+          backgroundColor: 'rgba(255,255,255,0.15)',
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.25)',
+        },
+        style,
+      ]}
     >
       <Text
         className="font-medium mb-1"
@@ -234,6 +249,7 @@ function DateChip({
   onPress: () => void;
   chipWidth: number;
 }) {
+  const { colors } = useTheme();
   const dayName = DAY_NAMES[date.getDay()];
   const dateNum = date.getDate();
 
@@ -243,9 +259,9 @@ function DateChip({
       ? 'border-2 border-primary'
       : '';
 
-  const dayColor = isSelected ? 'rgba(255,255,255,0.9)' : '#6B7280';
-  const dateColor = isSelected ? '#FFFFFF' : '#1F2937';
-  const dotColor = isSelected ? '#FFFFFF' : '#2563EB';
+  const dayColor = isSelected ? 'rgba(255,255,255,0.9)' : colors.textSecondary;
+  const dateColor = isSelected ? '#FFFFFF' : colors.text;
+  const dotColor = isSelected ? '#FFFFFF' : colors.primary;
 
   return (
     <TouchableOpacity
@@ -283,34 +299,36 @@ function EntryRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const { colors } = useTheme();
   return (
     <View
-      className="bg-gray-50 rounded-lg p-2.5 mb-2"
-      style={{ borderLeftWidth: 3, borderLeftColor: '#2563EB' }}
+      className="rounded-lg p-2.5 mb-2"
+      style={{ borderLeftWidth: 3, borderLeftColor: colors.primary, backgroundColor: colors.backgroundTertiary }}
     >
       <View className="flex-row">
         <View style={{ flex: 0.7 }}>
-          <Text className="text-sm font-semibold text-gray-800">
+          <Text className="text-sm font-semibold" style={{ color: colors.text }}>
             {entry.project}
           </Text>
           <Text
-            className="text-gray-500 mt-0.5"
-            style={{ fontSize: 13 }}
+            className="mt-0.5"
+            style={{ fontSize: 13, color: colors.textSecondary }}
             numberOfLines={1}
           >
             {entry.description}
           </Text>
           <View className="flex-row flex-wrap mt-1.5">
             <View
-              className="bg-white rounded mr-1 mb-1"
+              className="rounded mr-1 mb-1"
               style={{
                 borderWidth: 1,
-                borderColor: '#E5E7EB',
+                borderColor: colors.border,
+                backgroundColor: colors.surface,
                 paddingHorizontal: 4,
                 paddingVertical: 1,
               }}
             >
-              <Text style={{ fontSize: 10, color: '#4B5563' }}>
+              <Text style={{ fontSize: 10, color: colors.textSecondary }}>
                 {entry.category}
               </Text>
             </View>
@@ -331,27 +349,27 @@ function EntryRow({
           </View>
         </View>
         <View style={{ flex: 0.3, alignItems: 'flex-end' }}>
-          <Text className="text-base font-bold text-primary">
+          <Text className="text-base font-bold" style={{ color: colors.primary }}>
             {entry.hours.toFixed(2)}
           </Text>
           <View className="flex-row mt-2">
             <TouchableOpacity
               onPress={onEdit}
               className="items-center justify-center"
-              style={{ width: 32, height: 32 }}
+              style={{ width: 44, height: 44 }}
               accessibilityLabel={`Edit ${entry.project} entry`}
               accessibilityRole="button"
             >
-              <Ionicons name="pencil" size={14} color="#2563EB" />
+              <Ionicons name="pencil" size={14} color={colors.primary} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={onDelete}
               className="items-center justify-center ml-1"
-              style={{ width: 32, height: 32 }}
+              style={{ width: 44, height: 44 }}
               accessibilityLabel={`Delete ${entry.project} entry`}
               accessibilityRole="button"
             >
-              <Ionicons name="trash" size={14} color="#EF4444" />
+              <Ionicons name="trash" size={14} color={colors.error} />
             </TouchableOpacity>
           </View>
         </View>
@@ -371,17 +389,18 @@ function DayCard({
   onEditEntry: (id: string) => void;
   onDeleteEntry: (id: string) => void;
 }) {
+  const { colors } = useTheme();
   const hasEntries = day.entries.length > 0;
 
   return (
-    <View className="bg-white rounded-2xl p-4 mb-3 shadow-level-1" style={{ minHeight: 96 }}>
+    <View className="rounded-2xl p-4 mb-3 shadow-level-1" style={{ minHeight: 96, backgroundColor: colors.surface }}>
       {/* Card Header */}
       <View className="flex-row items-center justify-between">
-        <Text className="text-base font-semibold text-gray-800">
+        <Text className="text-base font-semibold" style={{ color: colors.text }}>
           {day.fullLabel}
         </Text>
         {hasEntries && (
-          <Text className="text-xl font-bold text-primary">
+          <Text className="text-xl font-bold" style={{ color: colors.primary }}>
             {day.totalHours.toFixed(2)} hrs
           </Text>
         )}
@@ -392,7 +411,7 @@ function DayCard({
           {/* Divider */}
           <View
             className="my-3"
-            style={{ borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}
+            style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}
           />
 
           {/* Entries */}
@@ -420,8 +439,8 @@ function DayCard({
       ) : (
         /* Empty Day State */
         <View className="items-center py-3">
-          <Ionicons name="time-outline" size={32} color="#D1D5DB" />
-          <Text className="text-sm text-gray-400 mt-2">No entries</Text>
+          <Ionicons name="time-outline" size={32} color={colors.borderSecondary} />
+          <Text className="text-sm mt-2" style={{ color: colors.textTertiary }}>No entries</Text>
           <TouchableOpacity
             onPress={() => onAddEntry(day.dateStr)}
             className="bg-primary rounded-lg px-3 py-1.5 mt-3"
@@ -440,9 +459,11 @@ function DayCard({
 
 function SubmissionStatusBadge({
   submission,
+  thisWeekHours,
   onViewDetails,
 }: {
   submission: TimesheetSubmission;
+  thisWeekHours: number;
   onViewDetails: () => void;
 }) {
   const statusConfig: Record<
@@ -502,7 +523,7 @@ function SubmissionStatusBadge({
       </View>
       {submission.status !== 'draft' && (
         <Text style={{ fontSize: 12, color: config.color }}>
-          {submission.totalHours.toFixed(1)} hrs
+          {thisWeekHours.toFixed(1)} hrs
         </Text>
       )}
     </TouchableOpacity>
@@ -666,8 +687,12 @@ function ConfirmSubmitModal({
 export default function TimesheetListScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { logout } = useAuth();
+  const { isDark, colors } = useTheme();
+  const { weekStartDay } = usePreferences();
   const { width: screenWidth } = useWindowDimensions();
   const chipWidth = (screenWidth - 16) / 7.2;
+  const cardWidth = screenWidth * 0.7; // 70% width shows edge of next card
 
   const today = useMemo(() => new Date(), []);
 
@@ -677,12 +702,12 @@ export default function TimesheetListScreen() {
   const [metricsScrollIndex, setMetricsScrollIndex] = useState(0);
   const metricsScrollRef = useRef<ScrollView>(null);
 
-  // Calculate current week bounds based on offset
+  // Calculate current week bounds based on offset and user's preferred week start day
   const weekStart = useMemo(() => {
-    const start = getWeekStart(today);
+    const start = getWeekStart(today, weekStartDay);
     start.setDate(start.getDate() + weekOffset * 7);
     return start;
-  }, [today, weekOffset]);
+  }, [today, weekOffset, weekStartDay]);
 
   const weekEnd = useMemo(() => getWeekEnd(weekStart), [weekStart]);
 
@@ -723,7 +748,7 @@ export default function TimesheetListScreen() {
   });
 
   const submission: TimesheetSubmission | null = useMemo(() => {
-    return submissionData?.timesheetSubmission ?? null;
+    return submissionData?.timesheetSubmissionByPayPeriod ?? null;
   }, [submissionData]);
 
   const isSubmitted = submission !== null && submission.status !== 'draft';
@@ -732,9 +757,14 @@ export default function TimesheetListScreen() {
   const [submitTimesheet, { loading: isSubmitting }] = useAuthenticatedMutation(
     SUBMIT_TIMESHEET_MUTATION,
     {
-      refetchQueries: ['WeekTimeEntries', 'TimesheetSubmission'],
+      refetchQueries: ['WeekTimeEntries', 'TimesheetSubmissionByPayPeriod'],
     },
   );
+
+  // Delete mutation
+  const [deleteEntry] = useAuthenticatedMutation(DELETE_TIME_ENTRY_MUTATION, {
+    refetchQueries: ['WeekTimeEntries'],
+  });
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
@@ -817,10 +847,39 @@ export default function TimesheetListScreen() {
   );
 
   const handleDeleteEntry = useCallback(
-    (_id: string) => {
-      // TODO: Implement delete with confirmation dialog and mutation
+    (id: string) => {
+      const entry = entries.find(e => e.id === id);
+      if (!entry) return;
+
+      Alert.alert(
+        'Delete Time Entry',
+        `Delete entry for ${entry.project}?\n${entry.hours.toFixed(1)} hours - ${entry.description}`,
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await deleteEntry({ variables: { id } });
+                // Refetch is automatic due to refetchQueries
+              } catch (error) {
+                Alert.alert(
+                  'Delete Failed',
+                  'Could not delete entry. Please try again.',
+                  [{ text: 'OK' }]
+                );
+              }
+            },
+          },
+        ],
+        { cancelable: true }
+      );
     },
-    [],
+    [entries, deleteEntry],
   );
 
   const handleSubmitPress = useCallback(() => {
@@ -873,10 +932,10 @@ export default function TimesheetListScreen() {
     if (submission.comments) {
       details.push(`Comments: ${submission.comments}`);
     }
-    details.push(`Total Hours: ${submission.totalHours.toFixed(1)}`);
+    details.push(`Total Hours: ${thisWeekHours.toFixed(1)}`);
 
     Alert.alert('Submission Details', details.join('\n'));
-  }, [submission]);
+  }, [submission, thisWeekHours]);
 
   const handlePrevWeek = useCallback(() => {
     setWeekOffset((prev) => prev - 1);
@@ -893,15 +952,15 @@ export default function TimesheetListScreen() {
 
   const handleMetricsScroll = useCallback(
     (event: { nativeEvent: { contentOffset: { x: number } } }) => {
-      const idx = Math.round(event.nativeEvent.contentOffset.x / 132); // 120 + 12 margin
+      const idx = Math.round(event.nativeEvent.contentOffset.x / (cardWidth + 12));
       setMetricsScrollIndex(idx);
     },
-    [],
+    [cardWidth],
   );
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <StatusBar style="light" />
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
+      <StatusBar style={isDark ? 'light' : 'light'} />
 
       {/* === Top Navigation Bar === */}
       <View
@@ -947,7 +1006,7 @@ export default function TimesheetListScreen() {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         className="shadow-level-1"
-        style={{ height: 88, paddingVertical: 16, paddingHorizontal: 12 }}
+        style={{ height: 100, paddingVertical: 18, paddingHorizontal: 12 }}
       >
         <ScrollView
           ref={metricsScrollRef}
@@ -955,28 +1014,34 @@ export default function TimesheetListScreen() {
           showsHorizontalScrollIndicator={false}
           onScroll={handleMetricsScroll}
           scrollEventThrottle={32}
+          snapToInterval={cardWidth + 12}
+          decelerationRate="fast"
         >
           <MetricCard
             label="Total Hours"
             value={metrics.totalHours.toFixed(2)}
             subtext="this period"
+            style={{ width: cardWidth, marginRight: 12 }}
           />
           <MetricCard
             label="ETO"
             value={metrics.etoHours.toFixed(2)}
             subtext="hours used"
             valueColor="#0EA5E9"
+            style={{ width: cardWidth, marginRight: 12 }}
           />
           <MetricCard
             label="Pending"
             value={String(metrics.pendingDays)}
             subtext="days left"
             valueColor="#F59E0B"
+            style={{ width: cardWidth, marginRight: 12 }}
           />
           <MetricCard
             label="This Week"
             value={metrics.thisWeekHours.toFixed(2)}
             subtext="hours logged"
+            style={{ width: cardWidth, marginRight: 12 }}
           />
         </ScrollView>
 
@@ -987,12 +1052,12 @@ export default function TimesheetListScreen() {
               key={i}
               className="rounded-full mx-1"
               style={{
-                width: 6,
-                height: 6,
+                width: 8,
+                height: 8,
                 backgroundColor:
                   i === metricsScrollIndex
                     ? '#FFFFFF'
-                    : 'rgba(255,255,255,0.4)',
+                    : 'rgba(255,255,255,0.5)',
               }}
             />
           ))}
@@ -1001,8 +1066,8 @@ export default function TimesheetListScreen() {
 
       {/* === Week Date Header === */}
       <View
-        className="bg-white px-2 py-2"
-        style={{ borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}
+        className="px-2 py-2"
+        style={{ borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.surface }}
       >
         {/* Week Nav Row */}
         <View className="flex-row items-center justify-between px-2 mb-2">
@@ -1013,9 +1078,9 @@ export default function TimesheetListScreen() {
             accessibilityLabel="Previous week"
             accessibilityRole="button"
           >
-            <Ionicons name="chevron-back" size={20} color="#6B7280" />
+            <Ionicons name="chevron-back" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
-          <Text className="text-sm font-semibold text-gray-800">
+          <Text className="text-sm font-semibold" style={{ color: colors.text }}>
             {weekLabel}
           </Text>
           <TouchableOpacity
@@ -1025,7 +1090,7 @@ export default function TimesheetListScreen() {
             accessibilityLabel="Next week"
             accessibilityRole="button"
           >
-            <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -1055,32 +1120,22 @@ export default function TimesheetListScreen() {
       {submission && submission.status !== 'draft' && (
         <SubmissionStatusBadge
           submission={submission}
+          thisWeekHours={thisWeekHours}
           onViewDetails={handleViewSubmissionDetails}
         />
       )}
 
       {/* === Daily Entry Cards (Vertical Scroll) === */}
       {loading && !entries.length ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#2563EB" />
-          <Text className="text-sm text-gray-500 mt-3">Loading entries...</Text>
-        </View>
+        <ScrollView className="flex-1 px-4 pt-3">
+          <DayCardSkeletonList count={7} />
+        </ScrollView>
       ) : error && !entries.length ? (
-        <View className="flex-1 items-center justify-center p-4">
-          <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
-          <Text className="text-base font-semibold text-gray-800 mt-3">
-            Failed to load entries
-          </Text>
-          <Text className="text-sm text-gray-500 mt-1 text-center">
-            {error.message}
-          </Text>
-          <TouchableOpacity
-            onPress={handleRefresh}
-            className="bg-primary rounded-lg px-4 py-2 mt-4"
-          >
-            <Text className="text-white font-semibold">Retry</Text>
-          </TouchableOpacity>
-        </View>
+        <ErrorView
+          error={error}
+          onRetry={async () => { await refetch(); }}
+          onLogout={logout}
+        />
       ) : (
         <ScrollView
           className="flex-1 px-4 pt-3"
@@ -1109,23 +1164,24 @@ export default function TimesheetListScreen() {
       {/* === Submit Timesheet Footer === */}
       {!isSubmitted && (
         <View
-          className="absolute left-0 right-0 bg-white shadow-level-2"
+          className="absolute left-0 right-0 shadow-level-2"
           style={{
             bottom: 0,
             paddingBottom: insets.bottom + 8,
             paddingTop: 12,
             paddingHorizontal: 16,
             borderTopWidth: 1,
-            borderTopColor: '#E5E7EB',
+            borderTopColor: colors.border,
+            backgroundColor: colors.surface,
           }}
         >
           <View className="flex-row items-center justify-between mb-2">
-            <Text style={{ fontSize: 12, color: '#6B7280' }}>
+            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
               {submission?.status === 'draft' || !submission
                 ? 'Not submitted'
                 : ''}
             </Text>
-            <Text style={{ fontSize: 12, color: '#6B7280' }}>
+            <Text style={{ fontSize: 12, color: colors.textSecondary }}>
               {thisWeekHours.toFixed(1)} hrs this week
             </Text>
           </View>

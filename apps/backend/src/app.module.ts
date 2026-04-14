@@ -13,6 +13,7 @@ import { ETOModule } from './eto/eto.module';
 import { SyncModule } from './sync/sync.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RemindersModule } from './reminders/reminders.module';
+import { ClientsModule } from './clients/clients.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { RemindersModule } from './reminders/reminders.module';
     SyncModule,
     NotificationsModule,
     RemindersModule,
+    ClientsModule,
   ],
   controllers: [AppController],
   providers: [AppService, HealthResolver],

@@ -11,6 +11,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   type NotificationPreferences,
   DEFAULT_PREFERENCES,
@@ -27,8 +28,9 @@ function TopBar({
   topInset: number;
   onBack: () => void;
 }) {
+  const { colors } = useTheme();
   return (
-    <View className="bg-white shadow-level-1" style={{ paddingTop: topInset }}>
+    <View style={{ paddingTop: topInset, backgroundColor: colors.surface }}>
       <View
         className="flex-row items-center"
         style={{ height: 56, paddingHorizontal: 16 }}
@@ -40,11 +42,11 @@ function TopBar({
           accessibilityLabel="Go back"
           accessibilityRole="button"
         >
-          <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text
-          className="text-h3 font-semibold text-gray-800 flex-1 text-center"
-          style={{ marginRight: 44 }}
+          className="text-h3 font-semibold flex-1 text-center"
+          style={{ marginRight: 44, color: colors.text }}
           accessibilityRole="header"
         >
           Notification Preferences
@@ -55,10 +57,11 @@ function TopBar({
 }
 
 function SectionHeader({ title }: { title: string }) {
+  const { colors } = useTheme();
   return (
     <Text
-      className="text-caption font-bold text-gray-500 uppercase"
-      style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}
+      className="text-caption font-bold uppercase"
+      style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8, color: colors.textSecondary }}
     >
       {title}
     </Text>
@@ -80,6 +83,7 @@ function ToggleRow({
   disabled: boolean;
   showDivider: boolean;
 }) {
+  const { colors } = useTheme();
   return (
     <View
       className="flex-row items-center justify-between"
@@ -88,14 +92,14 @@ function ToggleRow({
         paddingVertical: 12,
         minHeight: 64,
         borderBottomWidth: showDivider ? 1 : 0,
-        borderBottomColor: '#E5E7EB',
+        borderBottomColor: colors.border,
         opacity: disabled ? 0.5 : 1,
       }}
     >
       <View className="flex-1 mr-3">
-        <Text className="text-body text-gray-800">{label}</Text>
+        <Text className="text-body" style={{ color: colors.text }}>{label}</Text>
         {description && (
-          <Text className="text-caption text-gray-500" style={{ marginTop: 2 }}>
+          <Text className="text-caption" style={{ marginTop: 2, color: colors.textSecondary }}>
             {description}
           </Text>
         )}
@@ -104,8 +108,8 @@ function ToggleRow({
         value={value}
         onValueChange={onValueChange}
         disabled={disabled}
-        trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
-        thumbColor={value ? '#2563EB' : '#F3F4F6'}
+        trackColor={{ false: colors.borderSecondary, true: colors.primaryLight }}
+        thumbColor={value ? colors.primary : colors.backgroundTertiary}
         accessibilityLabel={`${label} toggle`}
       />
     </View>
@@ -162,9 +166,11 @@ export default function NotificationPreferencesScreen() {
 
   const disabled = !prefs.masterEnabled;
 
+  const { isDark, colors } = useTheme();
+
   return (
-    <View className="flex-1 bg-gray-50">
-      <StatusBar style="dark" />
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
 
       <TopBar topInset={insets.top} onBack={() => router.back()} />
 
@@ -175,31 +181,31 @@ export default function NotificationPreferencesScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#2563EB"
+            tintColor={colors.primary}
           />
         }
         showsVerticalScrollIndicator={false}
       >
         {/* Master Toggle */}
         <View
-          className="bg-white shadow-level-1 mx-md mt-md"
-          style={{ borderRadius: 12 }}
+          className="mx-md mt-md"
+          style={{ borderRadius: 12, backgroundColor: colors.surface }}
         >
           <View
             className="flex-row items-center justify-between"
             style={{ paddingHorizontal: 16, paddingVertical: 16, minHeight: 64 }}
           >
             <View className="flex-row items-center flex-1 mr-3">
-              <Ionicons name="notifications-outline" size={24} color="#2563EB" />
-              <Text className="text-body font-semibold text-gray-800 ml-3">
+              <Ionicons name="notifications-outline" size={24} color={colors.primary} />
+              <Text className="text-body font-semibold ml-3" style={{ color: colors.text }}>
                 Enable All Notifications
               </Text>
             </View>
             <Switch
               value={prefs.masterEnabled}
               onValueChange={handleMasterToggle}
-              trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
-              thumbColor={prefs.masterEnabled ? '#2563EB' : '#F3F4F6'}
+              trackColor={{ false: colors.borderSecondary, true: colors.primaryLight }}
+              thumbColor={prefs.masterEnabled ? colors.primary : colors.backgroundTertiary}
               accessibilityLabel="Enable all notifications toggle"
             />
           </View>
@@ -208,8 +214,8 @@ export default function NotificationPreferencesScreen() {
         {/* Timesheet Reminders */}
         <SectionHeader title="TIMESHEET REMINDERS" />
         <View
-          className="bg-white shadow-level-1 mx-md"
-          style={{ borderRadius: 12 }}
+          className="mx-md"
+          style={{ borderRadius: 12, backgroundColor: colors.surface }}
         >
           <ToggleRow
             label="Remind me 2 days before deadline"
@@ -242,8 +248,8 @@ export default function NotificationPreferencesScreen() {
         {/* ETO Reminders */}
         <SectionHeader title="ETO REMINDERS" />
         <View
-          className="bg-white shadow-level-1 mx-md"
-          style={{ borderRadius: 12 }}
+          className="mx-md"
+          style={{ borderRadius: 12, backgroundColor: colors.surface }}
         >
           <ToggleRow
             label="Low balance alert (under 8 hours)"
@@ -286,8 +292,8 @@ export default function NotificationPreferencesScreen() {
         {/* Approval Notifications */}
         <SectionHeader title="APPROVAL NOTIFICATIONS" />
         <View
-          className="bg-white shadow-level-1 mx-md"
-          style={{ borderRadius: 12 }}
+          className="mx-md"
+          style={{ borderRadius: 12, backgroundColor: colors.surface }}
         >
           <ToggleRow
             label="Timesheet approved"

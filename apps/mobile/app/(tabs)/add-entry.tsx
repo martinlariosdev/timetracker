@@ -21,8 +21,10 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { useDatePicker } from '@/components/DatePicker';
+import { ClientSelectorModal } from '@/components/ClientSelectorModal';
 import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
+import { usePreferences } from '@/contexts/PreferencesContext';
 import { DateSelectorCard } from '@/components/add-entry/DateSelectorCard';
 import { WeekStripCard } from '@/components/add-entry/WeekStripCard';
 import { ClientCard } from '@/components/add-entry/ClientCard';
@@ -64,11 +66,12 @@ export default function AddEntryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ date?: string; id?: string }>();
+  const { weekStartDay } = usePreferences();
 
   const isEditMode = !!params.id;
 
   // --- State ---
-  const [isExpanded, setIsExpanded] = useState(isEditMode);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     if (params.date) {
       return parseDate(params.date);
@@ -83,6 +86,8 @@ export default function AddEntryScreen() {
   ]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [clientSelectorVisible, setClientSelectorVisible] = useState(false);
+  const [clientId, setClientId] = useState<string | undefined>(undefined);
 
   // --- Derived State ---
   const totalHours = useMemo(
@@ -90,9 +95,11 @@ export default function AddEntryScreen() {
     [timeEntries],
   );
 
+  const weekStartDayNum = weekStartDay === 'sunday' ? 0 : 1;
+
   const weekStrip = useMemo(
-    () => generateWeekStrip(selectedDate),
-    [selectedDate],
+    () => generateWeekStrip(selectedDate, weekStartDayNum),
+    [selectedDate, weekStartDayNum],
   );
 
   const headerTitle = isEditMode
@@ -172,12 +179,16 @@ export default function AddEntryScreen() {
   // --- Handlers ---
 
   const handleClientPress = useCallback(() => {
-    // TODO: Open client selector/autocomplete
-    Alert.alert(
-      'Client Selector',
-      'Client autocomplete will be integrated when client list API is available',
-    );
+    setClientSelectorVisible(true);
   }, []);
+
+  const handleClientSelect = useCallback(
+    (selected: { id: string; name: string }) => {
+      setClientId(selected.id);
+      setClient(selected.name);
+    },
+    [],
+  );
 
   const handleDuplicateYesterday = useCallback(() => {
     // Copy mock yesterday's entry
@@ -552,6 +563,12 @@ export default function AddEntryScreen() {
         />
       </ScrollView>
       {datePicker.modal}
+      <ClientSelectorModal
+        visible={clientSelectorVisible}
+        onClose={() => setClientSelectorVisible(false)}
+        onSelect={handleClientSelect}
+        selectedClientId={clientId}
+      />
     </View>
   );
 }

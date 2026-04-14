@@ -16,6 +16,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme, type ThemeMode } from '@/contexts/ThemeContext';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { WorkHoursPicker } from '@/components/WorkHoursPicker';
+import { WeekStartDayPicker } from '@/components/WeekStartDayPicker';
+import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
+import { UPDATE_USER_PROFILE_MUTATION } from '@/lib/graphql/mutations';
 import {
   loadNotificationPreferences,
   saveNotificationPreferences,
@@ -62,27 +68,7 @@ const ALL_SETTINGS: SettingItem[] = [
     categoryIcon: '⚙️',
     type: 'navigation',
     icon: 'time-outline',
-    value: '8 hrs',
-  },
-  {
-    id: 'time-format',
-    title: 'Time Format',
-    keywords: ['time', 'format', '12', '24', 'hour', 'clock'],
-    category: 'Preferences',
-    categoryIcon: '⚙️',
-    type: 'navigation',
-    icon: 'time-outline',
-    value: '12-hour',
-  },
-  {
-    id: 'language',
-    title: 'Language',
-    keywords: ['language', 'locale', 'english', 'spanish'],
-    category: 'Preferences',
-    categoryIcon: '⚙️',
-    type: 'navigation',
-    icon: 'globe-outline',
-    value: 'English',
+    value: '', // Will be set dynamically
   },
   {
     id: 'week-start',
@@ -92,26 +78,18 @@ const ALL_SETTINGS: SettingItem[] = [
     categoryIcon: '⚙️',
     type: 'navigation',
     icon: 'calendar-outline',
-    value: 'Monday',
+    value: '', // Will be set dynamically
   },
   // Appearance
   {
     id: 'dark-mode',
-    title: 'Dark Mode',
-    keywords: ['dark', 'mode', 'theme', 'appearance', 'night', 'light'],
-    category: 'Appearance',
-    categoryIcon: '🎨',
-    type: 'toggle',
-    icon: 'moon-outline',
-  },
-  {
-    id: 'dark-theme-colors',
-    title: 'Dark Theme Colors',
-    keywords: ['dark', 'theme', 'colors', 'appearance', 'accent'],
+    title: 'Theme',
+    keywords: ['dark', 'mode', 'theme', 'appearance', 'night', 'light', 'system'],
     category: 'Appearance',
     categoryIcon: '🎨',
     type: 'navigation',
-    icon: 'color-palette-outline',
+    icon: 'moon-outline',
+    value: '', // Will be set dynamically
   },
   // ETO Reminders
   {
@@ -124,25 +102,6 @@ const ALL_SETTINGS: SettingItem[] = [
     icon: 'cash-outline',
   },
   {
-    id: 'eto-low-balance',
-    title: 'Low Balance Alert',
-    keywords: ['eto', 'low', 'balance', 'alert', 'threshold'],
-    category: 'ETO Reminders',
-    categoryIcon: '💰',
-    type: 'navigation',
-    icon: 'alert-circle-outline',
-    value: '8 hrs',
-  },
-  {
-    id: 'eto-accrual-reminder',
-    title: 'Accrual Reminder',
-    keywords: ['eto', 'accrual', 'reminder', 'period'],
-    category: 'ETO Reminders',
-    categoryIcon: '💰',
-    type: 'navigation',
-    icon: 'alarm-outline',
-  },
-  {
     id: 'eto-usage-summary',
     title: 'Usage Summary',
     keywords: ['eto', 'usage', 'summary', 'report', 'monthly'],
@@ -153,15 +112,6 @@ const ALL_SETTINGS: SettingItem[] = [
   },
   // Account & Security
   {
-    id: 'change-password',
-    title: 'Change Password',
-    keywords: ['password', 'change', 'security', 'account'],
-    category: 'Account & Security',
-    categoryIcon: '🔒',
-    type: 'navigation',
-    icon: 'key-outline',
-  },
-  {
     id: 'biometric',
     title: 'Biometric Authentication',
     keywords: ['biometric', 'fingerprint', 'face', 'id', 'touch', 'security'],
@@ -170,62 +120,15 @@ const ALL_SETTINGS: SettingItem[] = [
     type: 'toggle',
     icon: 'finger-print-outline',
   },
-  {
-    id: 'two-factor',
-    title: 'Two-Factor Authentication',
-    keywords: ['two', 'factor', '2fa', 'authentication', 'security'],
-    category: 'Account & Security',
-    categoryIcon: '🔒',
-    type: 'navigation',
-    icon: 'shield-checkmark-outline',
-  },
-  // Help & Support
-  {
-    id: 'help-center',
-    title: 'Help Center',
-    keywords: ['help', 'center', 'faq', 'support'],
-    category: 'Help & Support',
-    categoryIcon: '❓',
-    type: 'navigation',
-    icon: 'help-circle-outline',
-  },
-  {
-    id: 'contact-support',
-    title: 'Contact Support',
-    keywords: ['contact', 'support', 'email', 'chat'],
-    category: 'Help & Support',
-    categoryIcon: '❓',
-    type: 'navigation',
-    icon: 'chatbubble-outline',
-  },
-  {
-    id: 'report-bug',
-    title: 'Report a Bug',
-    keywords: ['report', 'bug', 'issue', 'problem'],
-    category: 'Help & Support',
-    categoryIcon: '❓',
-    type: 'navigation',
-    icon: 'bug-outline',
-  },
-  {
-    id: 'about',
-    title: 'About',
-    keywords: ['about', 'version', 'info', 'app'],
-    category: 'Help & Support',
-    categoryIcon: '❓',
-    type: 'navigation',
-    icon: 'information-circle-outline',
-  },
 ];
 
 const FREQUENTLY_USED_IDS = ['notifications', 'dark-mode', 'work-hours', 'eto-alerts'];
 
 const CATEGORIES: CategoryInfo[] = [
-  { label: 'Preferences', icon: '⚙️', ionicon: 'settings-outline', count: 5 },
-  { label: 'Appearance', icon: '🎨', ionicon: 'color-palette-outline', count: 2 },
-  { label: 'ETO Reminders', icon: '💰', ionicon: 'cash-outline', count: 4 },
-  { label: 'Account & Security', icon: '🔒', ionicon: 'lock-closed-outline', count: 3 },
-  { label: 'Help & Support', icon: '❓', ionicon: 'help-circle-outline', count: 4 },
+  { label: 'Preferences', icon: '⚙️', ionicon: 'settings-outline', count: 3 },
+  { label: 'Appearance', icon: '🎨', ionicon: 'color-palette-outline', count: 1 },
+  { label: 'ETO Reminders', icon: '💰', ionicon: 'cash-outline', count: 2 },
+  { label: 'Account & Security', icon: '🔒', ionicon: 'lock-closed-outline', count: 1 },
 ];
 
 // --- Simple fuzzy search ---
@@ -240,14 +143,16 @@ function matchesSearch(query: string, setting: SettingItem): boolean {
 // --- Sub-Components ---
 
 function TopBar({ topInset }: { topInset: number }) {
+  const { colors } = useTheme();
   return (
-    <View className="bg-white shadow-level-1" style={{ paddingTop: topInset }}>
+    <View style={{ paddingTop: topInset, backgroundColor: colors.surface }}>
       <View
         className="flex-row items-center justify-center"
         style={{ height: 56 }}
       >
         <Text
-          className="text-h3 font-semibold text-gray-800"
+          className="text-h3 font-semibold"
+          style={{ color: colors.text }}
           accessibilityRole="header"
         >
           Settings
@@ -266,6 +171,7 @@ function ProfileCard({
   email: string;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
   const initials = name
     .split(' ')
     .map((n) => n[0])
@@ -277,11 +183,12 @@ function ProfileCard({
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.7}
-      className="bg-white shadow-level-1 mx-md mt-md"
+      className="shadow-level-1 mx-md mt-md"
       style={{
         borderRadius: 12,
         height: 72,
         paddingHorizontal: 16,
+        backgroundColor: colors.surface,
       }}
       accessibilityLabel={`Profile: ${name}, ${email}. Tap to edit.`}
       accessibilityRole="button"
@@ -289,8 +196,8 @@ function ProfileCard({
       <View className="flex-row items-center flex-1" style={{ height: 72 }}>
         {/* Avatar */}
         <View
-          className="bg-primary items-center justify-center"
-          style={{ width: 40, height: 40, borderRadius: 20 }}
+          className="items-center justify-center"
+          style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary }}
         >
           <Text className="text-white font-semibold" style={{ fontSize: 14 }}>
             {initials}
@@ -299,16 +206,16 @@ function ProfileCard({
 
         {/* Name + Email */}
         <View className="flex-1 ml-3">
-          <Text className="text-body font-semibold text-gray-800" numberOfLines={1}>
+          <Text className="text-body font-semibold" style={{ color: colors.text }} numberOfLines={1}>
             {name}
           </Text>
-          <Text className="text-caption text-gray-500" numberOfLines={1}>
+          <Text className="text-caption" style={{ color: colors.textSecondary }} numberOfLines={1}>
             {email}
           </Text>
         </View>
 
         {/* Chevron */}
-        <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+        <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
       </View>
     </TouchableOpacity>
   );
@@ -329,15 +236,16 @@ function SearchBar({
   onFocus: () => void;
   onBlur: () => void;
 }) {
+  const { colors } = useTheme();
   return (
     <View
       className="mx-md mt-md"
       style={{
         height: 48,
         borderRadius: 12,
-        backgroundColor: isFocused ? '#FFFFFF' : '#F3F4F6',
+        backgroundColor: isFocused ? colors.surface : colors.backgroundTertiary,
         borderWidth: isFocused ? 2 : 1,
-        borderColor: isFocused ? '#2563EB' : '#E5E7EB',
+        borderColor: isFocused ? colors.primary : colors.border,
         paddingHorizontal: 12,
         flexDirection: 'row',
         alignItems: 'center',
@@ -352,11 +260,12 @@ function SearchBar({
           : {}),
       }}
     >
-      <Ionicons name="search" size={20} color="#9CA3AF" />
+      <Ionicons name="search" size={20} color={colors.textTertiary} />
       <TextInput
-        className="flex-1 text-body text-gray-800 ml-2"
+        className="flex-1 text-body ml-2"
+        style={{ color: colors.text }}
         placeholder="Search settings..."
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={colors.textTertiary}
         value={query}
         onChangeText={onChangeQuery}
         onFocus={onFocus}
@@ -372,7 +281,7 @@ function SearchBar({
           accessibilityLabel="Clear search"
           accessibilityRole="button"
         >
-          <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+          <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
         </TouchableOpacity>
       )}
     </View>
@@ -390,6 +299,7 @@ function SettingToggleRow({
   onToggle: (value: boolean) => void;
   showDivider: boolean;
 }) {
+  const { colors } = useTheme();
   return (
     <View
       className="flex-row items-center justify-between"
@@ -398,18 +308,18 @@ function SettingToggleRow({
         paddingVertical: 12,
         minHeight: 56,
         borderBottomWidth: showDivider ? 1 : 0,
-        borderBottomColor: '#E5E7EB',
+        borderBottomColor: colors.border,
       }}
     >
       <View className="flex-row items-center flex-1 mr-3">
-        <Ionicons name={setting.icon} size={20} color="#2563EB" />
-        <Text className="text-body text-gray-800 ml-3">{setting.title}</Text>
+        <Ionicons name={setting.icon} size={20} color={colors.primary} />
+        <Text className="text-body ml-3" style={{ color: colors.text }}>{setting.title}</Text>
       </View>
       <Switch
         value={isOn}
         onValueChange={onToggle}
-        trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
-        thumbColor={isOn ? '#2563EB' : '#F3F4F6'}
+        trackColor={{ false: colors.borderSecondary, true: colors.primaryLight }}
+        thumbColor={isOn ? colors.primary : colors.backgroundTertiary}
         accessibilityLabel={`${setting.title} toggle`}
       />
     </View>
@@ -425,6 +335,7 @@ function SettingNavRow({
   onPress: () => void;
   showDivider: boolean;
 }) {
+  const { colors } = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -435,20 +346,20 @@ function SettingNavRow({
         paddingVertical: 12,
         minHeight: 56,
         borderBottomWidth: showDivider ? 1 : 0,
-        borderBottomColor: '#E5E7EB',
+        borderBottomColor: colors.border,
       }}
       accessibilityLabel={`${setting.title}${setting.value ? `, current value: ${setting.value}` : ''}`}
       accessibilityRole="button"
     >
       <View className="flex-row items-center flex-1 mr-3">
-        <Ionicons name={setting.icon} size={20} color="#2563EB" />
-        <Text className="text-body text-gray-800 ml-3">{setting.title}</Text>
+        <Ionicons name={setting.icon} size={20} color={colors.primary} />
+        <Text className="text-body ml-3" style={{ color: colors.text }}>{setting.title}</Text>
       </View>
       <View className="flex-row items-center">
         {setting.value && (
-          <Text className="text-body-small text-gray-500 mr-2">{setting.value}</Text>
+          <Text className="text-body-small mr-2" style={{ color: colors.textSecondary }}>{setting.value}</Text>
         )}
-        <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+        <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
       </View>
     </TouchableOpacity>
   );
@@ -463,6 +374,7 @@ function CategoryRow({
   onPress: () => void;
   showDivider: boolean;
 }) {
+  const { colors } = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -473,14 +385,14 @@ function CategoryRow({
         paddingVertical: 12,
         minHeight: 56,
         borderBottomWidth: showDivider ? 1 : 0,
-        borderBottomColor: '#E5E7EB',
+        borderBottomColor: colors.border,
       }}
       accessibilityLabel={`${category.label}, ${category.count} items`}
       accessibilityRole="button"
     >
       <View className="flex-row items-center flex-1">
-        <Ionicons name={category.ionicon} size={20} color="#2563EB" />
-        <Text className="text-body font-semibold text-gray-800 ml-3">
+        <Ionicons name={category.ionicon} size={20} color={colors.primary} />
+        <Text className="text-body font-semibold ml-3" style={{ color: colors.text }}>
           {category.label}
         </Text>
       </View>
@@ -488,7 +400,7 @@ function CategoryRow({
         {/* Badge */}
         <View
           style={{
-            backgroundColor: '#F3F4F6',
+            backgroundColor: colors.backgroundTertiary,
             borderRadius: 12,
             paddingHorizontal: 8,
             paddingVertical: 2,
@@ -497,21 +409,22 @@ function CategoryRow({
             marginRight: 8,
           }}
         >
-          <Text className="text-caption font-semibold" style={{ color: '#6B7280' }}>
+          <Text className="text-caption font-semibold" style={{ color: colors.textSecondary }}>
             {category.count}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+        <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
       </View>
     </TouchableOpacity>
   );
 }
 
 function SectionHeader({ title }: { title: string }) {
+  const { colors } = useTheme();
   return (
     <Text
-      className="text-caption font-bold text-gray-500 uppercase"
-      style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}
+      className="text-caption font-bold uppercase"
+      style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8, color: colors.textSecondary }}
     >
       {title}
     </Text>
@@ -531,10 +444,11 @@ function SearchResultRow({
   onToggle: (value: boolean) => void;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
   return (
     <View
-      className="bg-white shadow-level-1 mx-md mb-2"
-      style={{ borderRadius: 12 }}
+      className="shadow-level-1 mx-md mb-2"
+      style={{ borderRadius: 12, backgroundColor: colors.surface }}
     >
       {isToggle ? (
         <View
@@ -542,17 +456,17 @@ function SearchResultRow({
           style={{ paddingHorizontal: 16, paddingVertical: 12, minHeight: 56 }}
         >
           <View className="flex-row items-center flex-1 mr-3">
-            <Ionicons name={setting.icon} size={20} color="#2563EB" />
+            <Ionicons name={setting.icon} size={20} color={colors.primary} />
             <View className="ml-3">
-              <Text className="text-body text-gray-800">{setting.title}</Text>
-              <Text className="text-caption text-gray-500">{setting.category}</Text>
+              <Text className="text-body" style={{ color: colors.text }}>{setting.title}</Text>
+              <Text className="text-caption" style={{ color: colors.textSecondary }}>{setting.category}</Text>
             </View>
           </View>
           <Switch
             value={isOn}
             onValueChange={onToggle}
-            trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
-            thumbColor={isOn ? '#2563EB' : '#F3F4F6'}
+            trackColor={{ false: colors.borderSecondary, true: colors.primaryLight }}
+            thumbColor={isOn ? colors.primary : colors.backgroundTertiary}
             accessibilityLabel={`${setting.title} toggle`}
           />
         </View>
@@ -566,17 +480,17 @@ function SearchResultRow({
           accessibilityRole="button"
         >
           <View className="flex-row items-center flex-1 mr-3">
-            <Ionicons name={setting.icon} size={20} color="#2563EB" />
+            <Ionicons name={setting.icon} size={20} color={colors.primary} />
             <View className="ml-3">
-              <Text className="text-body text-gray-800">{setting.title}</Text>
-              <Text className="text-caption text-gray-500">{setting.category}</Text>
+              <Text className="text-body" style={{ color: colors.text }}>{setting.title}</Text>
+              <Text className="text-caption" style={{ color: colors.textSecondary }}>{setting.category}</Text>
             </View>
           </View>
           <View className="flex-row items-center">
             {setting.value && (
-              <Text className="text-body-small text-gray-500 mr-2">{setting.value}</Text>
+              <Text className="text-body-small mr-2" style={{ color: colors.textSecondary }}>{setting.value}</Text>
             )}
-            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+            <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
           </View>
         </TouchableOpacity>
       )}
@@ -593,6 +507,7 @@ function DeleteAccountModal({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  const { colors } = useTheme();
   return (
     <Modal
       visible={visible}
@@ -602,7 +517,7 @@ function DeleteAccountModal({
     >
       <View
         className="flex-1 justify-end"
-        style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+        style={{ backgroundColor: colors.overlay }}
       >
         <TouchableOpacity
           className="flex-1"
@@ -611,19 +526,19 @@ function DeleteAccountModal({
           accessibilityLabel="Close modal"
         />
         <View
-          className="bg-white"
           style={{
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,
             paddingHorizontal: 24,
             paddingTop: 24,
             paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+            backgroundColor: colors.surface,
           }}
         >
           {/* Handle */}
           <View
             className="self-center rounded-full mb-4"
-            style={{ width: 40, height: 4, backgroundColor: '#D1D5DB' }}
+            style={{ width: 40, height: 4, backgroundColor: colors.borderSecondary }}
           />
 
           {/* Warning Icon */}
@@ -634,25 +549,25 @@ function DeleteAccountModal({
                 width: 64,
                 height: 64,
                 borderRadius: 32,
-                backgroundColor: '#FEF2F2',
+                backgroundColor: colors.error + '15',
               }}
             >
-              <Ionicons name="warning" size={32} color="#EF4444" />
+              <Ionicons name="warning" size={32} color={colors.error} />
             </View>
           </View>
 
           {/* Title */}
           <Text
-            className="font-bold text-gray-900 text-center"
-            style={{ fontSize: 24, lineHeight: 32 }}
+            className="font-bold text-center"
+            style={{ fontSize: 24, lineHeight: 32, color: colors.text }}
           >
             Delete Account?
           </Text>
 
           {/* Description */}
           <Text
-            className="text-body text-gray-600 text-center mt-3"
-            style={{ lineHeight: 22 }}
+            className="text-body text-center mt-3"
+            style={{ lineHeight: 22, color: colors.textSecondary }}
           >
             This action is permanent and cannot be undone. All your data, time
             entries, and ETO history will be permanently deleted.
@@ -666,15 +581,15 @@ function DeleteAccountModal({
               style={{
                 height: 52,
                 borderWidth: 1.5,
-                borderColor: '#D1D5DB',
-                backgroundColor: '#FFFFFF',
+                borderColor: colors.border,
+                backgroundColor: colors.surface,
               }}
               accessibilityLabel="Cancel deletion"
               accessibilityRole="button"
             >
               <Text
                 className="font-semibold"
-                style={{ fontSize: 16, color: '#4B5563' }}
+                style={{ fontSize: 16, color: colors.textSecondary }}
               >
                 Cancel
               </Text>
@@ -683,7 +598,7 @@ function DeleteAccountModal({
             <TouchableOpacity
               onPress={onConfirm}
               className="flex-1 items-center justify-center rounded-xl"
-              style={{ height: 52, backgroundColor: '#EF4444' }}
+              style={{ height: 52, backgroundColor: colors.error }}
               accessibilityLabel="Confirm delete account"
               accessibilityRole="button"
             >
@@ -692,6 +607,184 @@ function DeleteAccountModal({
                 style={{ fontSize: 16, color: '#FFFFFF' }}
               >
                 Delete
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function ThemeModePicker({
+  visible,
+  currentMode,
+  onSelect,
+  onClose,
+}: {
+  visible: boolean;
+  currentMode: ThemeMode;
+  onSelect: (mode: ThemeMode) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [selectedMode, setSelectedMode] = useState<ThemeMode>(currentMode);
+  const [isSaving, setIsSaving] = useState(false);
+  const { colors } = useTheme();
+
+  const MODES: { label: string; value: ThemeMode; icon: keyof typeof Ionicons.glyphMap; description: string }[] = [
+    { label: 'Light', value: 'light', icon: 'sunny-outline', description: 'Always use light theme' },
+    { label: 'Dark', value: 'dark', icon: 'moon-outline', description: 'Always use dark theme' },
+    { label: 'System', value: 'system', icon: 'phone-portrait-outline', description: 'Follow device setting' },
+  ];
+
+  const handleSelect = async () => {
+    if (selectedMode === currentMode) {
+      onClose();
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await onSelect(selectedMode);
+      onClose();
+    } catch (error) {
+      console.error('Failed to save theme mode:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType={Platform.OS === 'ios' ? 'slide' : 'fade'}
+      onRequestClose={onClose}
+    >
+      <View
+        className="flex-1 justify-end"
+        style={{ backgroundColor: colors.overlay }}
+      >
+        <TouchableOpacity
+          className="flex-1"
+          activeOpacity={1}
+          onPress={onClose}
+          accessibilityLabel="Close modal"
+        />
+        <View
+          style={{
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            paddingHorizontal: 24,
+            paddingTop: 24,
+            paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+            backgroundColor: colors.surface,
+          }}
+        >
+          {/* Handle */}
+          <View
+            className="self-center rounded-full mb-6"
+            style={{ width: 40, height: 4, backgroundColor: colors.borderSecondary }}
+          />
+
+          {/* Header */}
+          <Text
+            className="font-bold text-center"
+            style={{ fontSize: 20, lineHeight: 28, marginBottom: 24, color: colors.text }}
+          >
+            Choose Theme
+          </Text>
+
+          {/* Mode Selection */}
+          <View style={{ gap: 12, marginBottom: 24 }}>
+            {MODES.map((mode) => (
+              <TouchableOpacity
+                key={mode.value}
+                onPress={() => setSelectedMode(mode.value)}
+                activeOpacity={0.7}
+                className="flex-row items-center rounded-lg"
+                style={{
+                  paddingVertical: 14,
+                  paddingHorizontal: 16,
+                  backgroundColor: selectedMode === mode.value
+                    ? colors.primary + '15'
+                    : colors.backgroundTertiary,
+                }}
+                accessibilityLabel={mode.label}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: selectedMode === mode.value }}
+              >
+                <Ionicons
+                  name={mode.icon}
+                  size={22}
+                  color={selectedMode === mode.value ? colors.primary : colors.textSecondary}
+                />
+                <View className="flex-1 ml-3">
+                  <Text
+                    className="font-semibold"
+                    style={{
+                      fontSize: 16,
+                      color: selectedMode === mode.value ? colors.primary : colors.text,
+                    }}
+                  >
+                    {mode.label}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    {mode.description}
+                  </Text>
+                </View>
+                {selectedMode === mode.value && (
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Action Buttons */}
+          <View className="flex-row" style={{ gap: 12 }}>
+            <TouchableOpacity
+              onPress={onClose}
+              disabled={isSaving}
+              className="flex-1 items-center justify-center rounded-xl"
+              style={{
+                height: 52,
+                borderWidth: 1.5,
+                borderColor: colors.border,
+                backgroundColor: colors.surface,
+              }}
+              accessibilityLabel="Cancel"
+              accessibilityRole="button"
+            >
+              <Text
+                className="font-semibold"
+                style={{ fontSize: 16, color: colors.textSecondary }}
+              >
+                Cancel
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleSelect}
+              disabled={isSaving}
+              className="flex-1 items-center justify-center rounded-xl"
+              style={{
+                height: 52,
+                backgroundColor: isSaving ? colors.borderSecondary : colors.primary,
+              }}
+              accessibilityLabel="Save theme"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isSaving }}
+            >
+              <Text
+                className="font-semibold"
+                style={{ fontSize: 16, color: '#FFFFFF' }}
+              >
+                {isSaving ? 'Saving...' : 'Save'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -710,21 +803,27 @@ export default function SettingsScreen() {
     logout,
     user,
     biometricEnabled,
-    biometricSupported,
     enableBiometric,
     disableBiometric,
   } = useAuth();
+  const { themeMode, isDark, colors, setThemeMode } = useTheme();
+  const { workHours, weekStartDay, setWorkHours, setWeekStartDay } = usePreferences();
+
+  // Backend mutation for syncing work hours
+  const [updateUserProfile] = useAuthenticatedMutation(UPDATE_USER_PROFILE_MUTATION);
 
   // --- State ---
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [themePickerVisible, setThemePickerVisible] = useState(false);
+  const [workHoursModalVisible, setWorkHoursModalVisible] = useState(false);
+  const [weekStartDayModalVisible, setWeekStartDayModalVisible] = useState(false);
 
   // Toggle states (mock for demo)
   const [toggleStates, setToggleStates] = useState<Record<string, boolean>>({
     notifications: true,
-    'dark-mode': false,
     'eto-alerts': true,
     'eto-usage-summary': false,
     biometric: biometricEnabled,
@@ -743,10 +842,21 @@ export default function SettingsScreen() {
   }, []);
 
   // --- Derived ---
-  const frequentlyUsed = useMemo(
-    () => ALL_SETTINGS.filter((s) => FREQUENTLY_USED_IDS.includes(s.id)),
-    [],
-  );
+  const frequentlyUsed = useMemo(() => {
+    return ALL_SETTINGS.filter((s) => FREQUENTLY_USED_IDS.includes(s.id)).map((s) => {
+      if (s.id === 'work-hours') {
+        return { ...s, value: `${workHours} hrs` };
+      }
+      if (s.id === 'week-start') {
+        return { ...s, value: weekStartDay === 'monday' ? 'Monday' : 'Sunday' };
+      }
+      if (s.id === 'dark-mode') {
+        const label = themeMode === 'light' ? 'Light' : themeMode === 'dark' ? 'Dark' : 'System';
+        return { ...s, value: label };
+      }
+      return s;
+    });
+  }, [workHours, weekStartDay, themeMode]);
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -787,12 +897,40 @@ export default function SettingsScreen() {
       router.push('/settings/notifications');
       return;
     }
+    if (settingId === 'dark-mode') {
+      setThemePickerVisible(true);
+      return;
+    }
+    if (settingId === 'work-hours') {
+      setWorkHoursModalVisible(true);
+      return;
+    }
+    if (settingId === 'week-start') {
+      setWeekStartDayModalVisible(true);
+      return;
+    }
+    if (settingId === 'about') {
+      Alert.alert('About TimeTrack', 'Version 1.0.0 (Build 42)\n\nTimeTrack helps you manage timesheets and ETO hours.\n\nBuilt with React Native and Expo.');
+      return;
+    }
+    if (settingId === 'report-bug') {
+      Alert.alert('Report a Bug', 'Please send bug reports to:\nsupport@timetrack.app\n\nInclude a description of the issue and steps to reproduce it.');
+      return;
+    }
     Alert.alert('Coming Soon', `The "${settingId}" setting will be available in a future update.`);
   }, [router]);
 
   const handleCategoryPress = useCallback((categoryLabel: string) => {
     if (categoryLabel === 'Preferences') {
       router.push('/settings/notifications');
+      return;
+    }
+    if (categoryLabel === 'Appearance') {
+      setThemePickerVisible(true);
+      return;
+    }
+    if (categoryLabel === 'Account & Security') {
+      Alert.alert('Account & Security', 'Biometric authentication can be toggled from the Frequently Used section above.');
       return;
     }
     Alert.alert('Coming Soon', `The "${categoryLabel}" category will be available in a future update.`);
@@ -845,8 +983,8 @@ export default function SettingsScreen() {
   const userEmail = user?.email ?? '';
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <StatusBar style="dark" />
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
 
       {/* Top Bar */}
       <TopBar topInset={insets.top} />
@@ -859,7 +997,7 @@ export default function SettingsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#2563EB"
+            tintColor={colors.primary}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -902,15 +1040,15 @@ export default function SettingsScreen() {
             ) : (
               /* Empty Search State */
               <View className="items-center" style={{ paddingTop: 48 }}>
-                <Ionicons name="search" size={48} color="#D1D5DB" />
-                <Text className="text-body font-semibold text-gray-800 mt-4">
+                <Ionicons name="search" size={48} color={colors.borderSecondary} />
+                <Text className="text-body font-semibold mt-4" style={{ color: colors.text }}>
                   No results found
                 </Text>
-                <Text className="text-body-small text-gray-500 mt-2 text-center px-8">
+                <Text className="text-body-small mt-2 text-center px-8" style={{ color: colors.textSecondary }}>
                   Try searching for:
                 </Text>
                 <View className="mt-3 items-center">
-                  {['notifications', 'dark mode', 'work hours', 'password'].map(
+                  {['notifications', 'dark mode', 'work hours', 'week start'].map(
                     (suggestion) => (
                       <TouchableOpacity
                         key={suggestion}
@@ -918,7 +1056,7 @@ export default function SettingsScreen() {
                         accessibilityLabel={`Search for ${suggestion}`}
                         accessibilityRole="button"
                       >
-                        <Text className="text-body-small text-primary mt-1">
+                        <Text className="text-body-small mt-1" style={{ color: colors.primary }}>
                           {suggestion}
                         </Text>
                       </TouchableOpacity>
@@ -934,8 +1072,8 @@ export default function SettingsScreen() {
             {/* Frequently Used */}
             <SectionHeader title="FREQUENTLY USED" />
             <View
-              className="bg-white shadow-level-1 mx-md"
-              style={{ borderRadius: 12 }}
+              className="shadow-level-1 mx-md"
+              style={{ borderRadius: 12, backgroundColor: colors.surface }}
             >
               {frequentlyUsed.map((setting, index) => {
                 if (setting.id === 'notifications') {
@@ -948,7 +1086,7 @@ export default function SettingsScreen() {
                         paddingVertical: 12,
                         minHeight: 56,
                         borderBottomWidth: index < frequentlyUsed.length - 1 ? 1 : 0,
-                        borderBottomColor: '#E5E7EB',
+                        borderBottomColor: colors.border,
                       }}
                     >
                       <TouchableOpacity
@@ -958,15 +1096,15 @@ export default function SettingsScreen() {
                         accessibilityLabel="Notifications. Tap for detailed preferences."
                         accessibilityRole="button"
                       >
-                        <Ionicons name={setting.icon} size={20} color="#2563EB" />
-                        <Text className="text-body text-gray-800 ml-3">{setting.title}</Text>
-                        <Ionicons name="chevron-forward" size={14} color="#9CA3AF" style={{ marginLeft: 4 }} />
+                        <Ionicons name={setting.icon} size={20} color={colors.primary} />
+                        <Text className="text-body ml-3" style={{ color: colors.text }}>{setting.title}</Text>
+                        <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} style={{ marginLeft: 4 }} />
                       </TouchableOpacity>
                       <Switch
                         value={toggleStates[setting.id] ?? false}
                         onValueChange={(value) => handleToggle(setting.id, value)}
-                        trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
-                        thumbColor={(toggleStates[setting.id] ?? false) ? '#2563EB' : '#F3F4F6'}
+                        trackColor={{ false: colors.borderSecondary, true: colors.primaryLight }}
+                        thumbColor={(toggleStates[setting.id] ?? false) ? colors.primary : colors.backgroundTertiary}
                         accessibilityLabel="Notifications master toggle"
                       />
                     </View>
@@ -994,8 +1132,8 @@ export default function SettingsScreen() {
             {/* All Settings */}
             <SectionHeader title="ALL SETTINGS" />
             <View
-              className="bg-white shadow-level-1 mx-md"
-              style={{ borderRadius: 12 }}
+              className="shadow-level-1 mx-md"
+              style={{ borderRadius: 12, backgroundColor: colors.surface }}
             >
               {CATEGORIES.map((category, index) => (
                 <CategoryRow
@@ -1012,7 +1150,7 @@ export default function SettingsScreen() {
             <TouchableOpacity
               onPress={handleLogout}
               activeOpacity={0.7}
-              className="bg-white shadow-level-1 mx-md"
+              className="shadow-level-1 mx-md"
               style={{
                 borderRadius: 12,
                 height: 56,
@@ -1020,20 +1158,21 @@ export default function SettingsScreen() {
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
+                backgroundColor: colors.surface,
               }}
               accessibilityLabel="Log out of your account"
               accessibilityRole="button"
             >
-              <Ionicons name="log-out-outline" size={20} color="#4B5563" />
-              <Text className="text-body font-semibold text-gray-700 ml-2">
+              <Ionicons name="log-out-outline" size={20} color={colors.textSecondary} />
+              <Text className="text-body font-semibold ml-2" style={{ color: colors.textSecondary }}>
                 Logout
               </Text>
             </TouchableOpacity>
 
             {/* App Info */}
             <Text
-              className="text-caption text-gray-500 text-center"
-              style={{ paddingTop: 20, paddingBottom: 12 }}
+              className="text-caption text-center"
+              style={{ paddingTop: 20, paddingBottom: 12, color: colors.textTertiary }}
             >
               Version 1.0.0 (Build 42)
             </Text>
@@ -1046,9 +1185,9 @@ export default function SettingsScreen() {
               style={{
                 borderRadius: 12,
                 height: 56,
-                backgroundColor: '#FEF2F2',
+                backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2',
                 borderWidth: 1,
-                borderColor: '#FECACA',
+                borderColor: isDark ? 'rgba(239, 68, 68, 0.3)' : '#FECACA',
                 paddingHorizontal: 16,
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -1057,10 +1196,10 @@ export default function SettingsScreen() {
               accessibilityLabel="Delete your account"
               accessibilityRole="button"
             >
-              <Ionicons name="trash-outline" size={20} color="#EF4444" />
+              <Ionicons name="trash-outline" size={20} color={colors.error} />
               <Text
                 className="font-semibold ml-2"
-                style={{ fontSize: 16, color: '#EF4444' }}
+                style={{ fontSize: 16, color: colors.error }}
               >
                 Delete Account
               </Text>
@@ -1074,6 +1213,46 @@ export default function SettingsScreen() {
         visible={deleteModalVisible}
         onCancel={() => setDeleteModalVisible(false)}
         onConfirm={handleConfirmDelete}
+      />
+
+      {/* Theme Picker Modal */}
+      <ThemeModePicker
+        visible={themePickerVisible}
+        currentMode={themeMode}
+        onSelect={async (mode) => {
+          await setThemeMode(mode);
+        }}
+        onClose={() => setThemePickerVisible(false)}
+      />
+
+      {/* Work Hours Picker Modal */}
+      <WorkHoursPicker
+        visible={workHoursModalVisible}
+        currentHours={workHours}
+        onSelect={async (hours) => {
+          await setWorkHours(hours);
+          // Sync to backend
+          try {
+            await updateUserProfile({
+              variables: {
+                input: { workingHoursPerPeriod: hours * 11 },
+              },
+            });
+          } catch (err) {
+            console.warn('Failed to sync work hours to backend:', err);
+          }
+        }}
+        onClose={() => setWorkHoursModalVisible(false)}
+      />
+
+      {/* Week Start Day Picker Modal */}
+      <WeekStartDayPicker
+        visible={weekStartDayModalVisible}
+        currentDay={weekStartDay}
+        onSelect={async (day) => {
+          await setWeekStartDay(day);
+        }}
+        onClose={() => setWeekStartDayModalVisible(false)}
       />
     </View>
   );

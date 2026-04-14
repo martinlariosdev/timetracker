@@ -45,6 +45,12 @@ export class ETOTransactionObjectType {
   @Field(() => Boolean, { description: 'Whether this transaction has been synced with the backend' })
   synced: boolean;
 
+  @Field(() => Float, {
+    nullable: true,
+    description: 'Running balance after this transaction (computed, not stored)',
+  })
+  runningBalance?: number | null;
+
   @Field(() => Date, { description: 'Timestamp when this transaction was created' })
   createdAt: Date;
 }

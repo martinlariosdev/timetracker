@@ -43,9 +43,10 @@ export class ETOService {
    * @returns Array of ETO transactions
    */
   async getTransactions(consultantId: string, limit?: number, offset?: number): Promise<ETOTransactionObjectType[]> {
-    // Verify consultant exists
+    // Verify consultant exists and get current balance for running balance calculation
     const consultant = await this.prisma.consultant.findUnique({
       where: { id: consultantId },
+      select: { id: true, etoBalance: true },
     });
 
     if (!consultant) {
@@ -54,6 +55,7 @@ export class ETOService {
 
     const where = { consultantId };
 
+    // Fetch all transactions (up to limit) sorted newest-first
     const transactions = await this.prisma.eTOTransaction.findMany({
       where,
       orderBy: { date: 'desc' },
@@ -61,7 +63,33 @@ export class ETOService {
       skip: offset || 0,
     });
 
-    return transactions as ETOTransactionObjectType[];
+    // Compute running balance: start from current balance and work backwards.
+    // The most recent transaction's running balance equals the current balance.
+    // Each older transaction's running balance = the newer one's balance minus the newer one's hours.
+    // Note: When offset > 0 (pagination), we need to account for skipped transactions.
+    // We subtract the sum of skipped transactions' hours from the current balance.
+    let runningBalance = consultant.etoBalance;
+    if (offset && offset > 0) {
+      const skippedTransactions = await this.prisma.eTOTransaction.findMany({
+        where,
+        orderBy: { date: 'desc' },
+        take: offset,
+        select: { hours: true },
+      });
+      const skippedHours = skippedTransactions.reduce((sum, tx) => sum + tx.hours, 0);
+      runningBalance = Math.round((runningBalance - skippedHours) * 100) / 100;
+    }
+    const withRunningBalance = transactions.map((tx) => {
+      const result = {
+        ...tx,
+        runningBalance,
+      };
+      // Subtract this transaction's hours to get the balance before it
+      runningBalance = Math.round((runningBalance - tx.hours) * 100) / 100;
+      return result;
+    });
+
+    return withRunningBalance as ETOTransactionObjectType[];
   }
 
   /**

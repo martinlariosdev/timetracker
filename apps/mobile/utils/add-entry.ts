@@ -21,13 +21,23 @@ export function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
-export function generateWeekStrip(center: Date): Date[] {
-  // Show selected date ±3 days (7 days total, 4 visible at a time)
+export function generateWeekStrip(center: Date, weekStartDay: number = 1): Date[] {
+  // Generate 7-day week strip based on weekStartDay preference
+  // weekStartDay: 0 = Sunday, 1 = Monday (default)
+  const d = new Date(center);
+  const dayOfWeek = d.getDay();
+
+  // Calculate days to subtract to reach the start of the week
+  const daysToStart = (dayOfWeek - weekStartDay + 7) % 7;
+
+  const weekStart = new Date(d);
+  weekStart.setDate(weekStart.getDate() - daysToStart);
+
   const dates: Date[] = [];
-  for (let i = -3; i <= 3; i++) {
-    const d = new Date(center);
-    d.setDate(d.getDate() + i);
-    dates.push(d);
+  for (let i = 0; i < 7; i++) {
+    const dayDate = new Date(weekStart);
+    dayDate.setDate(dayDate.getDate() + i);
+    dates.push(dayDate);
   }
   return dates;
 }

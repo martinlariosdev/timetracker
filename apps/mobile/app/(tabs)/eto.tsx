@@ -5,14 +5,16 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  ActivityIndicator,
   Platform,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '@/hooks/useAuth';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
-import { ME_QUERY, ETO_REQUESTS_QUERY } from '@/lib/graphql/queries';
+import { ME_QUERY, ETO_TRANSACTIONS_QUERY } from '@/lib/graphql/queries';
+import { ErrorView } from '@/components/ErrorView';
+import { DayCardSkeletonList } from '@/components/skeletons/DayCardSkeleton';
 import ETOBalanceDetailModal from '@/components/ETOBalanceDetailModal';
 import UseETOModal from '@/components/UseETOModal';
 import ETOStatsModal from '@/components/ETOStatsModal';
@@ -364,6 +366,7 @@ function TransactionCard({
 
 export default function ETOScreen() {
   const insets = useSafeAreaInsets();
+  const { logout } = useAuth();
 
   // --- Modal State ---
   const [balanceDetailVisible, setBalanceDetailVisible] = useState(false);
@@ -381,13 +384,17 @@ export default function ETOScreen() {
     refetch: refetchMe,
   } = useAuthenticatedQuery(ME_QUERY);
 
+  // Get consultant ID from ME query for the transactions query
+  const consultantId = meData?.me?.id;
+
   const {
     data: transactionsData,
     loading: transactionsLoading,
     error: transactionsError,
     refetch: refetchTransactions,
-  } = useAuthenticatedQuery(ETO_REQUESTS_QUERY, {
-    variables: { filters: {} },
+  } = useAuthenticatedQuery(ETO_TRANSACTIONS_QUERY, {
+    variables: { consultantId: consultantId || '', limit: 20 },
+    skip: !consultantId,
   });
 
   // --- Derived Data ---
@@ -399,17 +406,17 @@ export default function ETOScreen() {
   }, [meData]);
 
   const transactions: ETOTransaction[] = useMemo(() => {
-    if (transactionsData?.etoRequests?.length > 0) {
-      return transactionsData.etoRequests.map((req: any) => ({
-        id: req.id,
-        date: req.startDate || req.requestDate,
-        hours: req.status === 'approved' ? -req.hours : req.hours,
-        transactionType: req.reason || 'ETO Request',
-        description: req.comments || req.reason || '',
-        runningBalance: undefined,
+    if (transactionsData?.etoTransactions?.length > 0) {
+      return transactionsData.etoTransactions.map((t: any) => ({
+        id: t.id,
+        date: t.date ? t.date.split('T')[0] : '',
+        hours: t.hours,
+        transactionType: t.transactionType || 'Transaction',
+        description: t.description || t.projectName || '',
+        runningBalance: t.runningBalance ?? undefined,
       }));
     }
-    return MOCK_TRANSACTIONS;
+    return MOCK_TRANSACTIONS; // Keep mock data as fallback during development
   }, [transactionsData]);
 
   const recentChange = useMemo(() => {
@@ -481,28 +488,15 @@ export default function ETOScreen() {
 
       {/* Content */}
       {loading && !transactions.length ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#2563EB" />
-          <Text className="text-sm text-gray-500 mt-3">Loading ETO data...</Text>
-        </View>
+        <ScrollView className="flex-1 px-4 pt-3">
+          <DayCardSkeletonList count={5} />
+        </ScrollView>
       ) : error && !transactions.length ? (
-        <View className="flex-1 items-center justify-center p-4">
-          <Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
-          <Text className="text-base font-semibold text-gray-800 mt-3">
-            Failed to load ETO data
-          </Text>
-          <Text className="text-sm text-gray-500 mt-1 text-center">
-            {error.message}
-          </Text>
-          <TouchableOpacity
-            onPress={handleRefresh}
-            className="bg-primary rounded-lg px-4 py-2 mt-4"
-            accessibilityLabel="Retry loading ETO data"
-            accessibilityRole="button"
-          >
-            <Text className="text-white font-semibold">Retry</Text>
-          </TouchableOpacity>
-        </View>
+        <ErrorView
+          error={error}
+          onRetry={async () => { await Promise.all([refetchMe(), refetchTransactions()]); }}
+          onLogout={logout}
+        />
       ) : (
         <ScrollView
           className="flex-1"

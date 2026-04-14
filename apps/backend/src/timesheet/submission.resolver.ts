@@ -106,6 +106,21 @@ export class SubmissionResolver {
   }
 
   /**
+   * Get a timesheet submission by pay period ID
+   * Returns the submission for the current user's timesheet for the specified pay period
+   * @param payPeriodId - Pay period ID
+   * @param user - Current authenticated user
+   * @returns Submission record or null if not found
+   */
+  @Query(() => TimesheetSubmissionType, { nullable: true, description: 'Get a timesheet submission by pay period ID' })
+  async timesheetSubmissionByPayPeriod(
+    @Args('payPeriodId') payPeriodId: string,
+    @CurrentUser() user: Consultant,
+  ) {
+    return this.submissionService.getSubmissionByPayPeriod(user.id, payPeriodId);
+  }
+
+  /**
    * Get all timesheet submissions for the current user
    * @param user - Current authenticated user
    * @returns Array of submissions

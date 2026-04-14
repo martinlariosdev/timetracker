@@ -10,6 +10,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Client model representing a company/client that consultants can log time against
+model Client {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  code      String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active])
+  @@index([name])
+  @@map("clients")
+}
+
 // Consultant model representing a consultant with their hours and payment details
 model Consultant {
   id                      String   @id @default(auto()) @map("_id") @db.ObjectId
