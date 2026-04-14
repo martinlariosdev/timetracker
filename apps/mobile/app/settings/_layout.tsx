@@ -7,6 +7,7 @@ export default function SettingsLayout() {
       <Stack.Screen name="work-hours" />
       <Stack.Screen name="week-start" />
       <Stack.Screen name="dark-mode" />
+      <Stack.Screen name="theme" />
     </Stack>
   );
 }

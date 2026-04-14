@@ -98,16 +98,6 @@ const ALL_SETTINGS: SettingItem[] = [
     icon: 'cash-outline',
   },
   {
-    id: 'eto-low-balance',
-    title: 'Low Balance Alert',
-    keywords: ['eto', 'low', 'balance', 'alert', 'threshold'],
-    category: 'ETO Reminders',
-    categoryIcon: '💰',
-    type: 'navigation',
-    icon: 'alert-circle-outline',
-    value: '8 hrs',
-  },
-  {
     id: 'eto-usage-summary',
     title: 'Usage Summary',
     keywords: ['eto', 'usage', 'summary', 'report', 'monthly'],
@@ -133,7 +123,7 @@ const FREQUENTLY_USED_IDS = ['notifications', 'dark-mode', 'work-hours', 'eto-al
 const CATEGORIES: CategoryInfo[] = [
   { label: 'Preferences', icon: '⚙️', ionicon: 'settings-outline', count: 3 },
   { label: 'Appearance', icon: '🎨', ionicon: 'color-palette-outline', count: 1 },
-  { label: 'ETO Reminders', icon: '💰', ionicon: 'cash-outline', count: 3 },
+  { label: 'ETO Reminders', icon: '💰', ionicon: 'cash-outline', count: 2 },
   { label: 'Account & Security', icon: '🔒', ionicon: 'lock-closed-outline', count: 1 },
 ];
 
@@ -149,14 +139,16 @@ function matchesSearch(query: string, setting: SettingItem): boolean {
 // --- Sub-Components ---
 
 function TopBar({ topInset }: { topInset: number }) {
+  const { colors } = useTheme();
   return (
-    <View className="bg-white shadow-level-1" style={{ paddingTop: topInset }}>
+    <View style={{ paddingTop: topInset, backgroundColor: colors.surface }}>
       <View
         className="flex-row items-center justify-center"
         style={{ height: 56 }}
       >
         <Text
-          className="text-h3 font-semibold text-gray-800"
+          className="text-h3 font-semibold"
+          style={{ color: colors.text }}
           accessibilityRole="header"
         >
           Settings
@@ -622,8 +614,8 @@ export default function SettingsScreen() {
     enableBiometric,
     disableBiometric,
   } = useAuth();
-  const { themeMode, isDark, setThemeMode } = useTheme();
-  const { workHours, weekStartDay, setWorkHours, setWeekStartDay } = usePreferences();
+  const { themeMode, isDark } = useTheme();
+  const { workHours, weekStartDay } = usePreferences();
 
   // --- State ---
   const [searchQuery, setSearchQuery] = useState('');
@@ -644,6 +636,11 @@ export default function SettingsScreen() {
   React.useEffect(() => {
     setToggleStates((prev) => ({ ...prev, biometric: biometricEnabled }));
   }, [biometricEnabled]);
+
+  // Keep dark mode toggle in sync with theme context
+  React.useEffect(() => {
+    setToggleStates((prev) => ({ ...prev, 'dark-mode': themeMode === 'dark' }));
+  }, [themeMode]);
 
   // Sync notifications toggle with stored preferences
   React.useEffect(() => {
@@ -709,7 +706,7 @@ export default function SettingsScreen() {
       return;
     }
     if (settingId === 'dark-mode') {
-      router.push('/settings/theme');
+      router.push('/settings/dark-mode');
       return;
     }
     if (settingId === 'work-hours') {
@@ -718,6 +715,14 @@ export default function SettingsScreen() {
     }
     if (settingId === 'week-start') {
       router.push('/settings/week-start');
+      return;
+    }
+    if (settingId === 'about') {
+      Alert.alert('About TimeTrack', 'Version 1.0.0 (Build 42)\n\nTimeTrack helps you manage timesheets and ETO hours.\n\nBuilt with React Native and Expo.');
+      return;
+    }
+    if (settingId === 'report-bug') {
+      Alert.alert('Report a Bug', 'Please send bug reports to:\nsupport@timetrack.app\n\nInclude a description of the issue and steps to reproduce it.');
       return;
     }
     Alert.alert('Coming Soon', `The "${settingId}" setting will be available in a future update.`);
@@ -729,7 +734,11 @@ export default function SettingsScreen() {
       return;
     }
     if (categoryLabel === 'Appearance') {
-      // Dark mode is controlled via the toggle on the main settings screen
+      router.push('/settings/dark-mode');
+      return;
+    }
+    if (categoryLabel === 'Account & Security') {
+      Alert.alert('Account & Security', 'Biometric authentication can be toggled from the Frequently Used section above.');
       return;
     }
     Alert.alert('Coming Soon', `The "${categoryLabel}" category will be available in a future update.`);
