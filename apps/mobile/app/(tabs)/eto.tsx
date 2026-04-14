@@ -12,7 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
-import { ME_QUERY, ETO_REQUESTS_QUERY } from '@/lib/graphql/queries';
+import { ME_QUERY, ETO_TRANSACTIONS_QUERY } from '@/lib/graphql/queries';
 import ETOBalanceDetailModal from '@/components/ETOBalanceDetailModal';
 import UseETOModal from '@/components/UseETOModal';
 import ETOStatsModal from '@/components/ETOStatsModal';
@@ -381,13 +381,17 @@ export default function ETOScreen() {
     refetch: refetchMe,
   } = useAuthenticatedQuery(ME_QUERY);
 
+  // Get consultant ID from ME query for the transactions query
+  const consultantId = meData?.me?.id;
+
   const {
     data: transactionsData,
     loading: transactionsLoading,
     error: transactionsError,
     refetch: refetchTransactions,
-  } = useAuthenticatedQuery(ETO_REQUESTS_QUERY, {
-    variables: { filters: {} },
+  } = useAuthenticatedQuery(ETO_TRANSACTIONS_QUERY, {
+    variables: { consultantId: consultantId || '', limit: 20 },
+    skip: !consultantId,
   });
 
   // --- Derived Data ---
@@ -399,17 +403,17 @@ export default function ETOScreen() {
   }, [meData]);
 
   const transactions: ETOTransaction[] = useMemo(() => {
-    if (transactionsData?.etoRequests?.length > 0) {
-      return transactionsData.etoRequests.map((req: any) => ({
-        id: req.id,
-        date: req.startDate || req.requestDate,
-        hours: req.status === 'approved' ? -req.hours : req.hours,
-        transactionType: req.reason || 'ETO Request',
-        description: req.comments || req.reason || '',
-        runningBalance: undefined,
+    if (transactionsData?.etoTransactions?.length > 0) {
+      return transactionsData.etoTransactions.map((t: any) => ({
+        id: t.id,
+        date: t.date ? t.date.split('T')[0] : '',
+        hours: t.hours,
+        transactionType: t.transactionType || 'Transaction',
+        description: t.description || t.projectName || '',
+        runningBalance: t.runningBalance ?? undefined,
       }));
     }
-    return MOCK_TRANSACTIONS;
+    return MOCK_TRANSACTIONS; // Keep mock data as fallback during development
   }, [transactionsData]);
 
   const recentChange = useMemo(() => {

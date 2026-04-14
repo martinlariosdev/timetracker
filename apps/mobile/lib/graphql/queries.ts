@@ -105,6 +105,27 @@ export const ETO_REQUESTS_QUERY = gql`
 `;
 
 /**
+ * Get ETO transaction history (accruals, usage, adjustments) - requires authentication
+ * Used on the ETO screen to display historical balance changes
+ */
+export const ETO_TRANSACTIONS_QUERY = gql`
+  query ETOTransactions($consultantId: ID!, $limit: Int, $offset: Int) {
+    etoTransactions(consultantId: $consultantId, limit: $limit, offset: $offset) {
+      id
+      consultantId
+      date
+      hours
+      transactionType
+      description
+      projectName
+      synced
+      runningBalance
+      createdAt
+    }
+  }
+`;
+
+/**
  * Get time entries for a date range (week view) - requires authentication
  */
 export const WEEK_TIME_ENTRIES_QUERY = gql`
