@@ -103,7 +103,6 @@ export const ETO_REQUESTS_QUERY = gql`
       reviewedAt
       comments
       syncStatus
-      lastModified
       createdAt
       updatedAt
     }
