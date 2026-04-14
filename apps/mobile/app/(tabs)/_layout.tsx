@@ -35,7 +35,7 @@ export default function TabsLayout() {
         name="add-entry"
         options={{
           title: 'Add Entry',
-          headerTitle: 'Add Time Entry',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="add-circle-outline" size={size} color={color} />
           ),

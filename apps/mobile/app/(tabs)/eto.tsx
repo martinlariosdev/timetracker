@@ -175,7 +175,7 @@ function BalanceCard({
       accessibilityRole="button"
     >
       <View className="flex-row items-center" style={{ gap: 8 }}>
-        <Text style={{ fontSize: 32 }}>💰</Text>
+        <Ionicons name="time-sharp" size={24} color="#1F2937" />
         <Text className="text-body text-gray-600">ETO Balance</Text>
       </View>
 
@@ -232,7 +232,7 @@ function QuickActions({
         accessibilityLabel="Use ETO hours"
         accessibilityRole="button"
       >
-        <Text style={{ fontSize: 24 }}>💸</Text>
+        <Ionicons name="time-outline" size={24} color="#FFFFFF" />
         <Text className="text-body font-bold text-white ml-2">Use ETO</Text>
       </TouchableOpacity>
 
@@ -251,7 +251,7 @@ function QuickActions({
         accessibilityLabel="View ETO statistics"
         accessibilityRole="button"
       >
-        <Text style={{ fontSize: 24 }}>📊</Text>
+        <Ionicons name="stats-chart-outline" size={24} color="#1F2937" />
       </TouchableOpacity>
     </View>
   );
@@ -313,7 +313,7 @@ function TransactionCard({
     >
       {/* Card Header */}
       <View className="flex-row items-center" style={{ gap: 8, marginBottom: 12 }}>
-        <Text style={{ fontSize: 20 }}>📅</Text>
+        <Ionicons name="calendar-outline" size={20} color="#1F2937" />
         <Text className="text-body font-semibold text-gray-800">
           {formattedDate}
         </Text>

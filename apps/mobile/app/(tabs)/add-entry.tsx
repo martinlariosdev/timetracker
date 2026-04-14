@@ -418,7 +418,7 @@ export default function AddEntryScreen() {
             accessibilityLabel="Close"
             accessibilityRole="button"
           >
-            <Ionicons name="close" size={24} color="#4B5563" />
+            <Ionicons name="chevron-back" size={24} color="#4B5563" />
           </TouchableOpacity>
 
           <Text className="text-h4 font-semibold text-gray-800">
