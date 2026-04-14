@@ -898,15 +898,15 @@ export default function SettingsScreen() {
       return;
     }
     if (settingId === 'dark-mode') {
-      router.push('/settings/dark-mode');
+      setThemePickerVisible(true);
       return;
     }
     if (settingId === 'work-hours') {
-      router.push('/settings/work-hours');
+      setWorkHoursModalVisible(true);
       return;
     }
     if (settingId === 'week-start') {
-      router.push('/settings/week-start');
+      setWeekStartDayModalVisible(true);
       return;
     }
     if (settingId === 'about') {
@@ -926,7 +926,7 @@ export default function SettingsScreen() {
       return;
     }
     if (categoryLabel === 'Appearance') {
-      router.push('/settings/dark-mode');
+      setThemePickerVisible(true);
       return;
     }
     if (categoryLabel === 'Account & Security') {
@@ -1213,6 +1213,46 @@ export default function SettingsScreen() {
         visible={deleteModalVisible}
         onCancel={() => setDeleteModalVisible(false)}
         onConfirm={handleConfirmDelete}
+      />
+
+      {/* Theme Picker Modal */}
+      <ThemeModePicker
+        visible={themePickerVisible}
+        currentMode={themeMode}
+        onSelect={async (mode) => {
+          await setThemeMode(mode);
+        }}
+        onClose={() => setThemePickerVisible(false)}
+      />
+
+      {/* Work Hours Picker Modal */}
+      <WorkHoursPicker
+        visible={workHoursModalVisible}
+        currentHours={workHours}
+        onSelect={async (hours) => {
+          await setWorkHours(hours);
+          // Sync to backend
+          try {
+            await updateUserProfile({
+              variables: {
+                input: { workingHoursPerPeriod: hours * 11 },
+              },
+            });
+          } catch (err) {
+            console.warn('Failed to sync work hours to backend:', err);
+          }
+        }}
+        onClose={() => setWorkHoursModalVisible(false)}
+      />
+
+      {/* Week Start Day Picker Modal */}
+      <WeekStartDayPicker
+        visible={weekStartDayModalVisible}
+        currentDay={weekStartDay}
+        onSelect={async (day) => {
+          await setWeekStartDay(day);
+        }}
+        onClose={() => setWeekStartDayModalVisible(false)}
       />
     </View>
   );
