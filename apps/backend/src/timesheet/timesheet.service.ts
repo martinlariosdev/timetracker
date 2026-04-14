@@ -205,12 +205,6 @@ export class TimesheetService {
       // Build validation data from update input
       const validationData: Record<string, unknown> = {};
 
-      if (data.consultantId !== undefined) {
-        validationData.consultantId = this.convertToNumericId(data.consultantId);
-      }
-      if (data.payPeriodId !== undefined) {
-        validationData.payPeriodId = this.convertToNumericId(data.payPeriodId);
-      }
       if (data.date !== undefined) {
         validationData.date = data.date;
       }
@@ -245,16 +239,6 @@ export class TimesheetService {
       // Build Prisma update data
       const prismaData: Partial<Prisma.TimeEntryUpdateInput> = {};
       const dateStr = data.date || existingEntry.date.toISOString().split('T')[0];
-
-      if (data.consultantId !== undefined) {
-        await this.validateConsultantExists(data.consultantId);
-        prismaData.consultant = { connect: { id: data.consultantId } };
-      }
-
-      if (data.payPeriodId !== undefined) {
-        await this.validatePayPeriodExists(data.payPeriodId);
-        prismaData.payPeriod = { connect: { id: data.payPeriodId } };
-      }
 
       if (data.date !== undefined) {
         prismaData.date = new Date(data.date);
@@ -297,7 +281,7 @@ export class TimesheetService {
 
         // Check for overlapping entries (excluding current entry)
         await this.checkForOverlappingEntries(
-          data.consultantId || existingEntry.consultantId,
+          existingEntry.consultantId,
           dateStr,
           finalInTime1,
           finalOutTime1,
