@@ -726,7 +726,7 @@ export default function TimesheetListScreen() {
   });
 
   const submission: TimesheetSubmission | null = useMemo(() => {
-    return submissionData?.timesheetSubmission ?? null;
+    return submissionData?.timesheetSubmissionByPayPeriod ?? null;
   }, [submissionData]);
 
   const isSubmitted = submission !== null && submission.status !== 'draft';
@@ -735,7 +735,7 @@ export default function TimesheetListScreen() {
   const [submitTimesheet, { loading: isSubmitting }] = useAuthenticatedMutation(
     SUBMIT_TIMESHEET_MUTATION,
     {
-      refetchQueries: ['WeekTimeEntries', 'TimesheetSubmission'],
+      refetchQueries: ['WeekTimeEntries', 'TimesheetSubmissionByPayPeriod'],
     },
   );
 

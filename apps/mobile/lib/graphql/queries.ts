@@ -140,8 +140,8 @@ export const TIMESHEET_METRICS_QUERY = gql`
  * Get timesheet submission status for a pay period - requires authentication
  */
 export const TIMESHEET_SUBMISSION_QUERY = gql`
-  query TimesheetSubmission($payPeriodId: String!) {
-    timesheetSubmission(payPeriodId: $payPeriodId) {
+  query TimesheetSubmissionByPayPeriod($payPeriodId: String!) {
+    timesheetSubmissionByPayPeriod(payPeriodId: $payPeriodId) {
       id
       consultantId
       payPeriodId
