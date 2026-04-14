@@ -205,7 +205,7 @@ function MetricCard({
 }) {
   return (
     <View
-      className="rounded-xl p-3"
+      className="rounded-xl self-center flex-col px-6 py-2"
       style={[
         {
           backgroundColor: 'rgba(255,255,255,0.15)',
@@ -216,20 +216,22 @@ function MetricCard({
       ]}
     >
       <Text
-        className="font-medium mb-1"
+        className="font-medium"
         style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}
       >
         {label}
       </Text>
-      <Text
-        className="text-2xl font-bold"
-        style={{ color: valueColor || '#FFFFFF' }}
-      >
-        {value}
-      </Text>
-      <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)' }}>
-        {subtext}
-      </Text>
+      <View className="flex-row items-center gap-2">
+        <Text
+          className="text-2xl font-bold"
+          style={{ color: valueColor || '#FFFFFF' }}
+        >
+          {value}
+        </Text>
+        <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)' }}>
+          {subtext}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -692,7 +694,7 @@ export default function TimesheetListScreen() {
   const { weekStartDay } = usePreferences();
   const { width: screenWidth } = useWindowDimensions();
   const chipWidth = (screenWidth - 16) / 7.2;
-  const cardWidth = screenWidth * 0.7; // 70% width shows edge of next card
+  const cardWidth = screenWidth * 0.6; // 70% width shows edge of next card
 
   const today = useMemo(() => new Date(), []);
 
@@ -1006,7 +1008,7 @@ export default function TimesheetListScreen() {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         className="shadow-level-1"
-        style={{ height: 100, paddingVertical: 18, paddingHorizontal: 12 }}
+        style={{ height: 120, paddingVertical: 18, paddingHorizontal: 12 }}
       >
         <ScrollView
           ref={metricsScrollRef}
