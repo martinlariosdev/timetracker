@@ -758,11 +758,14 @@ export default function TimesheetListScreen() {
   }, [weekStart]);
 
   // Submission status query
+  // TEMP DISABLED: Mobile calculates string payPeriodId but backend expects ObjectID
+  // Need to query pay periods from backend first to get actual IDs
   const {
     data: submissionData,
     refetch: refetchSubmission,
   } = useAuthenticatedQuery(TIMESHEET_SUBMISSION_QUERY, {
     variables: { payPeriodId },
+    skip: true, // Skip until we have real pay period IDs from backend
   });
 
   const submission: TimesheetSubmission | null = useMemo(() => {
@@ -985,36 +988,8 @@ export default function TimesheetListScreen() {
         className="bg-primary shadow-level-1"
         style={{ paddingTop: insets.top }}
       >
-        <View className="flex-row items-center justify-between px-4" style={{ height: 56 }}>
-          <TouchableOpacity
-            className="items-center justify-center"
-            style={{ width: 44, height: 44 }}
-            accessibilityLabel="Menu"
-            accessibilityRole="button"
-          >
-            <Ionicons name="menu" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-
-          <Text className="text-xl font-semibold text-white">Timesheet</Text>
-
-          <View className="flex-row items-center">
-            <TouchableOpacity
-              className="items-center justify-center"
-              style={{ width: 44, height: 44 }}
-              accessibilityLabel="Toggle view"
-              accessibilityRole="button"
-            >
-              <Ionicons name="grid-outline" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="items-center justify-center ml-3"
-              style={{ width: 44, height: 44 }}
-              accessibilityLabel="Filter"
-              accessibilityRole="button"
-            >
-              <Ionicons name="filter" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
+        <View className="flex-row items-center justify-center px-4" style={{ height: 56 }}>
+          <Text className="text-xl font-semibold text-white">Time Tracking</Text>
         </View>
       </View>
 

@@ -134,7 +134,7 @@ export const ETO_TRANSACTIONS_QUERY = gql`
  * Get time entries for a date range (week view) - requires authentication
  */
 export const WEEK_TIME_ENTRIES_QUERY = gql`
-  query WeekTimeEntries($startDate: String!, $endDate: String!) {
+  query WeekTimeEntries($startDate: DateTime!, $endDate: DateTime!) {
     timeEntries(filters: { startDate: $startDate, endDate: $endDate }) {
       id
       consultantId
