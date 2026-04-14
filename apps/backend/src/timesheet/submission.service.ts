@@ -210,6 +210,25 @@ export class SubmissionService {
   }
 
   /**
+   * Get a submission by consultant ID and pay period ID
+   * @param consultantId - Consultant ID
+   * @param payPeriodId - Pay period ID
+   * @returns Submission record or null if not found
+   */
+  async getSubmissionByPayPeriod(consultantId: string, payPeriodId: string) {
+    return this.prisma.timesheetSubmission.findFirst({
+      where: {
+        consultantId,
+        payPeriodId,
+      },
+      include: {
+        consultant: true,
+        payPeriod: true,
+      },
+    });
+  }
+
+  /**
    * Get all submissions for a consultant
    * @param consultantId - Consultant ID
    * @returns Array of submissions
