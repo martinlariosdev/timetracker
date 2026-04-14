@@ -698,14 +698,9 @@ export default function SettingsScreen() {
         await saveNotificationPreferences({ ...prefs, masterEnabled: value });
         return;
       }
-      if (settingId === 'dark-mode') {
-        setToggleStates((prev) => ({ ...prev, 'dark-mode': value }));
-        await setThemeMode(value ? 'dark' : 'light');
-        return;
-      }
       setToggleStates((prev) => ({ ...prev, [settingId]: value }));
     },
-    [enableBiometric, disableBiometric, setThemeMode],
+    [enableBiometric, disableBiometric],
   );
 
   const handleNavSetting = useCallback((settingId: string) => {
@@ -734,7 +729,7 @@ export default function SettingsScreen() {
       return;
     }
     if (categoryLabel === 'Appearance') {
-      router.push('/settings/theme');
+      // Dark mode is controlled via the toggle on the main settings screen
       return;
     }
     Alert.alert('Coming Soon', `The "${categoryLabel}" category will be available in a future update.`);
