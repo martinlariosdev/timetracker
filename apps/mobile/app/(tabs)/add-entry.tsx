@@ -68,7 +68,7 @@ export default function AddEntryScreen() {
   const isEditMode = !!params.id;
 
   // --- State ---
-  const [isExpanded, setIsExpanded] = useState(isEditMode);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     if (params.date) {
       return parseDate(params.date);
