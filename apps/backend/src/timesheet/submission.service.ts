@@ -216,10 +216,12 @@ export class SubmissionService {
    * @returns Submission record or null if not found
    */
   async getSubmissionByPayPeriod(consultantId: string, payPeriodId: string) {
-    return this.prisma.timesheetSubmission.findFirst({
+    return this.prisma.timesheetSubmission.findUnique({
       where: {
-        consultantId,
-        payPeriodId,
+        consultantId_payPeriodId: {
+          consultantId,
+          payPeriodId,
+        },
       },
       include: {
         consultant: true,
