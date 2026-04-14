@@ -16,6 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/contexts/ThemeContext';
+import { usePreferences } from '@/contexts/PreferencesContext';
 import {
   loadNotificationPreferences,
   saveNotificationPreferences,
@@ -62,27 +64,7 @@ const ALL_SETTINGS: SettingItem[] = [
     categoryIcon: '⚙️',
     type: 'navigation',
     icon: 'time-outline',
-    value: '8 hrs',
-  },
-  {
-    id: 'time-format',
-    title: 'Time Format',
-    keywords: ['time', 'format', '12', '24', 'hour', 'clock'],
-    category: 'Preferences',
-    categoryIcon: '⚙️',
-    type: 'navigation',
-    icon: 'time-outline',
-    value: '12-hour',
-  },
-  {
-    id: 'language',
-    title: 'Language',
-    keywords: ['language', 'locale', 'english', 'spanish'],
-    category: 'Preferences',
-    categoryIcon: '⚙️',
-    type: 'navigation',
-    icon: 'globe-outline',
-    value: 'English',
+    value: '', // Will be set dynamically
   },
   {
     id: 'week-start',
@@ -92,7 +74,7 @@ const ALL_SETTINGS: SettingItem[] = [
     categoryIcon: '⚙️',
     type: 'navigation',
     icon: 'calendar-outline',
-    value: 'Monday',
+    value: '', // Will be set dynamically
   },
   // Appearance
   {
@@ -103,15 +85,6 @@ const ALL_SETTINGS: SettingItem[] = [
     categoryIcon: '🎨',
     type: 'toggle',
     icon: 'moon-outline',
-  },
-  {
-    id: 'dark-theme-colors',
-    title: 'Dark Theme Colors',
-    keywords: ['dark', 'theme', 'colors', 'appearance', 'accent'],
-    category: 'Appearance',
-    categoryIcon: '🎨',
-    type: 'navigation',
-    icon: 'color-palette-outline',
   },
   // ETO Reminders
   {
@@ -134,15 +107,6 @@ const ALL_SETTINGS: SettingItem[] = [
     value: '8 hrs',
   },
   {
-    id: 'eto-accrual-reminder',
-    title: 'Accrual Reminder',
-    keywords: ['eto', 'accrual', 'reminder', 'period'],
-    category: 'ETO Reminders',
-    categoryIcon: '💰',
-    type: 'navigation',
-    icon: 'alarm-outline',
-  },
-  {
     id: 'eto-usage-summary',
     title: 'Usage Summary',
     keywords: ['eto', 'usage', 'summary', 'report', 'monthly'],
@@ -153,15 +117,6 @@ const ALL_SETTINGS: SettingItem[] = [
   },
   // Account & Security
   {
-    id: 'change-password',
-    title: 'Change Password',
-    keywords: ['password', 'change', 'security', 'account'],
-    category: 'Account & Security',
-    categoryIcon: '🔒',
-    type: 'navigation',
-    icon: 'key-outline',
-  },
-  {
     id: 'biometric',
     title: 'Biometric Authentication',
     keywords: ['biometric', 'fingerprint', 'face', 'id', 'touch', 'security'],
@@ -170,34 +125,7 @@ const ALL_SETTINGS: SettingItem[] = [
     type: 'toggle',
     icon: 'finger-print-outline',
   },
-  {
-    id: 'two-factor',
-    title: 'Two-Factor Authentication',
-    keywords: ['two', 'factor', '2fa', 'authentication', 'security'],
-    category: 'Account & Security',
-    categoryIcon: '🔒',
-    type: 'navigation',
-    icon: 'shield-checkmark-outline',
-  },
   // Help & Support
-  {
-    id: 'help-center',
-    title: 'Help Center',
-    keywords: ['help', 'center', 'faq', 'support'],
-    category: 'Help & Support',
-    categoryIcon: '❓',
-    type: 'navigation',
-    icon: 'help-circle-outline',
-  },
-  {
-    id: 'contact-support',
-    title: 'Contact Support',
-    keywords: ['contact', 'support', 'email', 'chat'],
-    category: 'Help & Support',
-    categoryIcon: '❓',
-    type: 'navigation',
-    icon: 'chatbubble-outline',
-  },
   {
     id: 'report-bug',
     title: 'Report a Bug',
@@ -221,11 +149,11 @@ const ALL_SETTINGS: SettingItem[] = [
 const FREQUENTLY_USED_IDS = ['notifications', 'dark-mode', 'work-hours', 'eto-alerts'];
 
 const CATEGORIES: CategoryInfo[] = [
-  { label: 'Preferences', icon: '⚙️', ionicon: 'settings-outline', count: 5 },
-  { label: 'Appearance', icon: '🎨', ionicon: 'color-palette-outline', count: 2 },
-  { label: 'ETO Reminders', icon: '💰', ionicon: 'cash-outline', count: 4 },
-  { label: 'Account & Security', icon: '🔒', ionicon: 'lock-closed-outline', count: 3 },
-  { label: 'Help & Support', icon: '❓', ionicon: 'help-circle-outline', count: 4 },
+  { label: 'Preferences', icon: '⚙️', ionicon: 'settings-outline', count: 3 },
+  { label: 'Appearance', icon: '🎨', ionicon: 'color-palette-outline', count: 1 },
+  { label: 'ETO Reminders', icon: '💰', ionicon: 'cash-outline', count: 3 },
+  { label: 'Account & Security', icon: '🔒', ionicon: 'lock-closed-outline', count: 1 },
+  { label: 'Help & Support', icon: '❓', ionicon: 'help-circle-outline', count: 2 },
 ];
 
 // --- Simple fuzzy search ---
@@ -714,6 +642,8 @@ export default function SettingsScreen() {
     enableBiometric,
     disableBiometric,
   } = useAuth();
+  const { themeMode, isDark, setThemeMode } = useTheme();
+  const { workHours, weekStartDay, setWorkHours, setWeekStartDay } = usePreferences();
 
   // --- State ---
   const [searchQuery, setSearchQuery] = useState('');
@@ -724,7 +654,7 @@ export default function SettingsScreen() {
   // Toggle states (mock for demo)
   const [toggleStates, setToggleStates] = useState<Record<string, boolean>>({
     notifications: true,
-    'dark-mode': false,
+    'dark-mode': themeMode === 'dark',
     'eto-alerts': true,
     'eto-usage-summary': false,
     biometric: biometricEnabled,
@@ -743,10 +673,17 @@ export default function SettingsScreen() {
   }, []);
 
   // --- Derived ---
-  const frequentlyUsed = useMemo(
-    () => ALL_SETTINGS.filter((s) => FREQUENTLY_USED_IDS.includes(s.id)),
-    [],
-  );
+  const frequentlyUsed = useMemo(() => {
+    return ALL_SETTINGS.filter((s) => FREQUENTLY_USED_IDS.includes(s.id)).map((s) => {
+      if (s.id === 'work-hours') {
+        return { ...s, value: `${workHours} hrs` };
+      }
+      if (s.id === 'week-start') {
+        return { ...s, value: weekStartDay === 'monday' ? 'Monday' : 'Sunday' };
+      }
+      return s;
+    });
+  }, [workHours, weekStartDay]);
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -777,14 +714,31 @@ export default function SettingsScreen() {
         await saveNotificationPreferences({ ...prefs, masterEnabled: value });
         return;
       }
+      if (settingId === 'dark-mode') {
+        setToggleStates((prev) => ({ ...prev, 'dark-mode': value }));
+        await setThemeMode(value ? 'dark' : 'light');
+        return;
+      }
       setToggleStates((prev) => ({ ...prev, [settingId]: value }));
     },
-    [enableBiometric, disableBiometric],
+    [enableBiometric, disableBiometric, setThemeMode],
   );
 
   const handleNavSetting = useCallback((settingId: string) => {
     if (settingId === 'notifications') {
       router.push('/settings/notifications');
+      return;
+    }
+    if (settingId === 'dark-mode') {
+      router.push('/settings/theme');
+      return;
+    }
+    if (settingId === 'work-hours') {
+      router.push('/settings/work-hours');
+      return;
+    }
+    if (settingId === 'week-start') {
+      router.push('/settings/week-start');
       return;
     }
     Alert.alert('Coming Soon', `The "${settingId}" setting will be available in a future update.`);
@@ -793,6 +747,10 @@ export default function SettingsScreen() {
   const handleCategoryPress = useCallback((categoryLabel: string) => {
     if (categoryLabel === 'Preferences') {
       router.push('/settings/notifications');
+      return;
+    }
+    if (categoryLabel === 'Appearance') {
+      router.push('/settings/theme');
       return;
     }
     Alert.alert('Coming Soon', `The "${categoryLabel}" category will be available in a future update.`);
