@@ -1,34 +1,25 @@
-import { InputType, Field, ID } from '@nestjs/graphql';
+import { InputType, Field, Float } from '@nestjs/graphql';
 import { createZodDto } from 'nestjs-zod';
 import { createTimeEntrySchema } from './create-time-entry.input';
-import { z } from 'zod';
 
 /**
  * Zod schema for updating an existing TimeEntry
- * Extends create schema with required id field and makes other fields optional
+ * Makes all create schema fields optional for partial updates
  */
-export const updateTimeEntrySchema = createTimeEntrySchema.extend({
-  id: z.string().min(1, 'Time entry ID is required'),
-}).partial();
+export const updateTimeEntrySchema = createTimeEntrySchema.partial();
 
 /**
  * GraphQL Input Type for updating an existing TimeEntry
  * Uses Zod schema with partial fields for updates
- * Requires id field for identification
+ * ID is passed as mutation argument, not in input object
  */
 @InputType({ description: 'Input for updating an existing time entry' })
 export class UpdateTimeEntryInput extends createZodDto(updateTimeEntrySchema) {
-  @Field(() => ID, { description: 'ID of the time entry to update' })
-  id: string;
-
-  @Field({ nullable: true, description: 'ID of the consultant creating the entry' })
-  consultantId?: string;
-
-  @Field({ nullable: true, description: 'ID of the pay period for this entry' })
-  payPeriodId?: string;
-
   @Field({ nullable: true, description: 'Date of the time entry in YYYY-MM-DD format' })
   date?: string;
+
+  @Field(() => Float, { nullable: true, description: 'Total hours worked' })
+  totalHours?: number;
 
   @Field({ nullable: true, description: 'Project or task number (e.g., PROJ-123)' })
   projectTaskNumber?: string;
