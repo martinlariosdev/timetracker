@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useState, useEffect } from 'react';
-import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
+// TEMP FIX: Reanimated requires custom development build, not available in Expo Go
+// import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { useAuth } from '@/hooks/useAuth';
 import { BiometricService } from '@/lib/auth/biometric-service';
 
@@ -63,17 +64,18 @@ export default function LoginScreen() {
     Linking.openURL('mailto:support@softwaremind.com');
   };
 
-  const cardEntering = reduceMotion
-    ? FadeIn.delay(200).duration(300)
-    : FadeInUp.delay(200).duration(600).springify();
-
-  const logoEntering = reduceMotion
-    ? FadeIn.duration(200)
-    : FadeIn.delay(100).duration(300);
-
-  const pillsEntering = reduceMotion
-    ? FadeIn.duration(200)
-    : FadeIn.delay(600).duration(200);
+  // TEMP FIX: Removed Reanimated animations - requires custom development build
+  // const cardEntering = reduceMotion
+  //   ? FadeIn.delay(200).duration(300)
+  //   : FadeInUp.delay(200).duration(600).springify();
+  //
+  // const logoEntering = reduceMotion
+  //   ? FadeIn.duration(200)
+  //   : FadeIn.delay(100).duration(300);
+  //
+  // const pillsEntering = reduceMotion
+  //   ? FadeIn.duration(200)
+  //   : FadeIn.delay(600).duration(200);
 
   return (
     <LinearGradient
@@ -127,7 +129,7 @@ export default function LoginScreen() {
           />
 
           {/* Logo */}
-          <Animated.View entering={logoEntering} className="mb-2xl items-center">
+          <View className="mb-2xl items-center">
             <View
               className="w-[180px] items-center justify-center"
               accessible
@@ -145,11 +147,10 @@ export default function LoginScreen() {
                 SOFTWARE MIND
               </Text>
             </View>
-          </Animated.View>
+          </View>
 
           {/* Floating Card */}
-          <Animated.View
-            entering={cardEntering}
+          <View
             className="bg-white rounded-3xl p-xl w-[88%] max-w-[380px] items-center shadow-level-4"
             style={{ elevation: 24 }}
           >
@@ -262,8 +263,7 @@ export default function LoginScreen() {
             </View>
 
             {/* Feature pills */}
-            <Animated.View
-              entering={pillsEntering}
+            <View
               className="flex-row flex-wrap gap-sm justify-center"
             >
               {FEATURE_PILLS.map((pill) => (
@@ -277,8 +277,8 @@ export default function LoginScreen() {
                   </Text>
                 </View>
               ))}
-            </Animated.View>
-          </Animated.View>
+            </View>
+          </View>
         </View>
 
         {/* Footer */}
