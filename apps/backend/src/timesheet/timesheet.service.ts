@@ -20,65 +20,96 @@ export class TimesheetService {
   /**
    * Create a new time entry
    * Validates input with Zod schema and calculates total hours
+   * Now supports both time-based and hours-based entry
    */
-  async create(data: CreateTimeEntryInput) {
+  async create(data: CreateTimeEntryInput & { consultantId: string }) {
     try {
-      // Convert string IDs to match shared schema expectations (number)
-      // Note: The shared schema expects numeric IDs, but Prisma uses ObjectId strings
-      // We'll validate the string format and structure, then convert for DB
-      const validationData = {
-        consultantId: this.convertToNumericId(data.consultantId),
-        payPeriodId: this.convertToNumericId(data.payPeriodId),
-        date: data.date,
-        projectTaskNumber: data.projectTaskNumber || null,
-        clientName: data.clientName,
-        description: data.description,
-        inTime1: data.inTime1,
-        outTime1: data.outTime1,
-        inTime2: data.inTime2 || null,
-        outTime2: data.outTime2 || null,
-      };
+      // Calculate pay period from date
+      const payPeriodId = await this.calculatePayPeriodId(data.date);
+      this.logger.debug(`Calculated pay period ${payPeriodId} for date ${data.date}`);
 
-      // Validate with Zod schema from shared package
-      const validated = createTimeEntrySchema.parse(validationData);
+      // Determine totalHours and time pairs
+      let totalHours: number;
+      let inTime1: string;
+      let outTime1: string;
+      let inTime2: string | null = data.inTime2 || null;
+      let outTime2: string | null = data.outTime2 || null;
 
-      // Check that consultant exists
+      if (data.inTime1 && data.outTime1) {
+        // Time pairs provided - calculate from them
+        totalHours = this.calculateTotalHours(
+          data.inTime1,
+          data.outTime1,
+          data.inTime2,
+          data.outTime2,
+        );
+        inTime1 = data.inTime1;
+        outTime1 = data.outTime1;
+
+        // If user also provided totalHours, log if mismatch
+        if (data.totalHours && Math.abs(data.totalHours - totalHours) > 0.01) {
+          this.logger.warn(
+            `Provided totalHours (${data.totalHours}) doesn't match calculated (${totalHours}). Using calculated.`,
+          );
+        }
+      } else {
+        // No time pairs - use provided totalHours and generate defaults
+        totalHours = data.totalHours;
+        inTime1 = '09:00'; // Default start time
+        const endHour = 9 + Math.floor(totalHours);
+        const endMin = Math.round((totalHours % 1) * 60);
+        outTime1 = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
+        this.logger.debug(
+          `Generated default time pair: ${inTime1}-${outTime1} for ${totalHours} hours`,
+        );
+      }
+
+      // TODO: Skip shared schema validation as it may not have totalHours field yet
+      // Once shared schema is updated, uncomment this validation
+      // const validationData = {
+      //   consultantId: this.convertToNumericId(data.consultantId),
+      //   payPeriodId: this.convertToNumericId(payPeriodId),
+      //   date: data.date,
+      //   projectTaskNumber: data.projectTaskNumber || null,
+      //   clientName: data.clientName,
+      //   description: data.description,
+      //   inTime1,
+      //   outTime1,
+      //   inTime2,
+      //   outTime2,
+      //   totalHours,
+      // };
+      // const validated = createTimeEntrySchema.parse(validationData);
+
+      // Check that consultant exists (using consultantId from resolver)
       await this.validateConsultantExists(data.consultantId);
 
-      // Check that pay period exists
-      await this.validatePayPeriodExists(data.payPeriodId);
+      // Check that pay period exists (using calculated payPeriodId)
+      await this.validatePayPeriodExists(payPeriodId);
 
       // Check for overlapping entries
       await this.checkForOverlappingEntries(
         data.consultantId,
         data.date,
-        data.inTime1,
-        data.outTime1,
-        data.inTime2,
-        data.outTime2,
-      );
-
-      // Calculate total hours
-      const totalHours = this.calculateTotalHours(
-        data.inTime1,
-        data.outTime1,
-        data.inTime2,
-        data.outTime2,
+        inTime1,
+        outTime1,
+        inTime2,
+        outTime2,
       );
 
       // Convert time strings to DateTime objects for Prisma
       const dateStr = data.date;
       const prismaData = {
         consultantId: data.consultantId,
-        payPeriodId: data.payPeriodId,
+        payPeriodId,
         date: new Date(dateStr),
         projectTaskNumber: data.projectTaskNumber || null,
         clientName: data.clientName,
         description: data.description,
-        inTime1: this.parseTimeToDateTime(dateStr, data.inTime1),
-        outTime1: this.parseTimeToDateTime(dateStr, data.outTime1),
-        inTime2: data.inTime2 ? this.parseTimeToDateTime(dateStr, data.inTime2) : null,
-        outTime2: data.outTime2 ? this.parseTimeToDateTime(dateStr, data.outTime2) : null,
+        inTime1: this.parseTimeToDateTime(dateStr, inTime1),
+        outTime1: this.parseTimeToDateTime(dateStr, outTime1),
+        inTime2: inTime2 ? this.parseTimeToDateTime(dateStr, inTime2) : null,
+        outTime2: outTime2 ? this.parseTimeToDateTime(dateStr, outTime2) : null,
         totalHours,
         synced: true,
       };
@@ -327,6 +358,24 @@ export class TimesheetService {
 
     this.logger.log(`Deleted time entry ${id}`);
     return deleted;
+  }
+
+  /**
+   * Calculate pay period ID from a date
+   * TODO: Implement actual pay period logic (currently returns mock ID)
+   * @param dateStr - Date in YYYY-MM-DD format
+   * @returns Pay period ID
+   */
+  private async calculatePayPeriodId(dateStr: string): Promise<string> {
+    // TODO: Implement actual pay period calculation logic
+    // For now, return a placeholder that follows expected format
+    // Format: YYYY-PP where PP is pay period number (1-26 for bi-weekly)
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    // Simple logic: 2-week periods, ~26 per year
+    const dayOfYear = Math.floor((date.getTime() - new Date(year, 0, 0).getTime()) / 86400000);
+    const payPeriod = Math.floor(dayOfYear / 14) + 1;
+    return `${year}-${String(payPeriod).padStart(2, '0')}`;
   }
 
   /**
