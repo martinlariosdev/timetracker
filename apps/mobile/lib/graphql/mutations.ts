@@ -108,7 +108,6 @@ export const SUBMIT_TIMESHEET_MUTATION = gql`
       payPeriodId
       submittedAt
       status
-      totalHours
     }
   }
 `;
