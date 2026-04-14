@@ -19,7 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
 import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
 import { WEEK_TIME_ENTRIES_QUERY, TIMESHEET_SUBMISSION_QUERY } from '@/lib/graphql/queries';
-import { SUBMIT_TIMESHEET_MUTATION } from '@/lib/graphql/mutations';
+import { SUBMIT_TIMESHEET_MUTATION, DELETE_TIME_ENTRY_MUTATION } from '@/lib/graphql/mutations';
 
 // --- Types ---
 
@@ -739,6 +739,11 @@ export default function TimesheetListScreen() {
     },
   );
 
+  // Delete mutation
+  const [deleteEntry] = useAuthenticatedMutation(DELETE_TIME_ENTRY_MUTATION, {
+    refetchQueries: ['WeekTimeEntries'],
+  });
+
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // Use API data if available, fall back to mock data
@@ -820,10 +825,39 @@ export default function TimesheetListScreen() {
   );
 
   const handleDeleteEntry = useCallback(
-    (_id: string) => {
-      // TODO: Implement delete with confirmation dialog and mutation
+    (id: string) => {
+      const entry = entries.find(e => e.id === id);
+      if (!entry) return;
+
+      Alert.alert(
+        'Delete Time Entry',
+        `Delete entry for ${entry.project}?\n${entry.hours.toFixed(1)} hours - ${entry.description}`,
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await deleteEntry({ variables: { id } });
+                // Refetch is automatic due to refetchQueries
+              } catch (error) {
+                Alert.alert(
+                  'Delete Failed',
+                  'Could not delete entry. Please try again.',
+                  [{ text: 'OK' }]
+                );
+              }
+            },
+          },
+        ],
+        { cancelable: true }
+      );
     },
-    [],
+    [entries, deleteEntry],
   );
 
   const handleSubmitPress = useCallback(() => {
