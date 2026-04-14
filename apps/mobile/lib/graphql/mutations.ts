@@ -46,14 +46,17 @@ export const CREATE_TIME_ENTRY_MUTATION = gql`
     createTimeEntry(input: $input) {
       id
       consultantId
-      date
-      hours
-      description
-      category
-      project
       payPeriodId
-      syncStatus
-      lastModified
+      date
+      projectTaskNumber
+      clientName
+      description
+      inTime1
+      outTime1
+      inTime2
+      outTime2
+      totalHours
+      synced
       createdAt
       updatedAt
     }
@@ -68,14 +71,17 @@ export const UPDATE_TIME_ENTRY_MUTATION = gql`
     updateTimeEntry(id: $id, input: $input) {
       id
       consultantId
-      date
-      hours
-      description
-      category
-      project
       payPeriodId
-      syncStatus
-      lastModified
+      date
+      projectTaskNumber
+      clientName
+      description
+      inTime1
+      outTime1
+      inTime2
+      outTime2
+      totalHours
+      synced
       createdAt
       updatedAt
     }
