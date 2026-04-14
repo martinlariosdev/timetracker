@@ -36,15 +36,3 @@ export const MOCK_LAST_CLIENT = {
   name: 'Advent',
   lastUsed: 'Last used today',
 };
-
-// Mock yesterday's entry for "Duplicate Yesterday"
-// TODO: Fetch from backend when connected
-export const MOCK_YESTERDAY_ENTRY = {
-  client: 'Advent',
-  description: 'Worked on PR #239, code review',
-  projectTask: 'PR #239',
-  timeEntries: [
-    { id: '1', inTime: '08:00', outTime: '12:00' },
-    { id: '2', inTime: '13:00', outTime: '17:00' },
-  ],
-};

@@ -1,41 +1,49 @@
 import React from 'react';
-import { Text, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export function DuplicateYesterdayButton({
   onPress,
   isAvailable,
+  isLoading = false,
 }: {
   onPress: () => void;
   isAvailable: boolean;
+  isLoading?: boolean;
 }) {
+  const disabled = !isAvailable || isLoading;
+
   return (
     <TouchableOpacity
       onPress={onPress}
-      disabled={!isAvailable}
+      disabled={disabled}
       activeOpacity={0.8}
       className={`mx-md mt-3 flex-row items-center justify-center shadow-level-1 ${
-        isAvailable ? '' : 'opacity-50'
+        disabled ? 'opacity-50' : ''
       }`}
       style={{
         height: 48,
         borderRadius: 12,
-        backgroundColor: isAvailable ? '#0EA5E9' : '#D1D5DB',
+        backgroundColor: disabled ? '#D1D5DB' : '#0EA5E9',
       }}
       accessibilityLabel="Duplicate yesterday's entry"
       accessibilityRole="button"
-      accessibilityState={{ disabled: !isAvailable }}
+      accessibilityState={{ disabled }}
     >
-      <Ionicons
-        name="clipboard"
-        size={20}
-        color={isAvailable ? '#FFFFFF' : '#6B7280'}
-      />
+      {isLoading ? (
+        <ActivityIndicator size="small" color="#FFFFFF" />
+      ) : (
+        <Ionicons
+          name="clipboard"
+          size={20}
+          color={disabled ? '#6B7280' : '#FFFFFF'}
+        />
+      )}
       <Text
         className="text-body font-semibold ml-2"
-        style={{ color: isAvailable ? '#FFFFFF' : '#6B7280' }}
+        style={{ color: disabled ? '#6B7280' : '#FFFFFF' }}
       >
-        Duplicate Yesterday
+        {isLoading ? 'Loading...' : 'Duplicate Yesterday'}
       </Text>
     </TouchableOpacity>
   );
