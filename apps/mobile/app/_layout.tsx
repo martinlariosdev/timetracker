@@ -1,4 +1,4 @@
-import { Stack, Slot, useRouter, useSegments } from 'expo-router';
+import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { ApolloProvider } from '../lib/apollo-provider';
@@ -8,7 +8,12 @@ import { useNotifications } from '../hooks/useNotifications';
 import { useAuth } from '../hooks/useAuth';
 import '../global.css';
 
-export default function RootLayout() {
+/**
+ * Navigation and Auth Guard Component
+ * Handles authentication routing logic
+ * MUST be inside ApolloProvider to use useAuth hook
+ */
+function NavigationGuard() {
   // Initialize push notifications on app startup
   useNotifications();
 
@@ -36,23 +41,26 @@ export default function RootLayout() {
   // Show loading screen while checking auth
   if (isLoading) {
     return (
-      <ApolloProvider>
-        <ThemeProvider>
-          <PreferencesProvider>
-            <View className="flex-1 items-center justify-center bg-gray-50">
-              <ActivityIndicator size="large" color="#2563EB" />
-            </View>
-          </PreferencesProvider>
-        </ThemeProvider>
-      </ApolloProvider>
+      <View className="flex-1 items-center justify-center bg-gray-50">
+        <ActivityIndicator size="large" color="#2563EB" />
+      </View>
     );
   }
 
+  return <Slot />;
+}
+
+/**
+ * Root Layout Component
+ * Wraps app with all necessary providers
+ * Order matters: ApolloProvider must be outermost
+ */
+export default function RootLayout() {
   return (
     <ApolloProvider>
       <ThemeProvider>
         <PreferencesProvider>
-          <Slot />
+          <NavigationGuard />
         </PreferencesProvider>
       </ThemeProvider>
     </ApolloProvider>
