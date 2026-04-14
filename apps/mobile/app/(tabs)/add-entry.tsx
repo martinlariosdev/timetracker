@@ -24,6 +24,7 @@ import { useDatePicker } from '@/components/DatePicker';
 import { ClientSelectorModal } from '@/components/ClientSelectorModal';
 import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
+import { usePreferences } from '@/contexts/PreferencesContext';
 import { DateSelectorCard } from '@/components/add-entry/DateSelectorCard';
 import { WeekStripCard } from '@/components/add-entry/WeekStripCard';
 import { ClientCard } from '@/components/add-entry/ClientCard';
@@ -65,6 +66,7 @@ export default function AddEntryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ date?: string; id?: string }>();
+  const { weekStartDay } = usePreferences();
 
   const isEditMode = !!params.id;
 
@@ -93,9 +95,11 @@ export default function AddEntryScreen() {
     [timeEntries],
   );
 
+  const weekStartDayNum = weekStartDay === 'sunday' ? 0 : 1;
+
   const weekStrip = useMemo(
-    () => generateWeekStrip(selectedDate),
-    [selectedDate],
+    () => generateWeekStrip(selectedDate, weekStartDayNum),
+    [selectedDate, weekStartDayNum],
   );
 
   const headerTitle = isEditMode
