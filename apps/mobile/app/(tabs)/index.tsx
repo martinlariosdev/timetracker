@@ -59,7 +59,8 @@ interface TimesheetSubmission {
   rejectedAt: string | null;
   rejectedBy: string | null;
   comments: string | null;
-  totalHours: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // --- Date Utilities ---
@@ -440,9 +441,11 @@ function DayCard({
 
 function SubmissionStatusBadge({
   submission,
+  thisWeekHours,
   onViewDetails,
 }: {
   submission: TimesheetSubmission;
+  thisWeekHours: number;
   onViewDetails: () => void;
 }) {
   const statusConfig: Record<
@@ -502,7 +505,7 @@ function SubmissionStatusBadge({
       </View>
       {submission.status !== 'draft' && (
         <Text style={{ fontSize: 12, color: config.color }}>
-          {submission.totalHours.toFixed(1)} hrs
+          {thisWeekHours.toFixed(1)} hrs
         </Text>
       )}
     </TouchableOpacity>
@@ -873,10 +876,10 @@ export default function TimesheetListScreen() {
     if (submission.comments) {
       details.push(`Comments: ${submission.comments}`);
     }
-    details.push(`Total Hours: ${submission.totalHours.toFixed(1)}`);
+    details.push(`Total Hours: ${thisWeekHours.toFixed(1)}`);
 
     Alert.alert('Submission Details', details.join('\n'));
-  }, [submission]);
+  }, [submission, thisWeekHours]);
 
   const handlePrevWeek = useCallback(() => {
     setWeekOffset((prev) => prev - 1);
@@ -1055,6 +1058,7 @@ export default function TimesheetListScreen() {
       {submission && submission.status !== 'draft' && (
         <SubmissionStatusBadge
           submission={submission}
+          thisWeekHours={thisWeekHours}
           onViewDetails={handleViewSubmissionDetails}
         />
       )}

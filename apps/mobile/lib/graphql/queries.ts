@@ -152,7 +152,8 @@ export const TIMESHEET_SUBMISSION_QUERY = gql`
       rejectedAt
       rejectedBy
       comments
-      totalHours
+      createdAt
+      updatedAt
     }
   }
 `;
