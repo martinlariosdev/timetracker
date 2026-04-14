@@ -57,7 +57,7 @@ function getErrorInfo(error: ApolloError | Error | null): ErrorInfo {
       message: "We're working on it. Try again later.",
       icon: 'server',
       color: '#EF4444',
-      action: 'none',
+      action: 'retry',
     };
   }
 
@@ -70,9 +70,9 @@ function getErrorInfo(error: ApolloError | Error | null): ErrorInfo {
     return {
       title: 'Access Denied',
       message: "You don't have permission to view this",
-      icon: 'shield-off',
+      icon: 'shield-outline',
       color: '#EF4444',
-      action: 'none',
+      action: 'retry',
     };
   }
 
@@ -88,18 +88,26 @@ function getErrorInfo(error: ApolloError | Error | null): ErrorInfo {
 
 interface ErrorViewProps {
   error: ApolloError | Error | null;
-  onRetry?: () => void;
-  onLogout?: () => void;
+  onRetry?: () => void | Promise<void>;
+  onLogout?: () => void | Promise<void>;
 }
 
 export function ErrorView({ error, onRetry, onLogout }: ErrorViewProps) {
   const info = getErrorInfo(error);
 
-  const handleAction = () => {
+  const handleAction = async () => {
     if (info.action === 'retry' && onRetry) {
-      onRetry();
+      try {
+        await onRetry();
+      } catch (error) {
+        console.error('Retry failed:', error);
+      }
     } else if (info.action === 'logout' && onLogout) {
-      onLogout();
+      try {
+        await onLogout();
+      } catch (error) {
+        console.error('Logout failed:', error);
+      }
     }
   };
 
