@@ -10,3 +10,8 @@ export interface FormErrors {
   timeEntries?: string;
   general?: string;
 }
+
+export interface TimeValidationResult {
+  valid: boolean;
+  error?: string;
+}

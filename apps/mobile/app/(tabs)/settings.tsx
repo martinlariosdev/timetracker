@@ -140,6 +140,45 @@ function matchesSearch(query: string, setting: SettingItem): boolean {
   return setting.keywords.some((kw) => kw.includes(q));
 }
 
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function highlightMatch(text: string, query: string): React.ReactNode {
+  if (!query.trim()) return text;
+
+  const regex = new RegExp(`(${escapeRegex(query)})`, 'gi');
+  const parts = text.split(regex);
+
+  if (parts.length === 1) return text;
+
+  const queryLower = query.toLowerCase();
+  return (
+    <Text>
+      {parts.map((part, i) =>
+        part.toLowerCase() === queryLower ? (
+          <Text key={i} style={{ backgroundColor: '#FEF3C7', fontWeight: '600' }}>{part}</Text>
+        ) : (
+          <Text key={i}>{part}</Text>
+        )
+      )}
+    </Text>
+  );
+}
+
+function getMatchReason(setting: SettingItem, query: string): string | null {
+  const queryLower = query.toLowerCase().trim();
+  if (!queryLower) return null;
+
+  if (setting.title.toLowerCase().includes(queryLower)) return null;
+
+  const matchedKeyword = setting.keywords?.find((kw) =>
+    kw.toLowerCase().includes(queryLower)
+  );
+
+  return matchedKeyword ? `Matches "${matchedKeyword}"` : null;
+}
+
 // --- Sub-Components ---
 
 function TopBar({ topInset }: { topInset: number }) {
@@ -437,14 +476,17 @@ function SearchResultRow({
   isOn,
   onToggle,
   onPress,
+  searchQuery = '',
 }: {
   setting: SettingItem;
   isToggle: boolean;
   isOn: boolean;
   onToggle: (value: boolean) => void;
   onPress: () => void;
+  searchQuery?: string;
 }) {
   const { colors } = useTheme();
+  const matchReason = getMatchReason(setting, searchQuery);
   return (
     <View
       className="shadow-level-1 mx-md mb-2"
@@ -458,8 +500,13 @@ function SearchResultRow({
           <View className="flex-row items-center flex-1 mr-3">
             <Ionicons name={setting.icon} size={20} color={colors.primary} />
             <View className="ml-3">
-              <Text className="text-body" style={{ color: colors.text }}>{setting.title}</Text>
-              <Text className="text-caption" style={{ color: colors.textSecondary }}>{setting.category}</Text>
+              <Text className="text-body" style={{ color: colors.text }}>
+                {highlightMatch(setting.title, searchQuery)}
+              </Text>
+              <Text className="text-caption" style={{ color: colors.textSecondary }}>
+                {setting.category}
+                {matchReason && <Text style={{ color: colors.textTertiary }}> · {matchReason}</Text>}
+              </Text>
             </View>
           </View>
           <Switch
@@ -482,8 +529,13 @@ function SearchResultRow({
           <View className="flex-row items-center flex-1 mr-3">
             <Ionicons name={setting.icon} size={20} color={colors.primary} />
             <View className="ml-3">
-              <Text className="text-body" style={{ color: colors.text }}>{setting.title}</Text>
-              <Text className="text-caption" style={{ color: colors.textSecondary }}>{setting.category}</Text>
+              <Text className="text-body" style={{ color: colors.text }}>
+                {highlightMatch(setting.title, searchQuery)}
+              </Text>
+              <Text className="text-caption" style={{ color: colors.textSecondary }}>
+                {setting.category}
+                {matchReason && <Text style={{ color: colors.textTertiary }}> · {matchReason}</Text>}
+              </Text>
             </View>
           </View>
           <View className="flex-row items-center">
@@ -495,124 +547,6 @@ function SearchResultRow({
         </TouchableOpacity>
       )}
     </View>
-  );
-}
-
-function DeleteAccountModal({
-  visible,
-  onCancel,
-  onConfirm,
-}: {
-  visible: boolean;
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  const { colors } = useTheme();
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType={Platform.OS === 'ios' ? 'slide' : 'fade'}
-      onRequestClose={onCancel}
-    >
-      <View
-        className="flex-1 justify-end"
-        style={{ backgroundColor: colors.overlay }}
-      >
-        <TouchableOpacity
-          className="flex-1"
-          activeOpacity={1}
-          onPress={onCancel}
-          accessibilityLabel="Close modal"
-        />
-        <View
-          style={{
-            borderTopLeftRadius: 24,
-            borderTopRightRadius: 24,
-            paddingHorizontal: 24,
-            paddingTop: 24,
-            paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-            backgroundColor: colors.surface,
-          }}
-        >
-          {/* Handle */}
-          <View
-            className="self-center rounded-full mb-4"
-            style={{ width: 40, height: 4, backgroundColor: colors.borderSecondary }}
-          />
-
-          {/* Warning Icon */}
-          <View className="items-center mb-4">
-            <View
-              className="items-center justify-center"
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: 32,
-                backgroundColor: colors.error + '15',
-              }}
-            >
-              <Ionicons name="warning" size={32} color={colors.error} />
-            </View>
-          </View>
-
-          {/* Title */}
-          <Text
-            className="font-bold text-center"
-            style={{ fontSize: 24, lineHeight: 32, color: colors.text }}
-          >
-            Delete Account?
-          </Text>
-
-          {/* Description */}
-          <Text
-            className="text-body text-center mt-3"
-            style={{ lineHeight: 22, color: colors.textSecondary }}
-          >
-            This action is permanent and cannot be undone. All your data, time
-            entries, and ETO history will be permanently deleted.
-          </Text>
-
-          {/* Actions */}
-          <View className="flex-row mt-6" style={{ gap: 12 }}>
-            <TouchableOpacity
-              onPress={onCancel}
-              className="flex-1 items-center justify-center rounded-xl"
-              style={{
-                height: 52,
-                borderWidth: 1.5,
-                borderColor: colors.border,
-                backgroundColor: colors.surface,
-              }}
-              accessibilityLabel="Cancel deletion"
-              accessibilityRole="button"
-            >
-              <Text
-                className="font-semibold"
-                style={{ fontSize: 16, color: colors.textSecondary }}
-              >
-                Cancel
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={onConfirm}
-              className="flex-1 items-center justify-center rounded-xl"
-              style={{ height: 52, backgroundColor: colors.error }}
-              accessibilityLabel="Confirm delete account"
-              accessibilityRole="button"
-            >
-              <Text
-                className="font-semibold"
-                style={{ fontSize: 16, color: '#FFFFFF' }}
-              >
-                Delete
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
   );
 }
 
@@ -816,7 +750,6 @@ export default function SettingsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [themePickerVisible, setThemePickerVisible] = useState(false);
   const [workHoursModalVisible, setWorkHoursModalVisible] = useState(false);
   const [weekStartDayModalVisible, setWeekStartDayModalVisible] = useState(false);
@@ -957,15 +890,6 @@ export default function SettingsScreen() {
     ]);
   }, [logout]);
 
-  const handleDeleteAccount = useCallback(() => {
-    setDeleteModalVisible(true);
-  }, []);
-
-  const handleConfirmDelete = useCallback(() => {
-    setDeleteModalVisible(false);
-    Alert.alert('Coming Soon', 'Account deletion will be available in a future update.');
-  }, []);
-
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     // Simulate refresh delay for user data reload
@@ -1034,6 +958,7 @@ export default function SettingsScreen() {
                     isOn={toggleStates[setting.id] ?? false}
                     onToggle={(value) => handleToggle(setting.id, value)}
                     onPress={() => handleNavSetting(setting.id)}
+                    searchQuery={searchQuery}
                   />
                 ))}
               </>
@@ -1177,43 +1102,9 @@ export default function SettingsScreen() {
               Version 1.0.0 (Build 42)
             </Text>
 
-            {/* Delete Account */}
-            <TouchableOpacity
-              onPress={handleDeleteAccount}
-              activeOpacity={0.7}
-              className="mx-md"
-              style={{
-                borderRadius: 12,
-                height: 56,
-                backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2',
-                borderWidth: 1,
-                borderColor: isDark ? 'rgba(239, 68, 68, 0.3)' : '#FECACA',
-                paddingHorizontal: 16,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              accessibilityLabel="Delete your account"
-              accessibilityRole="button"
-            >
-              <Ionicons name="trash-outline" size={20} color={colors.error} />
-              <Text
-                className="font-semibold ml-2"
-                style={{ fontSize: 16, color: colors.error }}
-              >
-                Delete Account
-              </Text>
-            </TouchableOpacity>
           </>
         )}
       </ScrollView>
-
-      {/* Delete Account Modal */}
-      <DeleteAccountModal
-        visible={deleteModalVisible}
-        onCancel={() => setDeleteModalVisible(false)}
-        onConfirm={handleConfirmDelete}
-      />
 
       {/* Theme Picker Modal */}
       <ThemeModePicker

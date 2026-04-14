@@ -20,6 +20,7 @@ import Animated, {
   withSpring,
   Easing,
 } from 'react-native-reanimated';
+import { useLazyQuery } from '@apollo/client/react';
 import { useDatePicker } from '@/components/DatePicker';
 import { ClientSelectorModal } from '@/components/ClientSelectorModal';
 import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
@@ -36,7 +37,7 @@ import {
   CREATE_TIME_ENTRY_MUTATION,
   UPDATE_TIME_ENTRY_MUTATION,
 } from '@/lib/graphql/mutations';
-import { TIME_ENTRY_QUERY } from '@/lib/graphql/queries';
+import { TIME_ENTRY_QUERY, TIME_ENTRIES_QUERY } from '@/lib/graphql/queries';
 import { TimeEntryPairData, FormErrors } from '@/types/add-entry';
 import {
   DAY_NAMES,
@@ -45,7 +46,6 @@ import {
   DEFAULT_IN_TIME,
   DEFAULT_OUT_TIME,
   MOCK_LAST_CLIENT,
-  MOCK_YESTERDAY_ENTRY,
 } from '@/constants/add-entry';
 import {
   formatDateParam,
@@ -55,7 +55,7 @@ import {
   parseTimeToMinutes,
   calculateHoursFromEntries,
   formatHours,
-  isValidTimeEntry,
+  validateTimeEntry,
   generateId,
   formatTimeDisplay,
 } from '@/utils/add-entry';
@@ -139,6 +139,18 @@ export default function AddEntryScreen() {
     refetchQueries: ['WeekTimeEntries'],
   });
 
+  // Lazy query for fetching yesterday's entry on demand
+  const [fetchYesterdayEntries, { loading: isDuplicating }] = useLazyQuery<{
+    timeEntries: Array<{
+      id: string;
+      date: string;
+      hours: number;
+      description: string;
+      category: string;
+      project: string;
+    }>;
+  }>(TIME_ENTRIES_QUERY, { fetchPolicy: 'network-only' });
+
   // Fetch existing entry for edit mode
   const { data: existingEntryData } = useAuthenticatedQuery(TIME_ENTRY_QUERY, {
     variables: { id: params.id },
@@ -190,26 +202,58 @@ export default function AddEntryScreen() {
     [],
   );
 
-  const handleDuplicateYesterday = useCallback(() => {
-    // Copy mock yesterday's entry
-    // TODO: Fetch actual yesterday's entry from backend
-    setClient(MOCK_YESTERDAY_ENTRY.client);
-    setDescription(MOCK_YESTERDAY_ENTRY.description);
-    setProjectTask(MOCK_YESTERDAY_ENTRY.projectTask);
-    setTimeEntries(
-      MOCK_YESTERDAY_ENTRY.timeEntries.map((e) => ({
-        ...e,
-        id: generateId(),
-      })),
-    );
-
+  const handleDuplicateYesterday = useCallback(async () => {
     const yesterday = new Date(selectedDate);
     yesterday.setDate(yesterday.getDate() - 1);
-    Alert.alert(
-      'Duplicated',
-      `Copied from ${MONTH_NAMES[yesterday.getMonth()]} ${yesterday.getDate()}`,
-    );
-  }, [selectedDate]);
+    const yesterdayStr = formatDateParam(yesterday);
+
+    try {
+      const { data, error } = await fetchYesterdayEntries({
+        variables: {
+          filters: { startDate: yesterdayStr, endDate: yesterdayStr },
+        },
+      });
+
+      if (error) {
+        Alert.alert('Error', 'Failed to fetch yesterday\'s entry. Please try again.');
+        return;
+      }
+
+      const entries = data?.timeEntries;
+      if (!entries || entries.length === 0) {
+        Alert.alert('No Entry Found', `No time entry found for ${MONTH_NAMES[yesterday.getMonth()]} ${yesterday.getDate()}.`);
+        return;
+      }
+
+      // Use the first entry from yesterday
+      const entry = entries[0];
+      setClient(entry.project || '');
+      setDescription(entry.description || '');
+      setProjectTask(entry.category || '');
+
+      // Convert hours to a single time entry pair starting at 08:00
+      const totalMin = (entry.hours || 8) * 60;
+      const inMin = 8 * 60;
+      const outMin = inMin + totalMin;
+      const outH = Math.floor(outMin / 60);
+      const outM = outMin % 60;
+      setTimeEntries([
+        {
+          id: generateId(),
+          inTime: '08:00',
+          outTime: `${String(outH).padStart(2, '0')}:${String(outM).padStart(2, '0')}`,
+        },
+      ]);
+
+      Alert.alert(
+        'Duplicated',
+        `Copied from ${MONTH_NAMES[yesterday.getMonth()]} ${yesterday.getDate()}`,
+      );
+    } catch (err) {
+      console.error('Failed to fetch yesterday\'s entry:', err);
+      Alert.alert('Error', 'Failed to fetch yesterday\'s entry. Please try again.');
+    }
+  }, [selectedDate, fetchYesterdayEntries]);
 
   const handleAddTimeEntry = useCallback(() => {
     setTimeEntries((prev) => [
@@ -249,15 +293,33 @@ export default function AddEntryScreen() {
       newErrors.timeEntries = 'At least one time entry is required';
     }
 
-    const hasInvalidTimes = timeEntries.some((e) => !isValidTimeEntry(e));
-    if (hasInvalidTimes) {
-      newErrors.timeEntries = 'All time entries must have out time after in time';
+    for (const entry of timeEntries) {
+      const result = validateTimeEntry(entry);
+      if (!result.valid) {
+        newErrors.timeEntries = result.error;
+        break;
+      }
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [client, description, isExpanded, timeEntries]);
 
+  /**
+   * KNOWN LIMITATION (Issue #14): Multiple time entry pairs are saved as total hours only.
+   * When a user creates entries like:
+   *   - 08:00-12:00 (4 hrs)
+   *   - 13:00-17:00 (4 hrs)
+   *
+   * Backend stores: { hours: 8.0, description: "...", project: "..." }
+   *
+   * On edit, the app reconstructs as a single 08:00-16:00 block.
+   * Original time pair boundaries (e.g., lunch break) are lost.
+   *
+   * Accepted as MVP limitation per UI/UX Audit. Full fix would require:
+   * - Backend schema change to store time pairs (e.g., timePairs JSON field)
+   * - Edit flow to preserve and restore original pairs
+   */
   const handleSave = useCallback(async () => {
     if (!validate()) return;
 
@@ -454,6 +516,30 @@ export default function AddEntryScreen() {
           </View>
         </Animated.View>
 
+        {/* Info banner: shown when multiple time entries exist (Issue #14) */}
+        {timeEntries.length > 1 && (
+          <View
+            className="mx-md mt-3"
+            style={{
+              backgroundColor: '#EFF6FF',
+              borderWidth: 1,
+              borderColor: '#BFDBFE',
+              borderRadius: 12,
+              padding: 12,
+            }}
+          >
+            <View className="flex-row items-center">
+              <Ionicons name="information-circle-outline" size={20} color="#3B82F6" />
+              <Text
+                className="text-body-small ml-2"
+                style={{ color: '#1D4ED8', flex: 1 }}
+              >
+                Multiple time entries are saved as total hours. Editing will show a single time block.
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* Time Entry Pairs */}
         {timeEntries.map((entry, index) => (
           <TimeEntryPairRow
@@ -516,6 +602,7 @@ export default function AddEntryScreen() {
           <DuplicateYesterdayButton
             onPress={handleDuplicateYesterday}
             isAvailable={true}
+            isLoading={isDuplicating}
           />
         )}
 
