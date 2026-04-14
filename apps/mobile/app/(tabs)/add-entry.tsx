@@ -13,13 +13,14 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  Easing,
-} from 'react-native-reanimated';
+// TEMP FIX: Reanimated requires custom development build, not available in Expo Go
+// import Animated, {
+//   useSharedValue,
+//   useAnimatedStyle,
+//   withTiming,
+//   withSpring,
+//   Easing,
+// } from 'react-native-reanimated';
 import { useLazyQuery } from '@apollo/client/react';
 import { useDatePicker } from '@/components/DatePicker';
 import { ClientSelectorModal } from '@/components/ClientSelectorModal';
@@ -114,21 +115,21 @@ export default function AddEntryScreen() {
       ? 'Save Entry'
       : 'Quick Save';
 
-  // --- Animation ---
-  const expandedHeight = useSharedValue(0);
-
-  useEffect(() => {
-    expandedHeight.value = withTiming(isExpanded ? 1 : 0, {
-      duration: isExpanded ? 400 : 300,
-      easing: isExpanded ? Easing.out(Easing.ease) : Easing.in(Easing.ease),
-    });
-  }, [isExpanded, expandedHeight]);
-
-  const expandedStyle = useAnimatedStyle(() => ({
-    opacity: expandedHeight.value,
-    maxHeight: expandedHeight.value * 600,
-    overflow: 'hidden' as const,
-  }));
+  // --- Animation (TEMP DISABLED: Requires Reanimated native build) ---
+  // const expandedHeight = useSharedValue(0);
+  //
+  // useEffect(() => {
+  //   expandedHeight.value = withTiming(isExpanded ? 1 : 0, {
+  //     duration: isExpanded ? 400 : 300,
+  //     easing: isExpanded ? Easing.out(Easing.ease) : Easing.in(Easing.ease),
+  //   });
+  // }, [isExpanded, expandedHeight]);
+  //
+  // const expandedStyle = useAnimatedStyle(() => ({
+  //   opacity: expandedHeight.value,
+  //   maxHeight: expandedHeight.value * 600,
+  //   overflow: 'hidden' as const,
+  // }));
 
   // --- GraphQL ---
   const [createEntry] = useAuthenticatedMutation(CREATE_TIME_ENTRY_MUTATION, {
@@ -451,7 +452,7 @@ export default function AddEntryScreen() {
         )}
 
         {/* Expanded-only fields */}
-        <Animated.View style={expandedStyle}>
+        {isExpanded && <View>
           {/* Description Field */}
           <View className="mx-md mt-3">
             <Text className="text-body-small text-gray-700 mb-2">
@@ -514,7 +515,7 @@ export default function AddEntryScreen() {
               accessibilityHint="Optional field"
             />
           </View>
-        </Animated.View>
+        </View>}
 
         {/* Info banner: shown when multiple time entries exist (Issue #14) */}
         {timeEntries.length > 1 && (
