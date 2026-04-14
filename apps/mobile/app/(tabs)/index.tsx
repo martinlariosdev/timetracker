@@ -25,7 +25,6 @@ import { WEEK_TIME_ENTRIES_QUERY, TIMESHEET_SUBMISSION_QUERY } from '@/lib/graph
 import { SUBMIT_TIMESHEET_MUTATION, DELETE_TIME_ENTRY_MUTATION } from '@/lib/graphql/mutations';
 import { ErrorView } from '@/components/ErrorView';
 import { DayCardSkeletonList } from '@/components/skeletons/DayCardSkeleton';
-import { MetricCardSkeleton } from '@/components/skeletons/MetricCardSkeleton';
 
 // --- Types ---
 
