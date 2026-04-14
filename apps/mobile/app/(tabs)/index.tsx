@@ -947,7 +947,7 @@ export default function TimesheetListScreen() {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         className="shadow-level-1"
-        style={{ height: 88, paddingVertical: 16, paddingHorizontal: 12 }}
+        style={{ height: 100, paddingVertical: 18, paddingHorizontal: 12 }}
       >
         <ScrollView
           ref={metricsScrollRef}
