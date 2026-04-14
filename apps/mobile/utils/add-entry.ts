@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { TimeEntryPairData } from '@/types/add-entry';
+import { TimeEntryPairData, TimeValidationResult } from '@/types/add-entry';
 
 export function formatDateParam(date: Date): string {
   const y = date.getFullYear();
@@ -42,19 +42,33 @@ export function generateWeekStrip(center: Date, weekStartDay: number = 1): Date[
   return dates;
 }
 
+const TIME_FORMAT_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+export function isValidTimeFormat(time: string): boolean {
+  return TIME_FORMAT_REGEX.test(time);
+}
+
 export function parseTimeToMinutes(time: string): number {
   const [h, m] = time.split(':').map(Number);
   return h * 60 + m;
 }
 
+export function calculateEntryMinutes(entry: TimeEntryPairData): number {
+  if (!isValidTimeFormat(entry.inTime) || !isValidTimeFormat(entry.outTime)) {
+    return 0;
+  }
+  const inMinutes = parseTimeToMinutes(entry.inTime);
+  const outMinutes = parseTimeToMinutes(entry.outTime);
+  if (outMinutes === inMinutes) return 0;
+  if (outMinutes > inMinutes) return outMinutes - inMinutes;
+  // Midnight span: out is next day
+  return (24 * 60 - inMinutes) + outMinutes;
+}
+
 export function calculateHoursFromEntries(entries: TimeEntryPairData[]): number {
   let totalMinutes = 0;
   for (const entry of entries) {
-    const inMinutes = parseTimeToMinutes(entry.inTime);
-    const outMinutes = parseTimeToMinutes(entry.outTime);
-    if (outMinutes > inMinutes) {
-      totalMinutes += outMinutes - inMinutes;
-    }
+    totalMinutes += calculateEntryMinutes(entry);
   }
   return totalMinutes / 60;
 }
@@ -63,10 +77,27 @@ export function formatHours(hours: number): string {
   return hours.toFixed(1);
 }
 
-export function isValidTimeEntry(entry: TimeEntryPairData): boolean {
+export function validateTimeEntry(entry: TimeEntryPairData): TimeValidationResult {
+  if (!isValidTimeFormat(entry.inTime)) {
+    return { valid: false, error: `Invalid clock-in time "${entry.inTime}". Use HH:MM format (00:00–23:59).` };
+  }
+  if (!isValidTimeFormat(entry.outTime)) {
+    return { valid: false, error: `Invalid clock-out time "${entry.outTime}". Use HH:MM format (00:00–23:59).` };
+  }
   const inMin = parseTimeToMinutes(entry.inTime);
   const outMin = parseTimeToMinutes(entry.outTime);
-  return outMin > inMin;
+  if (inMin === outMin) {
+    return { valid: false, error: 'Clock-in and clock-out times cannot be the same (0 hours).' };
+  }
+  if (outMin < inMin) {
+    const hours = ((24 * 60 - inMin) + outMin) / 60;
+    return { valid: true, error: `This entry spans midnight (${hours.toFixed(1)} hours overnight).` };
+  }
+  return { valid: true };
+}
+
+export function isValidTimeEntry(entry: TimeEntryPairData): boolean {
+  return validateTimeEntry(entry).valid;
 }
 
 export function generateId(): string {

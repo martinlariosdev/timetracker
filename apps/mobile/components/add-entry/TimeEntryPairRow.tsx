@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTimePicker } from '@/components/TimePicker';
 import { TimeEntryPairData } from '@/types/add-entry';
 import {
-  isValidTimeEntry,
+  validateTimeEntry,
   formatTimeDisplay,
 } from '@/utils/add-entry';
 
@@ -31,7 +31,7 @@ export function TimeEntryPairRow({
   canRemove: boolean;
   error?: string;
 }) {
-  const isValid = isValidTimeEntry(entry);
+  const validation = validateTimeEntry(entry);
   const borderColor = error ? '#EF4444' : '#D1D5DB';
 
   const inTimePicker = useTimePicker({
@@ -119,9 +119,14 @@ export function TimeEntryPairRow({
       {error && (
         <Text className="text-caption text-error mt-1 ml-1">{error}</Text>
       )}
-      {!isValid && !error && entry.inTime && entry.outTime && (
+      {!validation.valid && !error && entry.inTime && entry.outTime && (
         <Text className="text-caption text-error mt-1 ml-1">
-          Out time must be after in time
+          {validation.error}
+        </Text>
+      )}
+      {validation.valid && validation.error && (
+        <Text className="text-caption mt-1 ml-1" style={{ color: '#F59E0B' }}>
+          {validation.error}
         </Text>
       )}
     </View>
