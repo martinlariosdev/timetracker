@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePreferences } from '@/contexts/PreferencesContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 function TopBar({
   topInset,
@@ -20,8 +21,9 @@ function TopBar({
   topInset: number;
   onBack: () => void;
 }) {
+  const { colors } = useTheme();
   return (
-    <View className="bg-white shadow-level-1" style={{ paddingTop: topInset }}>
+    <View style={{ paddingTop: topInset, backgroundColor: colors.surface }}>
       <View
         className="flex-row items-center"
         style={{ height: 56, paddingHorizontal: 16 }}
@@ -33,11 +35,11 @@ function TopBar({
           accessibilityLabel="Go back"
           accessibilityRole="button"
         >
-          <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text
-          className="text-h3 font-semibold text-gray-800 flex-1 text-center"
-          style={{ marginRight: 44 }}
+          className="text-h3 font-semibold flex-1 text-center"
+          style={{ marginRight: 44, color: colors.text }}
           accessibilityRole="header"
         >
           Work Hours
@@ -56,15 +58,17 @@ function HourOption({
   selected: boolean;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.7}
-      className={`flex-row items-center justify-between mx-md mt-2 px-4 py-3 rounded-lg ${
-        selected ? 'bg-blue-50 border-2 border-primary' : 'bg-white border border-gray-200'
-      }`}
+      className="flex-row items-center justify-between mx-md mt-2 px-4 py-3 rounded-lg"
       style={{
         borderRadius: 12,
+        backgroundColor: selected ? (colors.primary + '15') : colors.surface,
+        borderWidth: selected ? 2 : 1,
+        borderColor: selected ? colors.primary : colors.border,
       }}
       accessibilityLabel={`${hours} hours per day`}
       accessibilityRole="radio"
@@ -72,17 +76,24 @@ function HourOption({
     >
       <View className="flex-row items-center flex-1">
         <View
-          className={`w-5 h-5 rounded-full border-2 ${
-            selected ? 'bg-primary border-primary' : 'border-gray-400'
-          }`}
-          style={{ width: 20, height: 20, borderRadius: 10 }}
+          style={{
+            width: 20,
+            height: 20,
+            borderRadius: 10,
+            borderWidth: 2,
+            borderColor: selected ? colors.primary : colors.textTertiary,
+            backgroundColor: selected ? colors.primary : 'transparent',
+          }}
         />
-        <Text className={`text-body ml-3 ${selected ? 'text-primary font-semibold' : 'text-gray-800'}`}>
+        <Text
+          className="text-body ml-3"
+          style={{ color: selected ? colors.primary : colors.text, fontWeight: selected ? '600' : '400' }}
+        >
           {hours} hours per day
         </Text>
       </View>
       {selected && (
-        <Ionicons name="checkmark" size={20} color="#2563EB" />
+        <Ionicons name="checkmark" size={20} color={colors.primary} />
       )}
     </TouchableOpacity>
   );
@@ -92,6 +103,7 @@ export default function WorkHoursScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { workHours, setWorkHours } = usePreferences();
+  const { isDark, colors } = useTheme();
   const [selectedHours, setSelectedHours] = useState(workHours);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -117,8 +129,8 @@ export default function WorkHoursScreen() {
   }, [selectedHours, workHours, setWorkHours, router]);
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <StatusBar style="dark" />
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
 
       <TopBar topInset={insets.top} onBack={() => router.back()} />
 
@@ -128,15 +140,16 @@ export default function WorkHoursScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Description */}
-        <View className="mx-md mt-md p-4 bg-blue-50 rounded-lg">
-          <Text className="text-body text-gray-800">
+        <View className="mx-md mt-md p-4 rounded-lg" style={{ backgroundColor: colors.primary + '15' }}>
+          <Text className="text-body" style={{ color: colors.text }}>
             Select your standard work hours per day. This is used to calculate your daily timesheet targets.
           </Text>
         </View>
 
         {/* Hour Options */}
         <Text
-          className="text-caption font-bold text-gray-500 uppercase mt-6 mx-md"
+          className="text-caption font-bold uppercase mt-6 mx-md"
+          style={{ color: colors.textSecondary }}
         >
           Hours Per Day
         </Text>
@@ -152,15 +165,22 @@ export default function WorkHoursScreen() {
 
         {/* Custom Option */}
         <Text
-          className="text-caption font-bold text-gray-500 uppercase mt-6 mx-md"
+          className="text-caption font-bold uppercase mt-6 mx-md"
+          style={{ color: colors.textSecondary }}
         >
           Or Enter Custom Value
         </Text>
         <View className="mx-md mt-2">
           <TextInput
-            className="bg-white text-body text-gray-800 rounded-lg border border-gray-200 px-4 py-3"
+            className="text-body rounded-lg px-4 py-3"
+            style={{
+              backgroundColor: colors.surface,
+              color: colors.text,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
             placeholder="Enter hours (4-12)"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.textTertiary}
             keyboardType="decimal-pad"
             value={selectedHours.toString()}
             onChangeText={(text) => {
@@ -171,7 +191,7 @@ export default function WorkHoursScreen() {
             }}
             accessibilityLabel="Custom work hours input"
           />
-          <Text className="text-caption text-gray-500 mt-1">
+          <Text className="text-caption mt-1" style={{ color: colors.textSecondary }}>
             Valid range: 4 to 12 hours
           </Text>
         </View>
@@ -181,8 +201,8 @@ export default function WorkHoursScreen() {
           onPress={handleSave}
           disabled={isSaving}
           activeOpacity={0.8}
-          className="mx-md mt-6 flex-row items-center justify-center bg-green-500 rounded-lg"
-          style={{ height: 48 }}
+          className="mx-md mt-6 flex-row items-center justify-center rounded-lg"
+          style={{ height: 48, backgroundColor: isSaving ? colors.textTertiary : colors.primary }}
           accessibilityLabel="Save work hours"
           accessibilityRole="button"
           accessibilityState={{ disabled: isSaving }}
@@ -198,7 +218,7 @@ export default function WorkHoursScreen() {
         </TouchableOpacity>
 
         {/* Info Text */}
-        <Text className="text-caption text-gray-500 text-center mt-4 mx-md">
+        <Text className="text-caption text-center mt-4 mx-md" style={{ color: colors.textSecondary }}>
           Current selection: {selectedHours} hours per day
         </Text>
       </ScrollView>
