@@ -144,11 +144,20 @@ export default function AddEntryScreen() {
   const [fetchYesterdayEntries, { loading: isDuplicating }] = useLazyQuery<{
     timeEntries: Array<{
       id: string;
+      consultantId: string;
+      payPeriodId: string;
       date: string;
-      hours: number;
+      projectTaskNumber: string;
+      clientName?: string;
       description: string;
-      category: string;
-      project: string;
+      inTime1?: string;
+      outTime1?: string;
+      inTime2?: string;
+      outTime2?: string;
+      totalHours: number;
+      synced: boolean;
+      createdAt: string;
+      updatedAt: string;
     }>;
   }>(TIME_ENTRIES_QUERY, { fetchPolicy: 'network-only' });
 
@@ -163,12 +172,12 @@ export default function AddEntryScreen() {
     if (existingEntryData?.timeEntry) {
       const entry = existingEntryData.timeEntry;
       setSelectedDate(parseDate(entry.date));
-      setClient(entry.project || MOCK_LAST_CLIENT.name);
+      setClient(entry.clientName || MOCK_LAST_CLIENT.name);
       setDescription(entry.description || '');
-      setProjectTask(entry.category || '');
+      setProjectTask(entry.projectTaskNumber || '');
       // For edit mode, use the stored hours to create a single time entry pair
       // TODO: Support multiple time entry pairs from backend
-      const totalMin = (entry.hours || 8) * 60;
+      const totalMin = (entry.totalHours || 8) * 60;
       const inMin = 8 * 60; // default 08:00
       const outMin = inMin + totalMin;
       const outH = Math.floor(outMin / 60);
@@ -228,12 +237,12 @@ export default function AddEntryScreen() {
 
       // Use the first entry from yesterday
       const entry = entries[0];
-      setClient(entry.project || '');
+      setClient(entry.clientName || '');
       setDescription(entry.description || '');
-      setProjectTask(entry.category || '');
+      setProjectTask(entry.projectTaskNumber || '');
 
       // Convert hours to a single time entry pair starting at 08:00
-      const totalMin = (entry.hours || 8) * 60;
+      const totalMin = (entry.totalHours || 8) * 60;
       const inMin = 8 * 60;
       const outMin = inMin + totalMin;
       const outH = Math.floor(outMin / 60);
@@ -334,10 +343,10 @@ export default function AddEntryScreen() {
 
     const input = {
       date: dateStr,
-      hours: totalHours,
+      totalHours: totalHours,
       description: autoDescription,
-      category: projectTask.trim() || undefined,
-      project: client.trim(),
+      projectTaskNumber: projectTask.trim() || undefined,
+      clientName: client.trim(),
     };
 
     try {

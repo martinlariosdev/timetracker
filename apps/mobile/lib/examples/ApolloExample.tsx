@@ -85,7 +85,7 @@ export function TimeEntriesExample() {
       {entries.map((entry: any) => (
         <View key={entry.id} style={styles.entry}>
           <Text>{entry.date}</Text>
-          <Text>{entry.hours} hours - {entry.description}</Text>
+          <Text>{entry.totalHours} hours - {entry.description}</Text>
         </View>
       ))}
       <Button title="Refresh" onPress={() => refetch()} />
@@ -109,8 +109,8 @@ export function CreateTimeEntryExample() {
           id: 'temp-id',
           ...variables.input,
           consultantId: 'current-user-id',
-          syncStatus: 'PENDING',
-          lastModified: new Date().toISOString(),
+          payPeriodId: 'temp-pp-id',
+          synced: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
@@ -124,10 +124,10 @@ export function CreateTimeEntryExample() {
         variables: {
           input: {
             date: new Date().toISOString().split('T')[0],
-            hours: 8,
+            totalHours: 8,
             description: 'Example time entry',
-            category: 'REGULAR',
-            project: 'PROJECT-001',
+            projectTaskNumber: 'TASK-001',
+            clientName: 'Example Client',
           },
         },
       });
