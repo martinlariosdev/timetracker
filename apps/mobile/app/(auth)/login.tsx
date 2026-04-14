@@ -8,6 +8,8 @@ import { useState, useEffect } from 'react';
 // import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { useAuth } from '@/hooks/useAuth';
 import { BiometricService } from '@/lib/auth/biometric-service';
+import { MockLoginButtonWithSelector } from '@/components/MockLoginButton';
+import { useRouter } from 'expo-router';
 
 const FEATURE_PILLS = [
   { icon: 'clock' as const, label: 'Quick Entry' },
@@ -16,6 +18,7 @@ const FEATURE_PILLS = [
 ];
 
 export default function LoginScreen() {
+  const router = useRouter();
   const { login, isLoading, error, biometricEnabled, authenticateWithBiometric } = useAuth();
   const [reduceMotion, setReduceMotion] = useState(false);
   const [biometricLabel, setBiometricLabel] = useState('Biometric');
@@ -262,9 +265,14 @@ export default function LoginScreen() {
               <View className="flex-1 h-[1px] bg-gray-200" />
             </View>
 
+            {/* Mock Login (Development Only) */}
+            <MockLoginButtonWithSelector
+              onSuccess={() => router.replace('/(tabs)')}
+            />
+
             {/* Feature pills */}
             <View
-              className="flex-row flex-wrap gap-sm justify-center"
+              className="flex-row flex-wrap gap-sm justify-center mt-lg"
             >
               {FEATURE_PILLS.map((pill) => (
                 <View
