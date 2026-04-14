@@ -24,6 +24,8 @@ import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
 import { WEEK_TIME_ENTRIES_QUERY, TIMESHEET_SUBMISSION_QUERY } from '@/lib/graphql/queries';
 import { SUBMIT_TIMESHEET_MUTATION, DELETE_TIME_ENTRY_MUTATION } from '@/lib/graphql/mutations';
 import { ErrorView } from '@/components/ErrorView';
+import { DayCardSkeletonList } from '@/components/skeletons/DayCardSkeleton';
+import { MetricCardSkeleton } from '@/components/skeletons/MetricCardSkeleton';
 
 // --- Types ---
 
@@ -1115,10 +1117,9 @@ export default function TimesheetListScreen() {
 
       {/* === Daily Entry Cards (Vertical Scroll) === */}
       {loading && !entries.length ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#2563EB" />
-          <Text className="text-sm text-gray-500 mt-3">Loading entries...</Text>
-        </View>
+        <ScrollView className="flex-1 px-4 pt-3">
+          <DayCardSkeletonList count={7} />
+        </ScrollView>
       ) : error && !entries.length ? (
         <ErrorView
           error={error}

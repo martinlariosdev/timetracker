@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
 import { ME_QUERY, ETO_TRANSACTIONS_QUERY } from '@/lib/graphql/queries';
 import { ErrorView } from '@/components/ErrorView';
+import { DayCardSkeletonList } from '@/components/skeletons/DayCardSkeleton';
 import ETOBalanceDetailModal from '@/components/ETOBalanceDetailModal';
 import UseETOModal from '@/components/UseETOModal';
 import ETOStatsModal from '@/components/ETOStatsModal';
@@ -488,10 +489,9 @@ export default function ETOScreen() {
 
       {/* Content */}
       {loading && !transactions.length ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#2563EB" />
-          <Text className="text-sm text-gray-500 mt-3">Loading ETO data...</Text>
-        </View>
+        <ScrollView className="flex-1 px-4 pt-3">
+          <DayCardSkeletonList count={5} />
+        </ScrollView>
       ) : error && !transactions.length ? (
         <ErrorView
           error={error}
