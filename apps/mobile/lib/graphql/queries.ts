@@ -180,6 +180,20 @@ export const TIMESHEET_SUBMISSION_QUERY = gql`
 `;
 
 /**
+ * Get all active clients for the client selector - requires authentication
+ */
+export const CLIENTS_QUERY = gql`
+  query Clients {
+    clients {
+      id
+      name
+      code
+      active
+    }
+  }
+`;
+
+/**
  * Get pending sync items - requires authentication
  */
 export const PENDING_SYNC_QUERY = gql`

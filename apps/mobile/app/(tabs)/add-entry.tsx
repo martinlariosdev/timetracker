@@ -21,6 +21,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { useDatePicker } from '@/components/DatePicker';
+import { ClientSelectorModal } from '@/components/ClientSelectorModal';
 import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
 import { DateSelectorCard } from '@/components/add-entry/DateSelectorCard';
@@ -83,6 +84,8 @@ export default function AddEntryScreen() {
   ]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [clientSelectorVisible, setClientSelectorVisible] = useState(false);
+  const [clientId, setClientId] = useState<string | undefined>(undefined);
 
   // --- Derived State ---
   const totalHours = useMemo(
@@ -172,12 +175,16 @@ export default function AddEntryScreen() {
   // --- Handlers ---
 
   const handleClientPress = useCallback(() => {
-    // TODO: Open client selector/autocomplete
-    Alert.alert(
-      'Client Selector',
-      'Client autocomplete will be integrated when client list API is available',
-    );
+    setClientSelectorVisible(true);
   }, []);
+
+  const handleClientSelect = useCallback(
+    (selected: { id: string; name: string }) => {
+      setClientId(selected.id);
+      setClient(selected.name);
+    },
+    [],
+  );
 
   const handleDuplicateYesterday = useCallback(() => {
     // Copy mock yesterday's entry
@@ -552,6 +559,12 @@ export default function AddEntryScreen() {
         />
       </ScrollView>
       {datePicker.modal}
+      <ClientSelectorModal
+        visible={clientSelectorVisible}
+        onClose={() => setClientSelectorVisible(false)}
+        onSelect={handleClientSelect}
+        selectedClientId={clientId}
+      />
     </View>
   );
 }
