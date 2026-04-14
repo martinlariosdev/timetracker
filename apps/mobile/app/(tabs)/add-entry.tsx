@@ -305,6 +305,21 @@ export default function AddEntryScreen() {
     return Object.keys(newErrors).length === 0;
   }, [client, description, isExpanded, timeEntries]);
 
+  /**
+   * KNOWN LIMITATION (Issue #14): Multiple time entry pairs are saved as total hours only.
+   * When a user creates entries like:
+   *   - 08:00-12:00 (4 hrs)
+   *   - 13:00-17:00 (4 hrs)
+   *
+   * Backend stores: { hours: 8.0, description: "...", project: "..." }
+   *
+   * On edit, the app reconstructs as a single 08:00-16:00 block.
+   * Original time pair boundaries (e.g., lunch break) are lost.
+   *
+   * Accepted as MVP limitation per UI/UX Audit. Full fix would require:
+   * - Backend schema change to store time pairs (e.g., timePairs JSON field)
+   * - Edit flow to preserve and restore original pairs
+   */
   const handleSave = useCallback(async () => {
     if (!validate()) return;
 
@@ -500,6 +515,30 @@ export default function AddEntryScreen() {
             />
           </View>
         </Animated.View>
+
+        {/* Info banner: shown when multiple time entries exist (Issue #14) */}
+        {timeEntries.length > 1 && (
+          <View
+            className="mx-md mt-3"
+            style={{
+              backgroundColor: '#EFF6FF',
+              borderWidth: 1,
+              borderColor: '#BFDBFE',
+              borderRadius: 12,
+              padding: 12,
+            }}
+          >
+            <View className="flex-row items-center">
+              <Ionicons name="information-circle-outline" size={20} color="#3B82F6" />
+              <Text
+                className="text-body-small ml-2"
+                style={{ color: '#1D4ED8', flex: 1 }}
+              >
+                Multiple time entries are saved as total hours. Editing will show a single time block.
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Time Entry Pairs */}
         {timeEntries.map((entry, index) => (
