@@ -1,3 +1,27 @@
 .DS_Store
 .claude/
 *.log
+
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+.next/
+.turbo/
+
+# Generated files
+**/generated/
+**/coverage/
+
+# Environment files
+.env
+.env*.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db

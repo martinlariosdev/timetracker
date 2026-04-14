@@ -1,0 +1,143 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// Consultant model representing a consultant with their hours and payment details
+model Consultant {
+  id                      String   @id @default(auto()) @map("_id") @db.ObjectId
+  externalId              String   @unique
+  name                    String
+  email                   String   @unique
+  teamLeadId              String?
+  teamLeadName            String?
+  teamLeadEmail           String?
+  etoBalance              Float    @default(0)
+  workingHoursPerPeriod   Float    @default(88)
+  paymentType             String   @default("Hourly")  // "Hourly", "Fixed", "Hybrid"
+  pushToken               String?
+  notificationPreferences Json?    @default("{}")
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  timeEntries             TimeEntry[]
+  etoTransactions         ETOTransaction[]
+  timesheetSubmissions    TimesheetSubmission[]
+
+  @@map("consultants")
+}
+
+// PayPeriod model representing a billing period
+model PayPeriod {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  startDate           DateTime
+  endDate             DateTime
+  displayText         String   // "January 2025", "Q1 2025", etc.
+  isCurrent           Boolean  @default(false)
+  deadlineDate        DateTime?
+  createdAt           DateTime @default(now())
+
+  timeEntries         TimeEntry[]
+  timesheetSubmissions TimesheetSubmission[]
+
+  @@unique([startDate, endDate])
+  @@index([isCurrent])
+  @@map("pay_periods")
+}
+
+// TimeEntry model representing a single day's time entry
+model TimeEntry {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  consultantId        String   @db.ObjectId
+  payPeriodId         String   @db.ObjectId
+  date                DateTime
+  projectTaskNumber   String?  // e.g., "PROJ-123"
+  clientName          String?
+  description         String?
+  inTime1             DateTime?
+  outTime1            DateTime?
+  inTime2             DateTime?
+  outTime2            DateTime?
+  totalHours          Float    @default(0)
+  synced              Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  consultant          Consultant @relation(fields: [consultantId], references: [id], onDelete: Cascade)
+  payPeriod           PayPeriod   @relation(fields: [payPeriodId], references: [id], onDelete: Cascade)
+
+  @@index([consultantId, payPeriodId])
+  @@index([date])
+  @@index([synced])
+  @@map("time_entries")
+}
+
+// ETOTransaction model representing ETO (time off) transactions
+model ETOTransaction {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  consultantId        String   @db.ObjectId
+  date                DateTime
+  hours               Float
+  transactionType     String   // "Accrual", "Usage", "Adjustment"
+  description         String?
+  projectName         String?
+  synced              Boolean  @default(true)
+  createdAt           DateTime @default(now())
+
+  consultant          Consultant @relation(fields: [consultantId], references: [id], onDelete: Cascade)
+
+  @@index([consultantId])
+  @@index([date])
+  @@index([synced])
+  @@map("eto_transactions")
+}
+
+// TimesheetSubmission model tracking timesheet approval workflow
+model TimesheetSubmission {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  consultantId        String   @db.ObjectId
+  payPeriodId         String   @db.ObjectId
+  status              String   @default("draft")  // "draft", "submitted", "approved", "rejected"
+  submittedAt         DateTime? @default(now())
+  approvedAt          DateTime?
+  approvedBy          String?
+  rejectedAt          DateTime?
+  rejectedBy          String?
+  comments            String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  consultant          Consultant @relation(fields: [consultantId], references: [id], onDelete: Cascade)
+  payPeriod           PayPeriod   @relation(fields: [payPeriodId], references: [id], onDelete: Cascade)
+
+  @@unique([consultantId, payPeriodId])
+  @@index([status])
+  @@index([submittedAt])
+  @@map("timesheet_submissions")
+}
+
+// SyncLog model for tracking synchronization operations
+model SyncLog {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String
+  deviceId            String
+  entityType          String   // "TimeEntry", "ETOTransaction", "Consultant", etc.
+  operation           String   // "create", "update", "delete"
+  entityId            String
+  syncedAt            DateTime @default(now())
+  success             Boolean  @default(true)
+  error               String?
+
+  @@index([userId, syncedAt])
+  @@index([syncedAt])
+  @@index([success])
+  @@index([userId, entityType, entityId])
+  @@map("sync_logs")
+}

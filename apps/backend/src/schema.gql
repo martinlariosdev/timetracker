@@ -1,0 +1,724 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+"""Input for manually adjusting ETO balance (accrual or admin adjustment)"""
+input AdjustETOInput {
+  """ID of the consultant whose balance to adjust"""
+  consultantId: ID!
+
+  """Date of the adjustment"""
+  date: String!
+
+  """Description or reason for the adjustment"""
+  description: String!
+
+  """
+  Number of hours (always positive, direction determined by transactionType)
+  """
+  hours: Float!
+
+  """
+  Type of adjustment: Accrual (adds to balance) or Usage (deducts from balance)
+  """
+  transactionType: ETOTransactionType!
+}
+
+"""Input for approving a timesheet submission"""
+input ApproveTimesheetInput {
+  """Optional comments from the approver"""
+  comments: String
+
+  """ID of the submission to approve"""
+  submissionId: ID!
+}
+
+type AuthResponse {
+  """JWT access token for authentication"""
+  accessToken: String!
+
+  """Token expiration time (e.g., "7d")"""
+  expiresIn: String!
+
+  """Authenticated user information"""
+  user: UserType!
+}
+
+"""Information about a detected data conflict"""
+type ConflictInfo {
+  """Timestamp when client last synced"""
+  clientLastSyncedAt: DateTime
+
+  """Client version of the data that conflicts"""
+  clientVersion: JSONObject
+
+  """Details about what changed"""
+  conflictDetails: String
+
+  """Whether a conflict was detected"""
+  hasConflict: Boolean!
+
+  """Timestamp when server data was last updated"""
+  serverUpdatedAt: DateTime
+
+  """Current server version of the data"""
+  serverVersion: JSONObject
+}
+
+"""Strategy for resolving data conflicts during sync"""
+enum ConflictResolutionStrategy {
+  CLIENT_WINS
+  MANUAL_MERGE
+  SERVER_WINS
+}
+
+"""Input for creating a sync log entry"""
+input CreateSyncLogInput {
+  """Device identifier that performed the sync"""
+  deviceId: String!
+
+  """ID of the entity that was synced"""
+  entityId: ID!
+
+  """Type of entity being synced"""
+  entityType: SyncEntityType!
+
+  """Error message if sync failed"""
+  error: String
+
+  """Type of operation performed"""
+  operation: SyncOperationType!
+
+  """Whether the sync operation was successful"""
+  success: Boolean = true
+}
+
+"""Input for creating a new time entry"""
+input CreateTimeEntryInput {
+  """Name of the client"""
+  clientName: String!
+
+  """ID of the consultant creating the entry"""
+  consultantId: ID!
+
+  """Date of the time entry in YYYY-MM-DD format"""
+  date: String!
+
+  """Description of work performed"""
+  description: String!
+
+  """First clock-in time in HH:mm format"""
+  inTime1: String!
+
+  """Second clock-in time in HH:mm format for split shifts"""
+  inTime2: String
+
+  """First clock-out time in HH:mm format"""
+  outTime1: String!
+
+  """Second clock-out time in HH:mm format for split shifts"""
+  outTime2: String
+
+  """ID of the pay period for this entry"""
+  payPeriodId: ID!
+
+  """Project or task number (e.g., PROJ-123)"""
+  projectTaskNumber: String
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+"""ETO transaction record for tracking earned time off"""
+type ETOTransactionObjectType {
+  """ID of the consultant who owns this transaction"""
+  consultantId: ID!
+
+  """Timestamp when this transaction was created"""
+  createdAt: DateTime!
+
+  """Transaction date in ISO 8601 format"""
+  date: DateTime!
+
+  """Description or reason for the transaction"""
+  description: String
+
+  """
+  Number of hours for this transaction (positive for accrual, negative for usage)
+  """
+  hours: Float!
+
+  """Unique identifier for the ETO transaction"""
+  id: ID!
+
+  """Project name associated with ETO usage"""
+  projectName: String
+
+  """Whether this transaction has been synced with the backend"""
+  synced: Boolean!
+
+  """Type of transaction: Accrual, Usage, or Adjustment"""
+  transactionType: ETOTransactionType!
+}
+
+"""Type of ETO transaction"""
+enum ETOTransactionType {
+  ACCRUAL
+  ADJUSTMENT
+  USAGE
+}
+
+"""
+The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSONObject
+
+input LoginInput {
+  """Okta authentication token"""
+  oktaToken: String!
+}
+
+input MockLoginInput {
+  """Email address of the consultant to authenticate as"""
+  email: String!
+}
+
+type Mutation {
+  """Manually adjust ETO balance (accrual or admin adjustment)"""
+  adjustETO(input: AdjustETOInput!): ETOTransactionObjectType!
+
+  """Approve a timesheet submission (team leads only)"""
+  approveTimesheet(input: ApproveTimesheetInput!): TimesheetSubmissionType!
+
+  """Create a new time entry"""
+  createTimeEntry(input: CreateTimeEntryInput!): TimeEntryType!
+
+  """Delete a time entry"""
+  deleteTimeEntry(id: String!): Boolean!
+
+  """Record a sync operation from a mobile device"""
+  logSync(input: CreateSyncLogInput!): SyncLogObjectType!
+
+  """Authenticate user with Okta token and receive JWT"""
+  login(input: LoginInput!): AuthResponse!
+
+  """Mock authentication by email (DEVELOPMENT ONLY)"""
+  mockLogin(input: MockLoginInput!): AuthResponse!
+
+  """Refresh JWT token for authenticated user"""
+  refreshToken: TokenResponse!
+
+  """Register a push notification token for the current user"""
+  registerPushToken(input: RegisterPushTokenInput!): Boolean!
+
+  """Reject a timesheet submission (team leads only)"""
+  rejectTimesheet(input: RejectTimesheetInput!): TimesheetSubmissionType!
+
+  """Resolve a detected conflict using a strategy"""
+  resolveConflict(input: ResolveConflictInput!): ResolvedConflict!
+
+  """Submit a timesheet for approval"""
+  submitTimesheet(input: SubmitTimesheetInput!): TimesheetSubmissionType!
+
+  """Batch sync ETO transactions from mobile device"""
+  syncETOTransactions(deviceId: String!, transactions: [SyncETOTransactionInput!]!): SyncResult!
+
+  """Batch sync time entries from mobile device"""
+  syncTimeEntries(deviceId: String!, entries: [SyncTimeEntryInput!]!): SyncResult!
+
+  """Batch sync timesheet submissions from mobile device"""
+  syncTimesheetSubmissions(deviceId: String!, submissions: [SyncTimesheetSubmissionInput!]!): SyncResult!
+
+  """Send a test push notification to the current user"""
+  testNotification(input: TestNotificationInput!): Boolean!
+
+  """Update an existing time entry"""
+  updateTimeEntry(id: String!, input: UpdateTimeEntryInput!): TimeEntryType!
+
+  """Use ETO hours (take time off)"""
+  useETO(input: UseETOInput!): ETOTransactionObjectType!
+}
+
+type Query {
+  """Check if an entity has conflicts before syncing"""
+  checkConflict(entityId: String!, entityType: SyncEntityType!, lastSyncedAt: DateTime!): ConflictInfo!
+
+  """Get current ETO balance for a consultant"""
+  etoBalance(consultantId: ID!): Float!
+
+  """Get ETO transactions for a consultant"""
+  etoTransactions(consultantId: ID!, limit: Int, offset: Int): [ETOTransactionObjectType!]!
+
+  """Get failed syncs for current user/device"""
+  failedSyncs: [SyncLogObjectType!]!
+  health: String!
+
+  """Get current authenticated user profile"""
+  me: UserType!
+
+  """Get all timesheet submissions for the current user"""
+  myTimesheetSubmissions: [TimesheetSubmissionType!]!
+
+  """Get timesheet submissions pending review (team leads only)"""
+  pendingTimesheetSubmissions: [TimesheetSubmissionType!]!
+
+  """Get sync logs for current user with optional filters"""
+  syncLogs(filters: SyncFilterInput): [SyncLogObjectType!]!
+
+  """Get all time entries for the current user"""
+  timeEntries(filters: TimeEntryFiltersInput): [TimeEntryType!]!
+
+  """Get a single time entry by ID"""
+  timeEntry(id: String!): TimeEntryType!
+
+  """Get a timesheet submission by ID"""
+  timesheetSubmission(id: String!): TimesheetSubmissionType!
+}
+
+input RegisterPushTokenInput {
+  """Expo push token for the device"""
+  token: String!
+}
+
+"""Input for rejecting a timesheet submission"""
+input RejectTimesheetInput {
+  """Required comments explaining why the timesheet was rejected"""
+  comments: String!
+
+  """ID of the submission to reject"""
+  submissionId: ID!
+}
+
+"""Input for resolving a data conflict"""
+input ResolveConflictInput {
+  """Client data to use for CLIENT_WINS strategy"""
+  clientData: JSONObject
+
+  """ID of the entity with conflict"""
+  entityId: ID!
+
+  """Type of entity with conflict"""
+  entityType: SyncEntityType!
+
+  """
+  Server data to use for SERVER_WINS strategy (optional, will be fetched if not provided)
+  """
+  serverData: JSONObject
+
+  """Strategy to use for conflict resolution"""
+  strategy: ConflictResolutionStrategy!
+}
+
+"""Result of applying a conflict resolution strategy"""
+type ResolvedConflict {
+  """Final data after conflict resolution"""
+  finalData: JSONObject!
+
+  """Additional details about the resolution"""
+  message: String
+
+  """Strategy that was applied"""
+  strategy: ConflictResolutionStrategy!
+
+  """Whether the conflict was successfully resolved"""
+  success: Boolean!
+}
+
+"""Input for submitting a timesheet for approval"""
+input SubmitTimesheetInput {
+  """ID of the pay period to submit"""
+  payPeriodId: ID!
+}
+
+"""Input for syncing a single ETO transaction"""
+input SyncETOTransactionInput {
+  """Date of the transaction"""
+  date: String!
+
+  """Description of the transaction"""
+  description: String
+
+  """Number of hours (positive value)"""
+  hours: Float!
+
+  """ID of existing transaction (null for CREATE)"""
+  id: ID
+
+  """Client last synced timestamp for conflict detection"""
+  lastSyncedAt: DateTime
+
+  """Operation to perform (CREATE, UPDATE, DELETE)"""
+  operation: SyncOperation!
+
+  """Project name (for Usage type)"""
+  projectName: String
+
+  """Conflict resolution strategy if conflict detected"""
+  resolution: ConflictResolutionStrategy = SERVER_WINS
+
+  """Transaction type (Usage, Accrual, Adjustment)"""
+  transactionType: String!
+}
+
+"""Type of entity being synced"""
+enum SyncEntityType {
+  CONSULTANT
+  ETO_TRANSACTION
+  TIMESHEET_SUBMISSION
+  TIME_ENTRY
+}
+
+"""Error information for a failed sync operation"""
+type SyncError {
+  """ID of the entity that failed to sync"""
+  entityId: String!
+
+  """Type of entity (TimeEntry, ETOTransaction, etc.)"""
+  entityType: String!
+
+  """Error message describing what went wrong"""
+  error: String!
+
+  """Operation that was attempted (CREATE, UPDATE, DELETE)"""
+  operation: String!
+}
+
+"""Filters for querying sync logs"""
+input SyncFilterInput {
+  """Filter by device identifier"""
+  deviceId: String
+
+  """Filter by entity type"""
+  entityType: SyncEntityType
+
+  """Only return failed syncs"""
+  onlyFailed: Boolean = false
+
+  """Filter by operation type"""
+  operation: SyncOperationType
+}
+
+"""Sync operation log record for tracking offline sync operations"""
+type SyncLogObjectType {
+  """Device identifier that performed the sync"""
+  deviceId: String!
+
+  """ID of the entity that was synced"""
+  entityId: ID!
+
+  """Type of entity being synced"""
+  entityType: SyncEntityType!
+
+  """Error message if sync failed"""
+  error: String
+
+  """Unique identifier for the sync log"""
+  id: ID!
+
+  """Type of operation performed"""
+  operation: SyncOperationType!
+
+  """Whether the sync operation was successful"""
+  success: Boolean!
+
+  """Timestamp when the sync occurred"""
+  syncedAt: DateTime!
+
+  """ID of the user who performed the sync"""
+  userId: ID!
+}
+
+"""Type of sync operation to perform"""
+enum SyncOperation {
+  CREATE
+  DELETE
+  UPDATE
+}
+
+"""Type of sync operation"""
+enum SyncOperationType {
+  CREATE
+  DELETE
+  UPDATE
+}
+
+"""Result of a batch sync operation"""
+type SyncResult {
+  """List of conflicts detected during sync"""
+  conflicts: [ConflictInfo!]!
+
+  """List of errors that occurred during sync"""
+  errors: [SyncError!]!
+
+  """Number of items that failed to sync"""
+  failed: Int!
+
+  """Number of successfully synced items"""
+  successful: Int!
+}
+
+"""Input for syncing a single time entry"""
+input SyncTimeEntryInput {
+  """Client name"""
+  clientName: String!
+
+  """Date in YYYY-MM-DD format"""
+  date: String!
+
+  """Description of work performed"""
+  description: String!
+
+  """ID of existing entry (null for CREATE)"""
+  id: ID
+
+  """First check-in time (HH:mm)"""
+  inTime1: String!
+
+  """Second check-in time (HH:mm)"""
+  inTime2: String
+
+  """Client last synced timestamp for conflict detection"""
+  lastSyncedAt: DateTime
+
+  """Operation to perform (CREATE, UPDATE, DELETE)"""
+  operation: SyncOperation!
+
+  """First check-out time (HH:mm)"""
+  outTime1: String!
+
+  """Second check-out time (HH:mm)"""
+  outTime2: String
+
+  """Pay period ID (will use current if not provided)"""
+  payPeriodId: ID
+
+  """Project/task number"""
+  projectTaskNumber: String
+
+  """Conflict resolution strategy if conflict detected"""
+  resolution: ConflictResolutionStrategy = SERVER_WINS
+
+  """Total hours (calculated client-side)"""
+  totalHours: Float!
+}
+
+"""Input for syncing a single timesheet submission"""
+input SyncTimesheetSubmissionInput {
+  """Comments for the submission"""
+  comments: String
+
+  """ID of existing submission (null for CREATE)"""
+  id: ID
+
+  """Client last synced timestamp for conflict detection"""
+  lastSyncedAt: DateTime
+
+  """Operation to perform (CREATE, UPDATE, DELETE)"""
+  operation: SyncOperation!
+
+  """Pay period ID for this submission"""
+  payPeriodId: ID!
+
+  """Conflict resolution strategy if conflict detected"""
+  resolution: ConflictResolutionStrategy = SERVER_WINS
+
+  """Submission status (draft, submitted, approved, rejected)"""
+  status: String!
+
+  """When the timesheet was submitted"""
+  submittedAt: DateTime
+}
+
+input TestNotificationInput {
+  """Notification body"""
+  body: String!
+
+  """Notification title"""
+  title: String!
+}
+
+"""Filters for querying time entries"""
+input TimeEntryFiltersInput {
+  """Filter by consultant ID"""
+  consultantId: ID
+
+  """Filter entries up to this date"""
+  endDate: DateTime
+
+  """Filter by pay period ID"""
+  payPeriodId: ID
+
+  """Filter entries from this date onwards"""
+  startDate: DateTime
+}
+
+"""Time entry for tracking work hours"""
+type TimeEntryType {
+  """Name of the client"""
+  clientName: String
+
+  """ID of the consultant who created this entry"""
+  consultantId: ID!
+
+  """Timestamp when this entry was created"""
+  createdAt: DateTime!
+
+  """Entry date in YYYY-MM-DD format"""
+  date: DateTime!
+
+  """Description of work performed"""
+  description: String
+
+  """Unique identifier for the time entry"""
+  id: ID!
+
+  """First clock-in time (ISO 8601 format)"""
+  inTime1: DateTime
+
+  """Second clock-in time (ISO 8601 format), for split shifts"""
+  inTime2: DateTime
+
+  """First clock-out time (ISO 8601 format)"""
+  outTime1: DateTime
+
+  """Second clock-out time (ISO 8601 format), for split shifts"""
+  outTime2: DateTime
+
+  """ID of the pay period this entry belongs to"""
+  payPeriodId: ID!
+
+  """Project or task number (e.g., PROJ-123)"""
+  projectTaskNumber: String
+
+  """Whether this entry has been synced with the backend"""
+  synced: Boolean!
+
+  """Total hours worked in this entry"""
+  totalHours: Float!
+
+  """Timestamp when this entry was last updated"""
+  updatedAt: DateTime!
+}
+
+"""Timesheet submission for approval workflow"""
+type TimesheetSubmissionType {
+  """Timestamp when the timesheet was approved"""
+  approvedAt: DateTime
+
+  """ID of the team lead who approved the timesheet"""
+  approvedBy: String
+
+  """Comments from team lead (especially for rejections)"""
+  comments: String
+
+  """ID of the consultant who submitted the timesheet"""
+  consultantId: ID!
+
+  """Timestamp when this submission was created"""
+  createdAt: DateTime!
+
+  """Unique identifier for the submission"""
+  id: ID!
+
+  """ID of the pay period for this submission"""
+  payPeriodId: ID!
+
+  """Timestamp when the timesheet was rejected"""
+  rejectedAt: DateTime
+
+  """ID of the team lead who rejected the timesheet"""
+  rejectedBy: String
+
+  """Submission status: draft, submitted, approved, or rejected"""
+  status: String!
+
+  """Timestamp when the timesheet was submitted"""
+  submittedAt: DateTime
+
+  """Timestamp when this submission was last updated"""
+  updatedAt: DateTime!
+}
+
+type TokenResponse {
+  """JWT access token"""
+  accessToken: String!
+
+  """Token expiration time"""
+  expiresIn: String!
+}
+
+"""Input for updating an existing time entry"""
+input UpdateTimeEntryInput {
+  """Name of the client"""
+  clientName: String
+
+  """ID of the consultant creating the entry"""
+  consultantId: String
+
+  """Date of the time entry in YYYY-MM-DD format"""
+  date: String
+
+  """Description of work performed"""
+  description: String
+
+  """ID of the time entry to update"""
+  id: ID!
+
+  """First clock-in time in HH:mm format"""
+  inTime1: String
+
+  """Second clock-in time in HH:mm format for split shifts"""
+  inTime2: String
+
+  """First clock-out time in HH:mm format"""
+  outTime1: String
+
+  """Second clock-out time in HH:mm format for split shifts"""
+  outTime2: String
+
+  """ID of the pay period for this entry"""
+  payPeriodId: String
+
+  """Project or task number (e.g., PROJ-123)"""
+  projectTaskNumber: String
+}
+
+"""Input for using ETO hours (taking time off)"""
+input UseETOInput {
+  """Date when ETO is used (YYYY-MM-DD format)"""
+  date: String!
+
+  """Description or reason for using ETO"""
+  description: String
+
+  """Number of hours to use (must be positive)"""
+  hours: Float!
+
+  """Project name associated with this ETO usage"""
+  projectName: String
+}
+
+type UserType {
+  """Consultant email"""
+  email: String!
+
+  """Current ETO (Extended Time Off) balance in hours"""
+  etoBalance: Float!
+
+  """External Okta user ID"""
+  externalId: String!
+
+  """Internal consultant ID"""
+  id: String!
+
+  """Consultant name"""
+  name: String!
+
+  """Payment type (e.g., contract, hourly)"""
+  paymentType: String
+
+  """Standard working hours per pay period"""
+  workingHoursPerPeriod: Float
+}

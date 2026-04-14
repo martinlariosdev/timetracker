@@ -1,0 +1,28 @@
+# Development Dockerfile with hot reload
+FROM node:20-alpine
+
+# Install pnpm
+RUN npm install -g pnpm@8.15.0
+
+# Set working directory
+WORKDIR /app
+
+# Copy root package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Copy workspace packages
+COPY packages ./packages
+COPY apps/backend ./apps/backend
+
+# Install all dependencies (including dev)
+RUN pnpm install --frozen-lockfile
+
+# Generate Prisma client
+WORKDIR /app/apps/backend
+RUN npx prisma generate
+
+# Expose port
+EXPOSE 3000
+
+# Start in development mode with hot reload
+CMD ["pnpm", "run", "start:dev"]

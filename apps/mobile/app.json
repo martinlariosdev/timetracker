@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "TimeTrack",
+    "slug": "timetrack",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "scheme": "timetrack",
+    "extra": {
+      "oktaIssuer": "${EXPO_PUBLIC_OKTA_ISSUER}",
+      "oktaClientId": "${EXPO_PUBLIC_OKTA_CLIENT_ID}",
+      "oktaRedirectUri": "${EXPO_PUBLIC_OKTA_REDIRECT_URI}"
+    },
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.timetrack.mobile"
+    },
+    "android": {
+      "package": "com.timetrack.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "@react-native-community/datetimepicker",
+      "expo-secure-store",
+      "expo-web-browser"
+    ]
+  }
+}
