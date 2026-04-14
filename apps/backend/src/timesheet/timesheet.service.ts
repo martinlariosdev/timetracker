@@ -364,15 +364,23 @@ export class TimesheetService {
    * @returns Pay period ID
    */
   private async calculatePayPeriodId(dateStr: string): Promise<string> {
-    // TODO: Implement actual pay period calculation logic
-    // For now, return a placeholder that follows expected format
-    // Format: YYYY-PP where PP is pay period number (1-26 for bi-weekly)
     const date = new Date(dateStr);
-    const year = date.getFullYear();
-    // Simple logic: 2-week periods, ~26 per year
-    const dayOfYear = Math.floor((date.getTime() - new Date(year, 0, 0).getTime()) / 86400000);
-    const payPeriod = Math.floor(dayOfYear / 14) + 1;
-    return `${year}-${String(payPeriod).padStart(2, '0')}`;
+
+    // Find pay period that contains this date
+    const payPeriod = await this.prisma.payPeriod.findFirst({
+      where: {
+        startDate: { lte: date },
+        endDate: { gte: date },
+      },
+    });
+
+    if (!payPeriod) {
+      throw new BadRequestException(
+        `No pay period found for date ${dateStr}. Please ensure pay periods are configured.`
+      );
+    }
+
+    return payPeriod.id;
   }
 
   /**
