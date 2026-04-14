@@ -152,10 +152,11 @@ function highlightMatch(text: string, query: string): React.ReactNode {
 
   if (parts.length === 1) return text;
 
+  const queryLower = query.toLowerCase();
   return (
     <Text>
       {parts.map((part, i) =>
-        regex.test(part) ? (
+        part.toLowerCase() === queryLower ? (
           <Text key={i} style={{ backgroundColor: '#FEF3C7', fontWeight: '600' }}>{part}</Text>
         ) : (
           <Text key={i}>{part}</Text>
@@ -485,6 +486,7 @@ function SearchResultRow({
   searchQuery?: string;
 }) {
   const { colors } = useTheme();
+  const matchReason = getMatchReason(setting, searchQuery);
   return (
     <View
       className="shadow-level-1 mx-md mb-2"
@@ -498,8 +500,13 @@ function SearchResultRow({
           <View className="flex-row items-center flex-1 mr-3">
             <Ionicons name={setting.icon} size={20} color={colors.primary} />
             <View className="ml-3">
-              <Text className="text-body" style={{ color: colors.text }}>{setting.title}</Text>
-              <Text className="text-caption" style={{ color: colors.textSecondary }}>{setting.category}</Text>
+              <Text className="text-body" style={{ color: colors.text }}>
+                {highlightMatch(setting.title, searchQuery)}
+              </Text>
+              <Text className="text-caption" style={{ color: colors.textSecondary }}>
+                {setting.category}
+                {matchReason && <Text style={{ color: colors.textTertiary }}> · {matchReason}</Text>}
+              </Text>
             </View>
           </View>
           <Switch
@@ -522,8 +529,13 @@ function SearchResultRow({
           <View className="flex-row items-center flex-1 mr-3">
             <Ionicons name={setting.icon} size={20} color={colors.primary} />
             <View className="ml-3">
-              <Text className="text-body" style={{ color: colors.text }}>{setting.title}</Text>
-              <Text className="text-caption" style={{ color: colors.textSecondary }}>{setting.category}</Text>
+              <Text className="text-body" style={{ color: colors.text }}>
+                {highlightMatch(setting.title, searchQuery)}
+              </Text>
+              <Text className="text-caption" style={{ color: colors.textSecondary }}>
+                {setting.category}
+                {matchReason && <Text style={{ color: colors.textTertiary }}> · {matchReason}</Text>}
+              </Text>
             </View>
           </View>
           <View className="flex-row items-center">
@@ -946,6 +958,7 @@ export default function SettingsScreen() {
                     isOn={toggleStates[setting.id] ?? false}
                     onToggle={(value) => handleToggle(setting.id, value)}
                     onPress={() => handleNavSetting(setting.id)}
+                    searchQuery={searchQuery}
                   />
                 ))}
               </>
