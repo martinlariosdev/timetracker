@@ -503,6 +503,7 @@ function DeleteAccountModal({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  const { colors } = useTheme();
   return (
     <Modal
       visible={visible}
@@ -512,7 +513,7 @@ function DeleteAccountModal({
     >
       <View
         className="flex-1 justify-end"
-        style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+        style={{ backgroundColor: colors.overlay }}
       >
         <TouchableOpacity
           className="flex-1"
@@ -521,19 +522,19 @@ function DeleteAccountModal({
           accessibilityLabel="Close modal"
         />
         <View
-          className="bg-white"
           style={{
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,
             paddingHorizontal: 24,
             paddingTop: 24,
             paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+            backgroundColor: colors.surface,
           }}
         >
           {/* Handle */}
           <View
             className="self-center rounded-full mb-4"
-            style={{ width: 40, height: 4, backgroundColor: '#D1D5DB' }}
+            style={{ width: 40, height: 4, backgroundColor: colors.borderSecondary }}
           />
 
           {/* Warning Icon */}
@@ -544,25 +545,25 @@ function DeleteAccountModal({
                 width: 64,
                 height: 64,
                 borderRadius: 32,
-                backgroundColor: '#FEF2F2',
+                backgroundColor: colors.error + '15',
               }}
             >
-              <Ionicons name="warning" size={32} color="#EF4444" />
+              <Ionicons name="warning" size={32} color={colors.error} />
             </View>
           </View>
 
           {/* Title */}
           <Text
-            className="font-bold text-gray-900 text-center"
-            style={{ fontSize: 24, lineHeight: 32 }}
+            className="font-bold text-center"
+            style={{ fontSize: 24, lineHeight: 32, color: colors.text }}
           >
             Delete Account?
           </Text>
 
           {/* Description */}
           <Text
-            className="text-body text-gray-600 text-center mt-3"
-            style={{ lineHeight: 22 }}
+            className="text-body text-center mt-3"
+            style={{ lineHeight: 22, color: colors.textSecondary }}
           >
             This action is permanent and cannot be undone. All your data, time
             entries, and ETO history will be permanently deleted.
@@ -576,15 +577,15 @@ function DeleteAccountModal({
               style={{
                 height: 52,
                 borderWidth: 1.5,
-                borderColor: '#D1D5DB',
-                backgroundColor: '#FFFFFF',
+                borderColor: colors.border,
+                backgroundColor: colors.surface,
               }}
               accessibilityLabel="Cancel deletion"
               accessibilityRole="button"
             >
               <Text
                 className="font-semibold"
-                style={{ fontSize: 16, color: '#4B5563' }}
+                style={{ fontSize: 16, color: colors.textSecondary }}
               >
                 Cancel
               </Text>
@@ -593,7 +594,7 @@ function DeleteAccountModal({
             <TouchableOpacity
               onPress={onConfirm}
               className="flex-1 items-center justify-center rounded-xl"
-              style={{ height: 52, backgroundColor: '#EF4444' }}
+              style={{ height: 52, backgroundColor: colors.error }}
               accessibilityLabel="Confirm delete account"
               accessibilityRole="button"
             >
@@ -867,7 +868,7 @@ export default function SettingsScreen() {
                         accessibilityLabel={`Search for ${suggestion}`}
                         accessibilityRole="button"
                       >
-                        <Text className="text-body-small text-primary mt-1">
+                        <Text className="text-body-small mt-1" style={{ color: colors.primary }}>
                           {suggestion}
                         </Text>
                       </TouchableOpacity>
