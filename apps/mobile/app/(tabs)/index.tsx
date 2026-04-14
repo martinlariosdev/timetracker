@@ -1122,7 +1122,7 @@ export default function TimesheetListScreen() {
       ) : error && !entries.length ? (
         <ErrorView
           error={error}
-          onRetry={refetch}
+          onRetry={async () => { await refetch(); }}
           onLogout={logout}
         />
       ) : (

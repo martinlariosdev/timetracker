@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ApolloError } from '@apollo/client';
 
 interface ErrorInfo {
   title: string;
@@ -11,7 +10,7 @@ interface ErrorInfo {
   action?: 'retry' | 'logout' | 'none';
 }
 
-function getErrorInfo(error: ApolloError | Error | null): ErrorInfo {
+function getErrorInfo(error: Error | null): ErrorInfo {
   if (!error) {
     return {
       title: 'Something Went Wrong',
@@ -22,8 +21,10 @@ function getErrorInfo(error: ApolloError | Error | null): ErrorInfo {
     };
   }
 
+  const errorWithProps = error as any;
+
   // Network error (offline, timeout)
-  if ('networkError' in error && error.networkError) {
+  if (errorWithProps.networkError) {
     return {
       title: 'No Internet Connection',
       message: 'Check your connection and try again',
@@ -34,7 +35,7 @@ function getErrorInfo(error: ApolloError | Error | null): ErrorInfo {
   }
 
   // Authentication error
-  if ('graphQLErrors' in error && error.graphQLErrors?.some(e =>
+  if (errorWithProps.graphQLErrors?.some((e: any) =>
     e.message.includes('Unauthorized') ||
     e.message.includes('Authentication') ||
     e.extensions?.code === 'UNAUTHENTICATED'
@@ -49,7 +50,7 @@ function getErrorInfo(error: ApolloError | Error | null): ErrorInfo {
   }
 
   // Server error (500)
-  if ('graphQLErrors' in error && error.graphQLErrors?.some(e =>
+  if (errorWithProps.graphQLErrors?.some((e: any) =>
     e.extensions?.code === 'INTERNAL_SERVER_ERROR'
   )) {
     return {
@@ -62,7 +63,7 @@ function getErrorInfo(error: ApolloError | Error | null): ErrorInfo {
   }
 
   // Permission error (403)
-  if ('graphQLErrors' in error && error.graphQLErrors?.some(e =>
+  if (errorWithProps.graphQLErrors?.some((e: any) =>
     e.message.includes('Forbidden') ||
     e.message.includes('permission') ||
     e.extensions?.code === 'FORBIDDEN'
@@ -87,7 +88,7 @@ function getErrorInfo(error: ApolloError | Error | null): ErrorInfo {
 }
 
 interface ErrorViewProps {
-  error: ApolloError | Error | null;
+  error: Error | null;
   onRetry?: () => void | Promise<void>;
   onLogout?: () => void | Promise<void>;
 }

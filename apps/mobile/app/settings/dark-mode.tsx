@@ -18,8 +18,9 @@ function TopBar({
   topInset: number;
   onBack: () => void;
 }) {
+  const { colors } = useTheme();
   return (
-    <View className="bg-white shadow-level-1" style={{ paddingTop: topInset }}>
+    <View style={{ paddingTop: topInset, backgroundColor: colors.surface }}>
       <View
         className="flex-row items-center"
         style={{ height: 56, paddingHorizontal: 16 }}
@@ -31,14 +32,14 @@ function TopBar({
           accessibilityLabel="Go back"
           accessibilityRole="button"
         >
-          <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text
-          className="text-h3 font-semibold text-gray-800 flex-1 text-center"
-          style={{ marginRight: 44 }}
+          className="text-h3 font-semibold flex-1 text-center"
+          style={{ marginRight: 44, color: colors.text }}
           accessibilityRole="header"
         >
-          Dark Mode
+          Appearance
         </Text>
       </View>
     </View>
@@ -48,18 +49,17 @@ function TopBar({
 function ThemeOption({
   title,
   description,
-  mode,
   isSelected,
   onPress,
   showDivider,
 }: {
   title: string;
   description: string;
-  mode: ThemeMode;
   isSelected: boolean;
   onPress: () => void;
   showDivider: boolean;
 }) {
+  const { colors } = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -70,15 +70,15 @@ function ThemeOption({
         paddingVertical: 16,
         minHeight: 72,
         borderBottomWidth: showDivider ? 1 : 0,
-        borderBottomColor: '#E5E7EB',
+        borderBottomColor: colors.border,
       }}
       accessibilityLabel={`${title}, ${description}${isSelected ? ', selected' : ''}`}
       accessibilityRole="radio"
       accessibilityState={{ selected: isSelected }}
     >
       <View className="flex-1">
-        <Text className="text-body font-semibold text-gray-800">{title}</Text>
-        <Text className="text-body-small text-gray-500 mt-1">{description}</Text>
+        <Text className="text-body font-semibold" style={{ color: colors.text }}>{title}</Text>
+        <Text className="text-body-small mt-1" style={{ color: colors.textSecondary }}>{description}</Text>
       </View>
       <View
         className="items-center justify-center"
@@ -87,8 +87,8 @@ function ThemeOption({
           height: 24,
           borderRadius: 12,
           borderWidth: 2,
-          borderColor: isSelected ? '#2563EB' : '#D1D5DB',
-          backgroundColor: isSelected ? '#2563EB' : '#FFFFFF',
+          borderColor: isSelected ? colors.primary : colors.borderSecondary,
+          backgroundColor: isSelected ? colors.primary : colors.surface,
         }}
       >
         {isSelected && (
@@ -99,21 +99,10 @@ function ThemeOption({
   );
 }
 
-function SectionHeader({ title }: { title: string }) {
-  return (
-    <Text
-      className="text-caption font-bold text-gray-500 uppercase"
-      style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}
-    >
-      {title}
-    </Text>
-  );
-}
-
-export default function ThemeScreen() {
+export default function DarkModeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { themeMode: mode, setThemeMode } = useTheme();
+  const { themeMode, isDark, colors, setThemeMode } = useTheme();
 
   const handleBack = useCallback(() => {
     router.back();
@@ -131,8 +120,8 @@ export default function ThemeScreen() {
   );
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <StatusBar style="dark" />
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
 
       <TopBar topInset={insets.top} onBack={handleBack} />
 
@@ -141,52 +130,55 @@ export default function ThemeScreen() {
         contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
         showsVerticalScrollIndicator={false}
       >
-        <SectionHeader title="Appearance" />
-        <View className="bg-white shadow-level-1 mx-md" style={{ borderRadius: 12 }}>
+        <Text
+          className="text-caption font-bold uppercase"
+          style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8, color: colors.textSecondary }}
+        >
+          Theme
+        </Text>
+        <View className="mx-md" style={{ borderRadius: 12, backgroundColor: colors.surface }}>
           <ThemeOption
             title="Light"
             description="Always use light theme"
-            mode="light"
-            isSelected={mode === 'light'}
+            isSelected={themeMode === 'light'}
             onPress={() => handleSelectTheme('light')}
-            showDivider={true}
+            showDivider
           />
           <ThemeOption
             title="Dark"
             description="Always use dark theme"
-            mode="dark"
-            isSelected={mode === 'dark'}
+            isSelected={themeMode === 'dark'}
             onPress={() => handleSelectTheme('dark')}
-            showDivider={true}
+            showDivider
           />
           <ThemeOption
             title="System"
-            description="Follow device settings"
-            mode="system"
-            isSelected={mode === 'system'}
+            description="Follow your device settings"
+            isSelected={themeMode === 'system'}
             onPress={() => handleSelectTheme('system')}
             showDivider={false}
           />
         </View>
 
-        <SectionHeader title="Preview" />
-        <View className="mx-md bg-white shadow-level-1" style={{ borderRadius: 12, padding: 16 }}>
-          <Text className="text-body-small text-gray-500 mb-3">
-            Theme will update across the app immediately
+        <Text
+          className="text-caption font-bold uppercase"
+          style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8, color: colors.textSecondary }}
+        >
+          Preview
+        </Text>
+        <View className="mx-md" style={{ borderRadius: 12, backgroundColor: colors.surface, padding: 16 }}>
+          <Text className="text-body-small mb-3" style={{ color: colors.textSecondary }}>
+            Changes apply immediately across the app.
           </Text>
           <View
             className="p-3 rounded-lg"
-            style={{
-              backgroundColor: mode === 'light' || (mode === 'system') ? '#F9FAFB' : '#1E293B',
-            }}
+            style={{ backgroundColor: colors.backgroundTertiary }}
           >
-            <Text
-              className="text-body font-semibold"
-              style={{
-                color: mode === 'light' || (mode === 'system') ? '#1F2937' : '#F8FAFC',
-              }}
-            >
-              Sample text
+            <Text className="text-body font-semibold" style={{ color: colors.text }}>
+              Sample text in current theme
+            </Text>
+            <Text className="text-body-small mt-1" style={{ color: colors.textSecondary }}>
+              Secondary text preview
             </Text>
           </View>
         </View>

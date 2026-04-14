@@ -274,3 +274,17 @@ export const RESOLVE_CONFLICT_MUTATION = gql`
     }
   }
 `;
+
+/**
+ * Update user profile settings - requires authentication
+ */
+export const UPDATE_USER_PROFILE_MUTATION = gql`
+  mutation UpdateUserProfile($input: UpdateUserProfileInput!) {
+    updateUserProfile(input: $input) {
+      id
+      name
+      email
+      workingHoursPerPeriod
+    }
+  }
+`;

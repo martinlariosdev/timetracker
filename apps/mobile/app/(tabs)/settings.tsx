@@ -79,12 +79,13 @@ const ALL_SETTINGS: SettingItem[] = [
   // Appearance
   {
     id: 'dark-mode',
-    title: 'Dark Mode',
-    keywords: ['dark', 'mode', 'theme', 'appearance', 'night', 'light'],
+    title: 'Theme',
+    keywords: ['dark', 'mode', 'theme', 'appearance', 'night', 'light', 'system'],
     category: 'Appearance',
     categoryIcon: '🎨',
-    type: 'toggle',
+    type: 'navigation',
     icon: 'moon-outline',
+    value: '', // Will be set dynamically
   },
   // ETO Reminders
   {
@@ -125,25 +126,6 @@ const ALL_SETTINGS: SettingItem[] = [
     type: 'toggle',
     icon: 'finger-print-outline',
   },
-  // Help & Support
-  {
-    id: 'report-bug',
-    title: 'Report a Bug',
-    keywords: ['report', 'bug', 'issue', 'problem'],
-    category: 'Help & Support',
-    categoryIcon: '❓',
-    type: 'navigation',
-    icon: 'bug-outline',
-  },
-  {
-    id: 'about',
-    title: 'About',
-    keywords: ['about', 'version', 'info', 'app'],
-    category: 'Help & Support',
-    categoryIcon: '❓',
-    type: 'navigation',
-    icon: 'information-circle-outline',
-  },
 ];
 
 const FREQUENTLY_USED_IDS = ['notifications', 'dark-mode', 'work-hours', 'eto-alerts'];
@@ -153,7 +135,6 @@ const CATEGORIES: CategoryInfo[] = [
   { label: 'Appearance', icon: '🎨', ionicon: 'color-palette-outline', count: 1 },
   { label: 'ETO Reminders', icon: '💰', ionicon: 'cash-outline', count: 3 },
   { label: 'Account & Security', icon: '🔒', ionicon: 'lock-closed-outline', count: 1 },
-  { label: 'Help & Support', icon: '❓', ionicon: 'help-circle-outline', count: 2 },
 ];
 
 // --- Simple fuzzy search ---
@@ -638,7 +619,6 @@ export default function SettingsScreen() {
     logout,
     user,
     biometricEnabled,
-    biometricSupported,
     enableBiometric,
     disableBiometric,
   } = useAuth();
@@ -681,9 +661,13 @@ export default function SettingsScreen() {
       if (s.id === 'week-start') {
         return { ...s, value: weekStartDay === 'monday' ? 'Monday' : 'Sunday' };
       }
+      if (s.id === 'dark-mode') {
+        const label = themeMode === 'light' ? 'Light' : themeMode === 'dark' ? 'Dark' : 'System';
+        return { ...s, value: label };
+      }
       return s;
     });
-  }, [workHours, weekStartDay]);
+  }, [workHours, weekStartDay, themeMode]);
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -804,7 +788,7 @@ export default function SettingsScreen() {
 
   return (
     <View className="flex-1 bg-gray-50">
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
 
       {/* Top Bar */}
       <TopBar topInset={insets.top} />
@@ -868,7 +852,7 @@ export default function SettingsScreen() {
                   Try searching for:
                 </Text>
                 <View className="mt-3 items-center">
-                  {['notifications', 'dark mode', 'work hours', 'password'].map(
+                  {['notifications', 'dark mode', 'work hours', 'week start'].map(
                     (suggestion) => (
                       <TouchableOpacity
                         key={suggestion}

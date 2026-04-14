@@ -494,7 +494,7 @@ export default function ETOScreen() {
       ) : error && !transactions.length ? (
         <ErrorView
           error={error}
-          onRetry={() => Promise.all([refetchMe(), refetchTransactions()])}
+          onRetry={async () => { await Promise.all([refetchMe(), refetchTransactions()]); }}
           onLogout={logout}
         />
       ) : (

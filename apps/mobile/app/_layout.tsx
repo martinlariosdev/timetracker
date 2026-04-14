@@ -2,6 +2,8 @@ import { Stack, Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { ApolloProvider } from '../lib/apollo-provider';
+import { ThemeProvider } from '../contexts/ThemeContext';
+import { PreferencesProvider } from '../contexts/PreferencesContext';
 import { useNotifications } from '../hooks/useNotifications';
 import { useAuth } from '../hooks/useAuth';
 import '../global.css';
@@ -35,16 +37,24 @@ export default function RootLayout() {
   if (isLoading) {
     return (
       <ApolloProvider>
-        <View className="flex-1 items-center justify-center bg-gray-50">
-          <ActivityIndicator size="large" color="#2563EB" />
-        </View>
+        <ThemeProvider>
+          <PreferencesProvider>
+            <View className="flex-1 items-center justify-center bg-gray-50">
+              <ActivityIndicator size="large" color="#2563EB" />
+            </View>
+          </PreferencesProvider>
+        </ThemeProvider>
       </ApolloProvider>
     );
   }
 
   return (
     <ApolloProvider>
-      <Slot />
+      <ThemeProvider>
+        <PreferencesProvider>
+          <Slot />
+        </PreferencesProvider>
+      </ThemeProvider>
     </ApolloProvider>
   );
 }
