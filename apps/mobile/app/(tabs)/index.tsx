@@ -339,7 +339,7 @@ function EntryRow({
             <TouchableOpacity
               onPress={onEdit}
               className="items-center justify-center"
-              style={{ width: 32, height: 32 }}
+              style={{ width: 44, height: 44 }}
               accessibilityLabel={`Edit ${entry.project} entry`}
               accessibilityRole="button"
             >
@@ -348,7 +348,7 @@ function EntryRow({
             <TouchableOpacity
               onPress={onDelete}
               className="items-center justify-center ml-1"
-              style={{ width: 32, height: 32 }}
+              style={{ width: 44, height: 44 }}
               accessibilityLabel={`Delete ${entry.project} entry`}
               accessibilityRole="button"
             >
