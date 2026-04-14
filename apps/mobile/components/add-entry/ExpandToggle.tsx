@@ -1,12 +1,13 @@
-import React, { useEffect } from 'react';
-import { TouchableOpacity, Text } from 'react-native';
+import React from 'react';
+import { TouchableOpacity, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+// TEMP FIX: Reanimated requires custom development build, not available in Expo Go
+// import Animated, {
+//   useSharedValue,
+//   useAnimatedStyle,
+//   withTiming,
+//   Easing,
+// } from 'react-native-reanimated';
 
 export function ExpandToggle({
   isExpanded,
@@ -15,18 +16,19 @@ export function ExpandToggle({
   isExpanded: boolean;
   onToggle: () => void;
 }) {
-  const rotateValue = useSharedValue(0);
-
-  useEffect(() => {
-    rotateValue.value = withTiming(isExpanded ? 180 : 0, {
-      duration: 300,
-      easing: Easing.out(Easing.ease),
-    });
-  }, [isExpanded, rotateValue]);
-
-  const chevronStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotateValue.value}deg` }],
-  }));
+  // TEMP FIX: Removed rotation animation, using icon swap instead
+  // const rotateValue = useSharedValue(0);
+  //
+  // useEffect(() => {
+  //   rotateValue.value = withTiming(isExpanded ? 180 : 0, {
+  //     duration: 300,
+  //     easing: Easing.out(Easing.ease),
+  //   });
+  // }, [isExpanded, rotateValue]);
+  //
+  // const chevronStyle = useAnimatedStyle(() => ({
+  //   transform: [{ rotate: `${rotateValue.value}deg` }],
+  // }));
 
   return (
     <TouchableOpacity
@@ -41,9 +43,13 @@ export function ExpandToggle({
       <Text className="text-body font-semibold" style={{ color: '#2563EB' }}>
         {isExpanded ? 'Less Details' : 'More Details'}
       </Text>
-      <Animated.View style={[{ marginLeft: 4 }, chevronStyle]}>
-        <Ionicons name="chevron-down" size={16} color="#2563EB" />
-      </Animated.View>
+      <View style={{ marginLeft: 4 }}>
+        <Ionicons
+          name={isExpanded ? "chevron-up" : "chevron-down"}
+          size={16}
+          color="#2563EB"
+        />
+      </View>
     </TouchableOpacity>
   );
 }
