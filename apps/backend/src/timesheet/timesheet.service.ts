@@ -235,6 +235,9 @@ export class TimesheetService {
       if (data.outTime2 !== undefined) {
         validationData.outTime2 = data.outTime2 || null;
       }
+      if (data.totalHours !== undefined) {
+        validationData.totalHours = data.totalHours;
+      }
 
       // Validate with partial schema
       patchTimeEntrySchema.parse(validationData);
@@ -269,7 +272,7 @@ export class TimesheetService {
         prismaData.description = data.description;
       }
 
-      // Handle time field updates
+      // Handle time field updates and totalHours
       const timeFieldsChanged =
         data.inTime1 !== undefined ||
         data.outTime1 !== undefined ||
@@ -317,13 +320,23 @@ export class TimesheetService {
           prismaData.outTime2 = data.outTime2 ? this.parseTimeToDateTime(dateStr, data.outTime2) : null;
         }
 
-        // Recalculate total hours
+        // Recalculate total hours from time pairs
         prismaData.totalHours = this.calculateTotalHours(
           finalInTime1,
           finalOutTime1,
           finalInTime2,
           finalOutTime2,
         );
+
+        // If user also provided totalHours, log if mismatch
+        if (data.totalHours !== undefined && Math.abs(data.totalHours - (prismaData.totalHours as number)) > 0.01) {
+          this.logger.warn(
+            `Provided totalHours (${data.totalHours}) doesn't match calculated (${prismaData.totalHours}). Using calculated.`,
+          );
+        }
+      } else if (data.totalHours !== undefined) {
+        // No time fields changed - use provided totalHours directly
+        prismaData.totalHours = data.totalHours;
       }
 
       const updated = await this.prisma.timeEntry.update({
