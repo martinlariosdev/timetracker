@@ -167,6 +167,7 @@ function ProfileCard({
   email: string;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
   const initials = name
     .split(' ')
     .map((n) => n[0])
@@ -178,11 +179,12 @@ function ProfileCard({
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.7}
-      className="bg-white shadow-level-1 mx-md mt-md"
+      className="shadow-level-1 mx-md mt-md"
       style={{
         borderRadius: 12,
         height: 72,
         paddingHorizontal: 16,
+        backgroundColor: colors.surface,
       }}
       accessibilityLabel={`Profile: ${name}, ${email}. Tap to edit.`}
       accessibilityRole="button"
@@ -190,8 +192,8 @@ function ProfileCard({
       <View className="flex-row items-center flex-1" style={{ height: 72 }}>
         {/* Avatar */}
         <View
-          className="bg-primary items-center justify-center"
-          style={{ width: 40, height: 40, borderRadius: 20 }}
+          className="items-center justify-center"
+          style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary }}
         >
           <Text className="text-white font-semibold" style={{ fontSize: 14 }}>
             {initials}
@@ -200,16 +202,16 @@ function ProfileCard({
 
         {/* Name + Email */}
         <View className="flex-1 ml-3">
-          <Text className="text-body font-semibold text-gray-800" numberOfLines={1}>
+          <Text className="text-body font-semibold" style={{ color: colors.text }} numberOfLines={1}>
             {name}
           </Text>
-          <Text className="text-caption text-gray-500" numberOfLines={1}>
+          <Text className="text-caption" style={{ color: colors.textSecondary }} numberOfLines={1}>
             {email}
           </Text>
         </View>
 
         {/* Chevron */}
-        <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+        <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
       </View>
     </TouchableOpacity>
   );
@@ -230,15 +232,16 @@ function SearchBar({
   onFocus: () => void;
   onBlur: () => void;
 }) {
+  const { colors } = useTheme();
   return (
     <View
       className="mx-md mt-md"
       style={{
         height: 48,
         borderRadius: 12,
-        backgroundColor: isFocused ? '#FFFFFF' : '#F3F4F6',
+        backgroundColor: isFocused ? colors.surface : colors.backgroundTertiary,
         borderWidth: isFocused ? 2 : 1,
-        borderColor: isFocused ? '#2563EB' : '#E5E7EB',
+        borderColor: isFocused ? colors.primary : colors.border,
         paddingHorizontal: 12,
         flexDirection: 'row',
         alignItems: 'center',
@@ -253,11 +256,12 @@ function SearchBar({
           : {}),
       }}
     >
-      <Ionicons name="search" size={20} color="#9CA3AF" />
+      <Ionicons name="search" size={20} color={colors.textTertiary} />
       <TextInput
-        className="flex-1 text-body text-gray-800 ml-2"
+        className="flex-1 text-body ml-2"
+        style={{ color: colors.text }}
         placeholder="Search settings..."
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor={colors.textTertiary}
         value={query}
         onChangeText={onChangeQuery}
         onFocus={onFocus}
@@ -273,7 +277,7 @@ function SearchBar({
           accessibilityLabel="Clear search"
           accessibilityRole="button"
         >
-          <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+          <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
         </TouchableOpacity>
       )}
     </View>
@@ -291,6 +295,7 @@ function SettingToggleRow({
   onToggle: (value: boolean) => void;
   showDivider: boolean;
 }) {
+  const { colors } = useTheme();
   return (
     <View
       className="flex-row items-center justify-between"
@@ -299,18 +304,18 @@ function SettingToggleRow({
         paddingVertical: 12,
         minHeight: 56,
         borderBottomWidth: showDivider ? 1 : 0,
-        borderBottomColor: '#E5E7EB',
+        borderBottomColor: colors.border,
       }}
     >
       <View className="flex-row items-center flex-1 mr-3">
-        <Ionicons name={setting.icon} size={20} color="#2563EB" />
-        <Text className="text-body text-gray-800 ml-3">{setting.title}</Text>
+        <Ionicons name={setting.icon} size={20} color={colors.primary} />
+        <Text className="text-body ml-3" style={{ color: colors.text }}>{setting.title}</Text>
       </View>
       <Switch
         value={isOn}
         onValueChange={onToggle}
-        trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
-        thumbColor={isOn ? '#2563EB' : '#F3F4F6'}
+        trackColor={{ false: colors.borderSecondary, true: colors.primaryLight }}
+        thumbColor={isOn ? colors.primary : colors.backgroundTertiary}
         accessibilityLabel={`${setting.title} toggle`}
       />
     </View>
@@ -326,6 +331,7 @@ function SettingNavRow({
   onPress: () => void;
   showDivider: boolean;
 }) {
+  const { colors } = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -336,20 +342,20 @@ function SettingNavRow({
         paddingVertical: 12,
         minHeight: 56,
         borderBottomWidth: showDivider ? 1 : 0,
-        borderBottomColor: '#E5E7EB',
+        borderBottomColor: colors.border,
       }}
       accessibilityLabel={`${setting.title}${setting.value ? `, current value: ${setting.value}` : ''}`}
       accessibilityRole="button"
     >
       <View className="flex-row items-center flex-1 mr-3">
-        <Ionicons name={setting.icon} size={20} color="#2563EB" />
-        <Text className="text-body text-gray-800 ml-3">{setting.title}</Text>
+        <Ionicons name={setting.icon} size={20} color={colors.primary} />
+        <Text className="text-body ml-3" style={{ color: colors.text }}>{setting.title}</Text>
       </View>
       <View className="flex-row items-center">
         {setting.value && (
-          <Text className="text-body-small text-gray-500 mr-2">{setting.value}</Text>
+          <Text className="text-body-small mr-2" style={{ color: colors.textSecondary }}>{setting.value}</Text>
         )}
-        <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+        <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
       </View>
     </TouchableOpacity>
   );
@@ -364,6 +370,7 @@ function CategoryRow({
   onPress: () => void;
   showDivider: boolean;
 }) {
+  const { colors } = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -374,14 +381,14 @@ function CategoryRow({
         paddingVertical: 12,
         minHeight: 56,
         borderBottomWidth: showDivider ? 1 : 0,
-        borderBottomColor: '#E5E7EB',
+        borderBottomColor: colors.border,
       }}
       accessibilityLabel={`${category.label}, ${category.count} items`}
       accessibilityRole="button"
     >
       <View className="flex-row items-center flex-1">
-        <Ionicons name={category.ionicon} size={20} color="#2563EB" />
-        <Text className="text-body font-semibold text-gray-800 ml-3">
+        <Ionicons name={category.ionicon} size={20} color={colors.primary} />
+        <Text className="text-body font-semibold ml-3" style={{ color: colors.text }}>
           {category.label}
         </Text>
       </View>
@@ -389,7 +396,7 @@ function CategoryRow({
         {/* Badge */}
         <View
           style={{
-            backgroundColor: '#F3F4F6',
+            backgroundColor: colors.backgroundTertiary,
             borderRadius: 12,
             paddingHorizontal: 8,
             paddingVertical: 2,
@@ -398,21 +405,22 @@ function CategoryRow({
             marginRight: 8,
           }}
         >
-          <Text className="text-caption font-semibold" style={{ color: '#6B7280' }}>
+          <Text className="text-caption font-semibold" style={{ color: colors.textSecondary }}>
             {category.count}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+        <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
       </View>
     </TouchableOpacity>
   );
 }
 
 function SectionHeader({ title }: { title: string }) {
+  const { colors } = useTheme();
   return (
     <Text
-      className="text-caption font-bold text-gray-500 uppercase"
-      style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}
+      className="text-caption font-bold uppercase"
+      style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8, color: colors.textSecondary }}
     >
       {title}
     </Text>
@@ -432,10 +440,11 @@ function SearchResultRow({
   onToggle: (value: boolean) => void;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
   return (
     <View
-      className="bg-white shadow-level-1 mx-md mb-2"
-      style={{ borderRadius: 12 }}
+      className="shadow-level-1 mx-md mb-2"
+      style={{ borderRadius: 12, backgroundColor: colors.surface }}
     >
       {isToggle ? (
         <View
@@ -443,17 +452,17 @@ function SearchResultRow({
           style={{ paddingHorizontal: 16, paddingVertical: 12, minHeight: 56 }}
         >
           <View className="flex-row items-center flex-1 mr-3">
-            <Ionicons name={setting.icon} size={20} color="#2563EB" />
+            <Ionicons name={setting.icon} size={20} color={colors.primary} />
             <View className="ml-3">
-              <Text className="text-body text-gray-800">{setting.title}</Text>
-              <Text className="text-caption text-gray-500">{setting.category}</Text>
+              <Text className="text-body" style={{ color: colors.text }}>{setting.title}</Text>
+              <Text className="text-caption" style={{ color: colors.textSecondary }}>{setting.category}</Text>
             </View>
           </View>
           <Switch
             value={isOn}
             onValueChange={onToggle}
-            trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
-            thumbColor={isOn ? '#2563EB' : '#F3F4F6'}
+            trackColor={{ false: colors.borderSecondary, true: colors.primaryLight }}
+            thumbColor={isOn ? colors.primary : colors.backgroundTertiary}
             accessibilityLabel={`${setting.title} toggle`}
           />
         </View>
@@ -467,17 +476,17 @@ function SearchResultRow({
           accessibilityRole="button"
         >
           <View className="flex-row items-center flex-1 mr-3">
-            <Ionicons name={setting.icon} size={20} color="#2563EB" />
+            <Ionicons name={setting.icon} size={20} color={colors.primary} />
             <View className="ml-3">
-              <Text className="text-body text-gray-800">{setting.title}</Text>
-              <Text className="text-caption text-gray-500">{setting.category}</Text>
+              <Text className="text-body" style={{ color: colors.text }}>{setting.title}</Text>
+              <Text className="text-caption" style={{ color: colors.textSecondary }}>{setting.category}</Text>
             </View>
           </View>
           <View className="flex-row items-center">
             {setting.value && (
-              <Text className="text-body-small text-gray-500 mr-2">{setting.value}</Text>
+              <Text className="text-body-small mr-2" style={{ color: colors.textSecondary }}>{setting.value}</Text>
             )}
-            <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+            <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
           </View>
         </TouchableOpacity>
       )}
@@ -614,7 +623,7 @@ export default function SettingsScreen() {
     enableBiometric,
     disableBiometric,
   } = useAuth();
-  const { themeMode, isDark } = useTheme();
+  const { themeMode, isDark, colors } = useTheme();
   const { workHours, weekStartDay } = usePreferences();
 
   // --- State ---
@@ -626,7 +635,6 @@ export default function SettingsScreen() {
   // Toggle states (mock for demo)
   const [toggleStates, setToggleStates] = useState<Record<string, boolean>>({
     notifications: true,
-    'dark-mode': themeMode === 'dark',
     'eto-alerts': true,
     'eto-usage-summary': false,
     biometric: biometricEnabled,
@@ -636,11 +644,6 @@ export default function SettingsScreen() {
   React.useEffect(() => {
     setToggleStates((prev) => ({ ...prev, biometric: biometricEnabled }));
   }, [biometricEnabled]);
-
-  // Keep dark mode toggle in sync with theme context
-  React.useEffect(() => {
-    setToggleStates((prev) => ({ ...prev, 'dark-mode': themeMode === 'dark' }));
-  }, [themeMode]);
 
   // Sync notifications toggle with stored preferences
   React.useEffect(() => {
@@ -791,7 +794,7 @@ export default function SettingsScreen() {
   const userEmail = user?.email ?? '';
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
       {/* Top Bar */}
@@ -805,7 +808,7 @@ export default function SettingsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#2563EB"
+            tintColor={colors.primary}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -848,11 +851,11 @@ export default function SettingsScreen() {
             ) : (
               /* Empty Search State */
               <View className="items-center" style={{ paddingTop: 48 }}>
-                <Ionicons name="search" size={48} color="#D1D5DB" />
-                <Text className="text-body font-semibold text-gray-800 mt-4">
+                <Ionicons name="search" size={48} color={colors.borderSecondary} />
+                <Text className="text-body font-semibold mt-4" style={{ color: colors.text }}>
                   No results found
                 </Text>
-                <Text className="text-body-small text-gray-500 mt-2 text-center px-8">
+                <Text className="text-body-small mt-2 text-center px-8" style={{ color: colors.textSecondary }}>
                   Try searching for:
                 </Text>
                 <View className="mt-3 items-center">
@@ -880,8 +883,8 @@ export default function SettingsScreen() {
             {/* Frequently Used */}
             <SectionHeader title="FREQUENTLY USED" />
             <View
-              className="bg-white shadow-level-1 mx-md"
-              style={{ borderRadius: 12 }}
+              className="shadow-level-1 mx-md"
+              style={{ borderRadius: 12, backgroundColor: colors.surface }}
             >
               {frequentlyUsed.map((setting, index) => {
                 if (setting.id === 'notifications') {
@@ -894,7 +897,7 @@ export default function SettingsScreen() {
                         paddingVertical: 12,
                         minHeight: 56,
                         borderBottomWidth: index < frequentlyUsed.length - 1 ? 1 : 0,
-                        borderBottomColor: '#E5E7EB',
+                        borderBottomColor: colors.border,
                       }}
                     >
                       <TouchableOpacity
@@ -904,15 +907,15 @@ export default function SettingsScreen() {
                         accessibilityLabel="Notifications. Tap for detailed preferences."
                         accessibilityRole="button"
                       >
-                        <Ionicons name={setting.icon} size={20} color="#2563EB" />
-                        <Text className="text-body text-gray-800 ml-3">{setting.title}</Text>
-                        <Ionicons name="chevron-forward" size={14} color="#9CA3AF" style={{ marginLeft: 4 }} />
+                        <Ionicons name={setting.icon} size={20} color={colors.primary} />
+                        <Text className="text-body ml-3" style={{ color: colors.text }}>{setting.title}</Text>
+                        <Ionicons name="chevron-forward" size={14} color={colors.textTertiary} style={{ marginLeft: 4 }} />
                       </TouchableOpacity>
                       <Switch
                         value={toggleStates[setting.id] ?? false}
                         onValueChange={(value) => handleToggle(setting.id, value)}
-                        trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
-                        thumbColor={(toggleStates[setting.id] ?? false) ? '#2563EB' : '#F3F4F6'}
+                        trackColor={{ false: colors.borderSecondary, true: colors.primaryLight }}
+                        thumbColor={(toggleStates[setting.id] ?? false) ? colors.primary : colors.backgroundTertiary}
                         accessibilityLabel="Notifications master toggle"
                       />
                     </View>
@@ -940,8 +943,8 @@ export default function SettingsScreen() {
             {/* All Settings */}
             <SectionHeader title="ALL SETTINGS" />
             <View
-              className="bg-white shadow-level-1 mx-md"
-              style={{ borderRadius: 12 }}
+              className="shadow-level-1 mx-md"
+              style={{ borderRadius: 12, backgroundColor: colors.surface }}
             >
               {CATEGORIES.map((category, index) => (
                 <CategoryRow
@@ -958,7 +961,7 @@ export default function SettingsScreen() {
             <TouchableOpacity
               onPress={handleLogout}
               activeOpacity={0.7}
-              className="bg-white shadow-level-1 mx-md"
+              className="shadow-level-1 mx-md"
               style={{
                 borderRadius: 12,
                 height: 56,
@@ -966,20 +969,21 @@ export default function SettingsScreen() {
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
+                backgroundColor: colors.surface,
               }}
               accessibilityLabel="Log out of your account"
               accessibilityRole="button"
             >
-              <Ionicons name="log-out-outline" size={20} color="#4B5563" />
-              <Text className="text-body font-semibold text-gray-700 ml-2">
+              <Ionicons name="log-out-outline" size={20} color={colors.textSecondary} />
+              <Text className="text-body font-semibold ml-2" style={{ color: colors.textSecondary }}>
                 Logout
               </Text>
             </TouchableOpacity>
 
             {/* App Info */}
             <Text
-              className="text-caption text-gray-500 text-center"
-              style={{ paddingTop: 20, paddingBottom: 12 }}
+              className="text-caption text-center"
+              style={{ paddingTop: 20, paddingBottom: 12, color: colors.textTertiary }}
             >
               Version 1.0.0 (Build 42)
             </Text>
@@ -992,9 +996,9 @@ export default function SettingsScreen() {
               style={{
                 borderRadius: 12,
                 height: 56,
-                backgroundColor: '#FEF2F2',
+                backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2',
                 borderWidth: 1,
-                borderColor: '#FECACA',
+                borderColor: isDark ? 'rgba(239, 68, 68, 0.3)' : '#FECACA',
                 paddingHorizontal: 16,
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -1003,10 +1007,10 @@ export default function SettingsScreen() {
               accessibilityLabel="Delete your account"
               accessibilityRole="button"
             >
-              <Ionicons name="trash-outline" size={20} color="#EF4444" />
+              <Ionicons name="trash-outline" size={20} color={colors.error} />
               <Text
                 className="font-semibold ml-2"
-                style={{ fontSize: 16, color: '#EF4444' }}
+                style={{ fontSize: 16, color: colors.error }}
               >
                 Delete Account
               </Text>

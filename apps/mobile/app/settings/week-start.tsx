@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePreferences, type WeekStartDay } from '@/contexts/PreferencesContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 function TopBar({
   topInset,
@@ -19,8 +20,9 @@ function TopBar({
   topInset: number;
   onBack: () => void;
 }) {
+  const { colors } = useTheme();
   return (
-    <View className="bg-white shadow-level-1" style={{ paddingTop: topInset }}>
+    <View style={{ paddingTop: topInset, backgroundColor: colors.surface }}>
       <View
         className="flex-row items-center"
         style={{ height: 56, paddingHorizontal: 16 }}
@@ -32,11 +34,11 @@ function TopBar({
           accessibilityLabel="Go back"
           accessibilityRole="button"
         >
-          <Ionicons name="chevron-back" size={24} color="#1F2937" />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text
-          className="text-h3 font-semibold text-gray-800 flex-1 text-center"
-          style={{ marginRight: 44 }}
+          className="text-h3 font-semibold flex-1 text-center"
+          style={{ marginRight: 44, color: colors.text }}
           accessibilityRole="header"
         >
           Week Start Day
@@ -57,15 +59,17 @@ function DayOption({
   selected: boolean;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.7}
-      className={`flex-row items-center justify-between mx-md mt-2 px-4 py-3 rounded-lg ${
-        selected ? 'bg-blue-50 border-2 border-primary' : 'bg-white border border-gray-200'
-      }`}
+      className="flex-row items-center justify-between mx-md mt-2 px-4 py-3 rounded-lg"
       style={{
         borderRadius: 12,
+        backgroundColor: selected ? (colors.primary + '15') : colors.surface,
+        borderWidth: selected ? 2 : 1,
+        borderColor: selected ? colors.primary : colors.border,
       }}
       accessibilityLabel={`Week starts on ${label}`}
       accessibilityRole="radio"
@@ -73,17 +77,24 @@ function DayOption({
     >
       <View className="flex-row items-center flex-1">
         <View
-          className={`w-5 h-5 rounded-full border-2 ${
-            selected ? 'bg-primary border-primary' : 'border-gray-400'
-          }`}
-          style={{ width: 20, height: 20, borderRadius: 10 }}
+          style={{
+            width: 20,
+            height: 20,
+            borderRadius: 10,
+            borderWidth: 2,
+            borderColor: selected ? colors.primary : colors.textTertiary,
+            backgroundColor: selected ? colors.primary : 'transparent',
+          }}
         />
-        <Text className={`text-body ml-3 ${selected ? 'text-primary font-semibold' : 'text-gray-800'}`}>
+        <Text
+          className="text-body ml-3"
+          style={{ color: selected ? colors.primary : colors.text, fontWeight: selected ? '600' : '400' }}
+        >
           {label}
         </Text>
       </View>
       {selected && (
-        <Ionicons name="checkmark" size={20} color="#2563EB" />
+        <Ionicons name="checkmark" size={20} color={colors.primary} />
       )}
     </TouchableOpacity>
   );
@@ -93,6 +104,7 @@ export default function WeekStartScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { weekStartDay, setWeekStartDay } = usePreferences();
+  const { isDark, colors } = useTheme();
   const [selectedDay, setSelectedDay] = useState<WeekStartDay>(weekStartDay);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -117,8 +129,8 @@ export default function WeekStartScreen() {
   }, [selectedDay, weekStartDay, setWeekStartDay, router]);
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <StatusBar style="dark" />
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
 
       <TopBar topInset={insets.top} onBack={() => router.back()} />
 
@@ -128,15 +140,16 @@ export default function WeekStartScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Description */}
-        <View className="mx-md mt-md p-4 bg-blue-50 rounded-lg">
-          <Text className="text-body text-gray-800">
+        <View className="mx-md mt-md p-4 rounded-lg" style={{ backgroundColor: colors.primary + '15' }}>
+          <Text className="text-body" style={{ color: colors.text }}>
             Choose which day your work week starts. This affects the calendar view and week calculations.
           </Text>
         </View>
 
         {/* Day Options */}
         <Text
-          className="text-caption font-bold text-gray-500 uppercase mt-6 mx-md"
+          className="text-caption font-bold uppercase mt-6 mx-md"
+          style={{ color: colors.textSecondary }}
         >
           Select Day
         </Text>
@@ -155,14 +168,14 @@ export default function WeekStartScreen() {
         />
 
         {/* Info Box */}
-        <View className="mx-md mt-6 p-4 bg-gray-100 rounded-lg">
-          <Text className="text-body-small text-gray-700 font-semibold mb-2">
+        <View className="mx-md mt-6 p-4 rounded-lg" style={{ backgroundColor: colors.backgroundTertiary }}>
+          <Text className="text-body-small font-semibold mb-2" style={{ color: colors.text }}>
             What this affects:
           </Text>
-          <Text className="text-body-small text-gray-600">
-            • Calendar view in the home screen{'\n'}
-            • Week boundaries for timesheets{'\n'}
-            • Week calculations in metrics
+          <Text className="text-body-small" style={{ color: colors.textSecondary }}>
+            {'\u2022'} Calendar view in the home screen{'\n'}
+            {'\u2022'} Week boundaries for timesheets{'\n'}
+            {'\u2022'} Week calculations in metrics
           </Text>
         </View>
 
@@ -171,8 +184,8 @@ export default function WeekStartScreen() {
           onPress={handleSave}
           disabled={isSaving}
           activeOpacity={0.8}
-          className="mx-md mt-6 flex-row items-center justify-center bg-green-500 rounded-lg"
-          style={{ height: 48 }}
+          className="mx-md mt-6 flex-row items-center justify-center rounded-lg"
+          style={{ height: 48, backgroundColor: isSaving ? colors.textTertiary : colors.primary }}
           accessibilityLabel="Save week start day"
           accessibilityRole="button"
           accessibilityState={{ disabled: isSaving }}
@@ -188,7 +201,7 @@ export default function WeekStartScreen() {
         </TouchableOpacity>
 
         {/* Info Text */}
-        <Text className="text-caption text-gray-500 text-center mt-4 mx-md">
+        <Text className="text-caption text-center mt-4 mx-md" style={{ color: colors.textSecondary }}>
           Current selection: {selectedDay === 'monday' ? 'Monday' : 'Sunday'}
         </Text>
       </ScrollView>
