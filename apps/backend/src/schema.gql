@@ -44,6 +44,14 @@ type AuthResponse {
   user: UserType!
 }
 
+type ClientType {
+  """Whether client is active"""
+  active: Boolean!
+  code: String!
+  id: ID!
+  name: String!
+}
+
 """Information about a detected data conflict"""
 type ConflictInfo {
   """Timestamp when client last synced"""
@@ -98,9 +106,6 @@ input CreateTimeEntryInput {
   """Name of the client"""
   clientName: String!
 
-  """ID of the consultant creating the entry"""
-  consultantId: ID!
-
   """Date of the time entry in YYYY-MM-DD format"""
   date: String!
 
@@ -108,22 +113,22 @@ input CreateTimeEntryInput {
   description: String!
 
   """First clock-in time in HH:mm format"""
-  inTime1: String!
+  inTime1: String
 
   """Second clock-in time in HH:mm format for split shifts"""
   inTime2: String
 
   """First clock-out time in HH:mm format"""
-  outTime1: String!
+  outTime1: String
 
   """Second clock-out time in HH:mm format for split shifts"""
   outTime2: String
 
-  """ID of the pay period for this entry"""
-  payPeriodId: ID!
-
   """Project or task number (e.g., PROJ-123)"""
   projectTaskNumber: String
+
+  """Total hours worked"""
+  totalHours: Float!
 }
 
 """
@@ -155,6 +160,9 @@ type ETOTransactionObjectType {
 
   """Project name associated with ETO usage"""
   projectName: String
+
+  """Running balance after this transaction (computed, not stored)"""
+  runningBalance: Float
 
   """Whether this transaction has been synced with the backend"""
   synced: Boolean!
@@ -245,6 +253,9 @@ type Query {
   """Check if an entity has conflicts before syncing"""
   checkConflict(entityId: String!, entityType: SyncEntityType!, lastSyncedAt: DateTime!): ConflictInfo!
 
+  """Get all active clients"""
+  clients: [ClientType!]!
+
   """Get current ETO balance for a consultant"""
   etoBalance(consultantId: ID!): Float!
 
@@ -275,6 +286,9 @@ type Query {
 
   """Get a timesheet submission by ID"""
   timesheetSubmission(id: String!): TimesheetSubmissionType!
+
+  """Get a timesheet submission by pay period ID"""
+  timesheetSubmissionByPayPeriod(payPeriodId: String!): TimesheetSubmissionType
 }
 
 input RegisterPushTokenInput {
@@ -654,17 +668,11 @@ input UpdateTimeEntryInput {
   """Name of the client"""
   clientName: String
 
-  """ID of the consultant creating the entry"""
-  consultantId: String
-
   """Date of the time entry in YYYY-MM-DD format"""
   date: String
 
   """Description of work performed"""
   description: String
-
-  """ID of the time entry to update"""
-  id: ID!
 
   """First clock-in time in HH:mm format"""
   inTime1: String
@@ -678,11 +686,11 @@ input UpdateTimeEntryInput {
   """Second clock-out time in HH:mm format for split shifts"""
   outTime2: String
 
-  """ID of the pay period for this entry"""
-  payPeriodId: String
-
   """Project or task number (e.g., PROJ-123)"""
   projectTaskNumber: String
+
+  """Total hours worked"""
+  totalHours: Float
 }
 
 """Input for using ETO hours (taking time off)"""

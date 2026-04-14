@@ -33,13 +33,19 @@ import { DayCardSkeletonList } from '@/components/skeletons/DayCardSkeleton';
 interface TimeEntry {
   id: string;
   consultantId: string;
+  payPeriodId: string;
   date: string;
-  hours: number;
+  projectTaskNumber: string;
+  clientName?: string;
   description: string;
-  category: string;
-  project: string;
-  syncStatus: string;
-  lastModified: string;
+  inTime1?: string;
+  outTime1?: string;
+  inTime2?: string;
+  outTime2?: string;
+  totalHours: number;
+  synced: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface DayData {
@@ -127,57 +133,67 @@ const MOCK_ENTRIES: TimeEntry[] = [
   {
     id: '1',
     consultantId: 'c1',
+    payPeriodId: 'pp-2026-04',
     date: formatDateParam(new Date()),
-    hours: 4,
+    totalHours: 4,
     description: 'Worked on PR #239, code review',
-    category: 'Development',
-    project: 'Aderant',
-    syncStatus: 'synced',
-    lastModified: new Date().toISOString(),
+    projectTaskNumber: 'PR-239',
+    clientName: 'Aderant',
+    synced: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   {
     id: '2',
     consultantId: 'c1',
+    payPeriodId: 'pp-2026-04',
     date: formatDateParam(new Date()),
-    hours: 4,
+    totalHours: 4,
     description: 'Sprint planning and standup meetings',
-    category: 'Meetings',
-    project: 'Aderant',
-    syncStatus: 'synced',
-    lastModified: new Date().toISOString(),
+    projectTaskNumber: 'MEETING',
+    clientName: 'Aderant',
+    synced: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   {
     id: '3',
     consultantId: 'c1',
+    payPeriodId: 'pp-2026-04',
     date: formatDateParam((() => { const d = new Date(); d.setDate(d.getDate() - 1); return d; })()),
-    hours: 6,
+    totalHours: 6,
     description: 'API integration for timesheet module',
-    category: 'Development',
-    project: 'TimeTrack',
-    syncStatus: 'synced',
-    lastModified: new Date().toISOString(),
+    projectTaskNumber: 'DEV-101',
+    clientName: 'TimeTrack',
+    synced: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   {
     id: '4',
     consultantId: 'c1',
+    payPeriodId: 'pp-2026-04',
     date: formatDateParam((() => { const d = new Date(); d.setDate(d.getDate() - 1); return d; })()),
-    hours: 2,
+    totalHours: 2,
     description: 'Documentation updates',
-    category: 'Documentation',
-    project: 'TimeTrack',
-    syncStatus: 'pending',
-    lastModified: new Date().toISOString(),
+    projectTaskNumber: 'DOC-50',
+    clientName: 'TimeTrack',
+    synced: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
   {
     id: '5',
     consultantId: 'c1',
+    payPeriodId: 'pp-2026-04',
     date: formatDateParam((() => { const d = new Date(); d.setDate(d.getDate() - 2); return d; })()),
-    hours: 8,
+    totalHours: 8,
     description: 'Full day on mobile UI implementation',
-    category: 'Development',
-    project: 'Aderant',
-    syncStatus: 'synced',
-    lastModified: new Date().toISOString(),
+    projectTaskNumber: 'UI-200',
+    clientName: 'Aderant',
+    synced: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   },
 ];
 
@@ -310,7 +326,7 @@ function EntryRow({
       <View className="flex-row">
         <View style={{ flex: 0.7 }}>
           <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-            {entry.project}
+            {entry.clientName}
           </Text>
           <Text
             className="mt-0.5"
@@ -331,10 +347,10 @@ function EntryRow({
               }}
             >
               <Text style={{ fontSize: 10, color: colors.textSecondary }}>
-                {entry.category}
+                {entry.projectTaskNumber}
               </Text>
             </View>
-            {entry.syncStatus === 'pending' && (
+            {!entry.synced && (
               <View
                 className="rounded mr-1 mb-1"
                 style={{
@@ -352,14 +368,14 @@ function EntryRow({
         </View>
         <View style={{ flex: 0.3, alignItems: 'flex-end' }}>
           <Text className="text-base font-bold" style={{ color: colors.primary }}>
-            {entry.hours.toFixed(2)}
+            {entry.totalHours.toFixed(2)}
           </Text>
           <View className="flex-row mt-2">
             <TouchableOpacity
               onPress={onEdit}
               className="items-center justify-center"
               style={{ width: 44, height: 44 }}
-              accessibilityLabel={`Edit ${entry.project} entry`}
+              accessibilityLabel={`Edit ${entry.clientName} entry`}
               accessibilityRole="button"
             >
               <Ionicons name="pencil" size={14} color={colors.primary} />
@@ -368,7 +384,7 @@ function EntryRow({
               onPress={onDelete}
               className="items-center justify-center ml-1"
               style={{ width: 44, height: 44 }}
-              accessibilityLabel={`Delete ${entry.project} entry`}
+              accessibilityLabel={`Delete ${entry.clientName} entry`}
               accessibilityRole="button"
             >
               <Ionicons name="trash" size={14} color={colors.error} />
@@ -792,7 +808,7 @@ export default function TimesheetListScreen() {
     return weekDates.map((date) => {
       const dateStr = formatDateParam(date);
       const dayEntries = entryMap.get(dateStr) || [];
-      const totalHours = dayEntries.reduce((sum, e) => sum + e.hours, 0);
+      const totalHours = dayEntries.reduce((sum, e) => sum + e.totalHours, 0);
       const dayOfWeek = DAY_NAMES[date.getDay()];
       const monthName = MONTH_NAMES[date.getMonth()];
 
@@ -855,7 +871,7 @@ export default function TimesheetListScreen() {
 
       Alert.alert(
         'Delete Time Entry',
-        `Delete entry for ${entry.project}?\n${entry.hours.toFixed(1)} hours - ${entry.description}`,
+        `Delete entry for ${entry.clientName}?\n${entry.totalHours.toFixed(1)} hours - ${entry.description}`,
         [
           {
             text: 'Cancel',

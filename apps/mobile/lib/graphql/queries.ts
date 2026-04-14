@@ -43,14 +43,17 @@ export const TIME_ENTRIES_QUERY = gql`
     timeEntries(filters: $filters) {
       id
       consultantId
-      date
-      hours
-      description
-      category
-      project
       payPeriodId
-      syncStatus
-      lastModified
+      date
+      projectTaskNumber
+      clientName
+      description
+      inTime1
+      outTime1
+      inTime2
+      outTime2
+      totalHours
+      synced
       createdAt
       updatedAt
     }
@@ -65,14 +68,17 @@ export const TIME_ENTRY_QUERY = gql`
     timeEntry(id: $id) {
       id
       consultantId
-      date
-      hours
-      description
-      category
-      project
       payPeriodId
-      syncStatus
-      lastModified
+      date
+      projectTaskNumber
+      clientName
+      description
+      inTime1
+      outTime1
+      inTime2
+      outTime2
+      totalHours
+      synced
       createdAt
       updatedAt
     }
@@ -97,7 +103,6 @@ export const ETO_REQUESTS_QUERY = gql`
       reviewedAt
       comments
       syncStatus
-      lastModified
       createdAt
       updatedAt
     }
@@ -134,12 +139,15 @@ export const WEEK_TIME_ENTRIES_QUERY = gql`
       id
       consultantId
       date
-      hours
+      projectTaskNumber
+      clientName
       description
-      category
-      project
-      syncStatus
-      lastModified
+      inTime1
+      outTime1
+      inTime2
+      outTime2
+      totalHours
+      synced
     }
   }
 `;
