@@ -16,8 +16,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme, type ThemeMode } from '@/contexts/ThemeContext';
 import { usePreferences } from '@/contexts/PreferencesContext';
+import { WorkHoursPicker } from '@/components/WorkHoursPicker';
+import { WeekStartDayPicker } from '@/components/WeekStartDayPicker';
+import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
+import { UPDATE_USER_PROFILE_MUTATION } from '@/lib/graphql/mutations';
 import {
   loadNotificationPreferences,
   saveNotificationPreferences,
@@ -612,6 +616,184 @@ function DeleteAccountModal({
   );
 }
 
+function ThemeModePicker({
+  visible,
+  currentMode,
+  onSelect,
+  onClose,
+}: {
+  visible: boolean;
+  currentMode: ThemeMode;
+  onSelect: (mode: ThemeMode) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [selectedMode, setSelectedMode] = useState<ThemeMode>(currentMode);
+  const [isSaving, setIsSaving] = useState(false);
+  const { colors } = useTheme();
+
+  const MODES: { label: string; value: ThemeMode; icon: keyof typeof Ionicons.glyphMap; description: string }[] = [
+    { label: 'Light', value: 'light', icon: 'sunny-outline', description: 'Always use light theme' },
+    { label: 'Dark', value: 'dark', icon: 'moon-outline', description: 'Always use dark theme' },
+    { label: 'System', value: 'system', icon: 'phone-portrait-outline', description: 'Follow device setting' },
+  ];
+
+  const handleSelect = async () => {
+    if (selectedMode === currentMode) {
+      onClose();
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await onSelect(selectedMode);
+      onClose();
+    } catch (error) {
+      console.error('Failed to save theme mode:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType={Platform.OS === 'ios' ? 'slide' : 'fade'}
+      onRequestClose={onClose}
+    >
+      <View
+        className="flex-1 justify-end"
+        style={{ backgroundColor: colors.overlay }}
+      >
+        <TouchableOpacity
+          className="flex-1"
+          activeOpacity={1}
+          onPress={onClose}
+          accessibilityLabel="Close modal"
+        />
+        <View
+          style={{
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            paddingHorizontal: 24,
+            paddingTop: 24,
+            paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+            backgroundColor: colors.surface,
+          }}
+        >
+          {/* Handle */}
+          <View
+            className="self-center rounded-full mb-6"
+            style={{ width: 40, height: 4, backgroundColor: colors.borderSecondary }}
+          />
+
+          {/* Header */}
+          <Text
+            className="font-bold text-center"
+            style={{ fontSize: 20, lineHeight: 28, marginBottom: 24, color: colors.text }}
+          >
+            Choose Theme
+          </Text>
+
+          {/* Mode Selection */}
+          <View style={{ gap: 12, marginBottom: 24 }}>
+            {MODES.map((mode) => (
+              <TouchableOpacity
+                key={mode.value}
+                onPress={() => setSelectedMode(mode.value)}
+                activeOpacity={0.7}
+                className="flex-row items-center rounded-lg"
+                style={{
+                  paddingVertical: 14,
+                  paddingHorizontal: 16,
+                  backgroundColor: selectedMode === mode.value
+                    ? colors.primary + '15'
+                    : colors.backgroundTertiary,
+                }}
+                accessibilityLabel={mode.label}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: selectedMode === mode.value }}
+              >
+                <Ionicons
+                  name={mode.icon}
+                  size={22}
+                  color={selectedMode === mode.value ? colors.primary : colors.textSecondary}
+                />
+                <View className="flex-1 ml-3">
+                  <Text
+                    className="font-semibold"
+                    style={{
+                      fontSize: 16,
+                      color: selectedMode === mode.value ? colors.primary : colors.text,
+                    }}
+                  >
+                    {mode.label}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                    }}
+                  >
+                    {mode.description}
+                  </Text>
+                </View>
+                {selectedMode === mode.value && (
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Action Buttons */}
+          <View className="flex-row" style={{ gap: 12 }}>
+            <TouchableOpacity
+              onPress={onClose}
+              disabled={isSaving}
+              className="flex-1 items-center justify-center rounded-xl"
+              style={{
+                height: 52,
+                borderWidth: 1.5,
+                borderColor: colors.border,
+                backgroundColor: colors.surface,
+              }}
+              accessibilityLabel="Cancel"
+              accessibilityRole="button"
+            >
+              <Text
+                className="font-semibold"
+                style={{ fontSize: 16, color: colors.textSecondary }}
+              >
+                Cancel
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleSelect}
+              disabled={isSaving}
+              className="flex-1 items-center justify-center rounded-xl"
+              style={{
+                height: 52,
+                backgroundColor: isSaving ? colors.borderSecondary : colors.primary,
+              }}
+              accessibilityLabel="Save theme"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isSaving }}
+            >
+              <Text
+                className="font-semibold"
+                style={{ fontSize: 16, color: '#FFFFFF' }}
+              >
+                {isSaving ? 'Saving...' : 'Save'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 // --- Main Screen ---
 
 export default function SettingsScreen() {
@@ -624,14 +806,20 @@ export default function SettingsScreen() {
     enableBiometric,
     disableBiometric,
   } = useAuth();
-  const { themeMode, isDark, colors } = useTheme();
-  const { workHours, weekStartDay } = usePreferences();
+  const { themeMode, isDark, colors, setThemeMode } = useTheme();
+  const { workHours, weekStartDay, setWorkHours, setWeekStartDay } = usePreferences();
+
+  // Backend mutation for syncing work hours
+  const [updateUserProfile] = useAuthenticatedMutation(UPDATE_USER_PROFILE_MUTATION);
 
   // --- State ---
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [themePickerVisible, setThemePickerVisible] = useState(false);
+  const [workHoursModalVisible, setWorkHoursModalVisible] = useState(false);
+  const [weekStartDayModalVisible, setWeekStartDayModalVisible] = useState(false);
 
   // Toggle states (mock for demo)
   const [toggleStates, setToggleStates] = useState<Record<string, boolean>>({
