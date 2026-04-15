@@ -10,18 +10,33 @@ export class ConflictInfo {
   @Field(() => Boolean, { description: 'Whether a conflict was detected' })
   hasConflict: boolean;
 
-  @Field(() => GraphQLJSONObject, { nullable: true, description: 'Current server version of the data' })
+  @Field(() => GraphQLJSONObject, {
+    nullable: true,
+    description: 'Current server version of the data',
+  })
   serverVersion?: Record<string, any> | null;
 
-  @Field(() => GraphQLJSONObject, { nullable: true, description: 'Client version of the data that conflicts' })
+  @Field(() => GraphQLJSONObject, {
+    nullable: true,
+    description: 'Client version of the data that conflicts',
+  })
   clientVersion?: Record<string, any> | null;
 
-  @Field(() => Date, { nullable: true, description: 'Timestamp when server data was last updated' })
+  @Field(() => Date, {
+    nullable: true,
+    description: 'Timestamp when server data was last updated',
+  })
   serverUpdatedAt?: Date | null;
 
-  @Field(() => Date, { nullable: true, description: 'Timestamp when client last synced' })
+  @Field(() => Date, {
+    nullable: true,
+    description: 'Timestamp when client last synced',
+  })
   clientLastSyncedAt?: Date | null;
 
-  @Field(() => String, { nullable: true, description: 'Details about what changed' })
+  @Field(() => String, {
+    nullable: true,
+    description: 'Details about what changed',
+  })
   conflictDetails?: string | null;
 }

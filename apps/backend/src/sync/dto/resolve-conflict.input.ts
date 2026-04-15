@@ -15,12 +15,21 @@ export class ResolveConflictInput {
   @Field(() => ID, { description: 'ID of the entity with conflict' })
   entityId: string;
 
-  @Field(() => ConflictResolutionStrategy, { description: 'Strategy to use for conflict resolution' })
+  @Field(() => ConflictResolutionStrategy, {
+    description: 'Strategy to use for conflict resolution',
+  })
   strategy: ConflictResolutionStrategy;
 
-  @Field(() => GraphQLJSONObject, { nullable: true, description: 'Client data to use for CLIENT_WINS strategy' })
+  @Field(() => GraphQLJSONObject, {
+    nullable: true,
+    description: 'Client data to use for CLIENT_WINS strategy',
+  })
   clientData?: Record<string, any>;
 
-  @Field(() => GraphQLJSONObject, { nullable: true, description: 'Server data to use for SERVER_WINS strategy (optional, will be fetched if not provided)' })
+  @Field(() => GraphQLJSONObject, {
+    nullable: true,
+    description:
+      'Server data to use for SERVER_WINS strategy (optional, will be fetched if not provided)',
+  })
   serverData?: Record<string, any>;
 }

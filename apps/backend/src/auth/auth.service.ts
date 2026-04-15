@@ -1,4 +1,9 @@
-import { Injectable, Logger, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { Consultant } from '@prisma/client';
@@ -12,7 +17,7 @@ interface OktaProfile {
 }
 
 interface JwtPayload {
-  sub: string;          // External ID from Okta
+  sub: string; // External ID from Okta
   email?: string;
   name?: string;
   consultantId?: string;
@@ -45,7 +50,9 @@ export class AuthService {
       });
 
       if (!consultant) {
-        this.logger.log(`Creating new consultant from Okta profile: ${externalId}`);
+        this.logger.log(
+          `Creating new consultant from Okta profile: ${externalId}`,
+        );
         consultant = await this.prisma.consultant.create({
           data: {
             externalId,
@@ -104,7 +111,9 @@ export class AuthService {
       });
 
       if (!consultant) {
-        this.logger.warn(`Consultant not found for JWT payload: ${payload.sub}`);
+        this.logger.warn(
+          `Consultant not found for JWT payload: ${payload.sub}`,
+        );
         throw new UnauthorizedException('Consultant not found');
       }
 
@@ -117,7 +126,9 @@ export class AuthService {
     }
   }
 
-  async login(consultant: Consultant): Promise<{ accessToken: string; expiresIn: string }> {
+  async login(
+    consultant: Consultant,
+  ): Promise<{ accessToken: string; expiresIn: string }> {
     const accessToken = await this.generateJwt(consultant);
     return {
       accessToken,

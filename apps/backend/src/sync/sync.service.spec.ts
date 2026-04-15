@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { SyncService } from './sync.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TimesheetService } from '../timesheet/timesheet.service';
@@ -234,8 +238,12 @@ describe('SyncService', () => {
         entityId: 'time-entry-123',
       };
 
-      await expect(service.createSyncLog('', input)).rejects.toThrow(BadRequestException);
-      await expect(service.createSyncLog('', input)).rejects.toThrow('Missing required fields for sync log');
+      await expect(service.createSyncLog('', input)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.createSyncLog('', input)).rejects.toThrow(
+        'Missing required fields for sync log',
+      );
     });
 
     it('should throw BadRequestException when required fields are missing', async () => {
@@ -245,8 +253,12 @@ describe('SyncService', () => {
         entityId: 'time-entry-123',
       } as CreateSyncLogInput;
 
-      await expect(service.createSyncLog(mockUserId, inputMissingDeviceId)).rejects.toThrow(BadRequestException);
-      await expect(service.createSyncLog(mockUserId, inputMissingDeviceId)).rejects.toThrow('Missing required fields for sync log');
+      await expect(
+        service.createSyncLog(mockUserId, inputMissingDeviceId),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.createSyncLog(mockUserId, inputMissingDeviceId),
+      ).rejects.toThrow('Missing required fields for sync log');
     });
 
     it('should throw InternalServerErrorException when Prisma create fails', async () => {
@@ -257,10 +269,16 @@ describe('SyncService', () => {
         entityId: 'time-entry-123',
       };
 
-      mockPrismaService.syncLog.create.mockRejectedValue(new Error('Database connection error'));
+      mockPrismaService.syncLog.create.mockRejectedValue(
+        new Error('Database connection error'),
+      );
 
-      await expect(service.createSyncLog(mockUserId, input)).rejects.toThrow(InternalServerErrorException);
-      await expect(service.createSyncLog(mockUserId, input)).rejects.toThrow('Failed to create sync log');
+      await expect(service.createSyncLog(mockUserId, input)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+      await expect(service.createSyncLog(mockUserId, input)).rejects.toThrow(
+        'Failed to create sync log',
+      );
     });
   });
 
@@ -320,7 +338,9 @@ describe('SyncService', () => {
 
       mockPrismaService.syncLog.findMany.mockResolvedValue(mockSyncLogs);
 
-      const result = await service.getSyncLogs(mockUserId, { deviceId: mockDeviceId });
+      const result = await service.getSyncLogs(mockUserId, {
+        deviceId: mockDeviceId,
+      });
 
       expect(result).toEqual(mockSyncLogs);
       expect(mockPrismaService.syncLog.findMany).toHaveBeenCalledWith({
@@ -405,15 +425,25 @@ describe('SyncService', () => {
     });
 
     it('should throw BadRequestException when userId is missing', async () => {
-      await expect(service.getSyncLogs('')).rejects.toThrow(BadRequestException);
-      await expect(service.getSyncLogs('')).rejects.toThrow('User ID is required');
+      await expect(service.getSyncLogs('')).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.getSyncLogs('')).rejects.toThrow(
+        'User ID is required',
+      );
     });
 
     it('should throw InternalServerErrorException when Prisma findMany fails', async () => {
-      mockPrismaService.syncLog.findMany.mockRejectedValue(new Error('Database connection error'));
+      mockPrismaService.syncLog.findMany.mockRejectedValue(
+        new Error('Database connection error'),
+      );
 
-      await expect(service.getSyncLogs(mockUserId)).rejects.toThrow(InternalServerErrorException);
-      await expect(service.getSyncLogs(mockUserId)).rejects.toThrow('Failed to retrieve sync logs');
+      await expect(service.getSyncLogs(mockUserId)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+      await expect(service.getSyncLogs(mockUserId)).rejects.toThrow(
+        'Failed to retrieve sync logs',
+      );
     });
   });
 
@@ -480,15 +510,25 @@ describe('SyncService', () => {
     });
 
     it('should throw BadRequestException when userId is missing', async () => {
-      await expect(service.getFailedSyncLogs('')).rejects.toThrow(BadRequestException);
-      await expect(service.getFailedSyncLogs('')).rejects.toThrow('User ID is required');
+      await expect(service.getFailedSyncLogs('')).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.getFailedSyncLogs('')).rejects.toThrow(
+        'User ID is required',
+      );
     });
 
     it('should throw InternalServerErrorException when Prisma findMany fails', async () => {
-      mockPrismaService.syncLog.findMany.mockRejectedValue(new Error('Database connection error'));
+      mockPrismaService.syncLog.findMany.mockRejectedValue(
+        new Error('Database connection error'),
+      );
 
-      await expect(service.getFailedSyncLogs(mockUserId)).rejects.toThrow(InternalServerErrorException);
-      await expect(service.getFailedSyncLogs(mockUserId)).rejects.toThrow('Failed to retrieve failed sync logs');
+      await expect(service.getFailedSyncLogs(mockUserId)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+      await expect(service.getFailedSyncLogs(mockUserId)).rejects.toThrow(
+        'Failed to retrieve failed sync logs',
+      );
     });
   });
 
@@ -524,7 +564,11 @@ describe('SyncService', () => {
 
       mockPrismaService.syncLog.findMany.mockResolvedValue(mockEntitySyncLogs);
 
-      const result = await service.getSyncLogsByEntity(mockUserId, entityType, entityId);
+      const result = await service.getSyncLogsByEntity(
+        mockUserId,
+        entityType,
+        entityId,
+      );
 
       expect(result).toEqual(mockEntitySyncLogs);
       expect(mockPrismaService.syncLog.findMany).toHaveBeenCalledWith({
@@ -544,7 +588,11 @@ describe('SyncService', () => {
 
       mockPrismaService.syncLog.findMany.mockResolvedValue([]);
 
-      const result = await service.getSyncLogsByEntity(mockUserId, entityType, entityId);
+      const result = await service.getSyncLogsByEntity(
+        mockUserId,
+        entityType,
+        entityId,
+      );
 
       expect(result).toEqual([]);
       expect(mockPrismaService.syncLog.findMany).toHaveBeenCalledWith({
@@ -559,18 +607,32 @@ describe('SyncService', () => {
     });
 
     it('should throw BadRequestException when required fields are missing', async () => {
-      await expect(service.getSyncLogsByEntity('', 'TimeEntry', 'entity-123')).rejects.toThrow(BadRequestException);
-      await expect(service.getSyncLogsByEntity('', 'TimeEntry', 'entity-123')).rejects.toThrow('User ID, entity type, and entity ID are required');
+      await expect(
+        service.getSyncLogsByEntity('', 'TimeEntry', 'entity-123'),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.getSyncLogsByEntity('', 'TimeEntry', 'entity-123'),
+      ).rejects.toThrow('User ID, entity type, and entity ID are required');
 
-      await expect(service.getSyncLogsByEntity(mockUserId, '', 'entity-123')).rejects.toThrow(BadRequestException);
-      await expect(service.getSyncLogsByEntity(mockUserId, 'TimeEntry', '')).rejects.toThrow(BadRequestException);
+      await expect(
+        service.getSyncLogsByEntity(mockUserId, '', 'entity-123'),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.getSyncLogsByEntity(mockUserId, 'TimeEntry', ''),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw InternalServerErrorException when Prisma findMany fails', async () => {
-      mockPrismaService.syncLog.findMany.mockRejectedValue(new Error('Database connection error'));
+      mockPrismaService.syncLog.findMany.mockRejectedValue(
+        new Error('Database connection error'),
+      );
 
-      await expect(service.getSyncLogsByEntity(mockUserId, 'TimeEntry', 'entity-123')).rejects.toThrow(InternalServerErrorException);
-      await expect(service.getSyncLogsByEntity(mockUserId, 'TimeEntry', 'entity-123')).rejects.toThrow('Failed to retrieve sync logs for entity');
+      await expect(
+        service.getSyncLogsByEntity(mockUserId, 'TimeEntry', 'entity-123'),
+      ).rejects.toThrow(InternalServerErrorException);
+      await expect(
+        service.getSyncLogsByEntity(mockUserId, 'TimeEntry', 'entity-123'),
+      ).rejects.toThrow('Failed to retrieve sync logs for entity');
     });
   });
 
@@ -628,7 +690,9 @@ describe('SyncService', () => {
       expect(result.serverVersion).toEqual(mockTimeEntry);
       expect(result.serverUpdatedAt).toEqual(mockTimeEntry.updatedAt);
       expect(result.clientLastSyncedAt).toEqual(lastSyncedAt);
-      expect(result.conflictDetails).toContain('Server data was modified after client\'s last sync');
+      expect(result.conflictDetails).toContain(
+        "Server data was modified after client's last sync",
+      );
     });
 
     it('should detect conflict for ETOTransaction using createdAt', async () => {
@@ -642,7 +706,9 @@ describe('SyncService', () => {
         createdAt: new Date('2024-04-12T11:00:00Z'), // After lastSyncedAt
       };
 
-      mockPrismaService.eTOTransaction.findFirst.mockResolvedValue(mockETOTransaction);
+      mockPrismaService.eTOTransaction.findFirst.mockResolvedValue(
+        mockETOTransaction,
+      );
 
       const result = await service.detectConflict(
         mockUserId,
@@ -692,7 +758,9 @@ describe('SyncService', () => {
         createdAt: new Date('2024-04-12T08:00:00Z'),
       };
 
-      mockPrismaService.timesheetSubmission.findFirst.mockResolvedValue(mockSubmission);
+      mockPrismaService.timesheetSubmission.findFirst.mockResolvedValue(
+        mockSubmission,
+      );
 
       const result = await service.detectConflict(
         mockUserId,
@@ -709,34 +777,71 @@ describe('SyncService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(null);
 
       await expect(
-        service.detectConflict(mockUserId, SyncEntityType.TIME_ENTRY, 'nonexistent-123', lastSyncedAt),
+        service.detectConflict(
+          mockUserId,
+          SyncEntityType.TIME_ENTRY,
+          'nonexistent-123',
+          lastSyncedAt,
+        ),
       ).rejects.toThrow(NotFoundException);
       await expect(
-        service.detectConflict(mockUserId, SyncEntityType.TIME_ENTRY, 'nonexistent-123', lastSyncedAt),
+        service.detectConflict(
+          mockUserId,
+          SyncEntityType.TIME_ENTRY,
+          'nonexistent-123',
+          lastSyncedAt,
+        ),
       ).rejects.toThrow('TimeEntry with ID nonexistent-123 not found');
     });
 
     it('should throw BadRequestException when required fields are missing', async () => {
       await expect(
-        service.detectConflict('', SyncEntityType.TIME_ENTRY, entityId, lastSyncedAt),
+        service.detectConflict(
+          '',
+          SyncEntityType.TIME_ENTRY,
+          entityId,
+          lastSyncedAt,
+        ),
       ).rejects.toThrow(BadRequestException);
       await expect(
-        service.detectConflict('', SyncEntityType.TIME_ENTRY, entityId, lastSyncedAt),
+        service.detectConflict(
+          '',
+          SyncEntityType.TIME_ENTRY,
+          entityId,
+          lastSyncedAt,
+        ),
       ).rejects.toThrow('All fields are required for conflict detection');
 
       await expect(
-        service.detectConflict(mockUserId, SyncEntityType.TIME_ENTRY, '', lastSyncedAt),
+        service.detectConflict(
+          mockUserId,
+          SyncEntityType.TIME_ENTRY,
+          '',
+          lastSyncedAt,
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw InternalServerErrorException when Prisma query fails', async () => {
-      mockPrismaService.timeEntry.findFirst.mockRejectedValue(new Error('Database error'));
+      mockPrismaService.timeEntry.findFirst.mockRejectedValue(
+        new Error('Database error'),
+      );
 
       await expect(
-        service.detectConflict(mockUserId, SyncEntityType.TIME_ENTRY, entityId, lastSyncedAt),
+        service.detectConflict(
+          mockUserId,
+          SyncEntityType.TIME_ENTRY,
+          entityId,
+          lastSyncedAt,
+        ),
       ).rejects.toThrow(InternalServerErrorException);
       await expect(
-        service.detectConflict(mockUserId, SyncEntityType.TIME_ENTRY, entityId, lastSyncedAt),
+        service.detectConflict(
+          mockUserId,
+          SyncEntityType.TIME_ENTRY,
+          entityId,
+          lastSyncedAt,
+        ),
       ).rejects.toThrow('Failed to detect conflict');
     });
   });
@@ -797,8 +902,12 @@ describe('SyncService', () => {
         description: 'Client version',
       };
 
-      mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockServerTimeEntry);
-      mockPrismaService.timeEntry.update.mockResolvedValue(mockUpdatedTimeEntry);
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(
+        mockServerTimeEntry,
+      );
+      mockPrismaService.timeEntry.update.mockResolvedValue(
+        mockUpdatedTimeEntry,
+      );
 
       const input: ResolveConflictInput = {
         entityType: SyncEntityType.TIME_ENTRY,
@@ -843,7 +952,9 @@ describe('SyncService', () => {
         // clientData missing
       };
 
-      await expect(service.resolveConflict(mockUserId, input)).rejects.toThrow(BadRequestException);
+      await expect(service.resolveConflict(mockUserId, input)).rejects.toThrow(
+        BadRequestException,
+      );
       await expect(service.resolveConflict(mockUserId, input)).rejects.toThrow(
         'Client data is required for CLIENT_WINS strategy',
       );
@@ -868,7 +979,9 @@ describe('SyncService', () => {
         description: 'Client version',
       };
 
-      mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockServerTimeEntry);
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(
+        mockServerTimeEntry,
+      );
 
       const input: ResolveConflictInput = {
         entityType: SyncEntityType.TIME_ENTRY,
@@ -900,7 +1013,9 @@ describe('SyncService', () => {
         createdAt: new Date('2024-04-12T11:00:00Z'),
       };
 
-      mockPrismaService.eTOTransaction.findFirst.mockResolvedValue(mockETOTransaction);
+      mockPrismaService.eTOTransaction.findFirst.mockResolvedValue(
+        mockETOTransaction,
+      );
 
       const input: ResolveConflictInput = {
         entityType: SyncEntityType.ETO_TRANSACTION,
@@ -951,7 +1066,9 @@ describe('SyncService', () => {
         createdAt: new Date('2024-04-12T08:00:00Z'),
       };
 
-      mockPrismaService.timesheetSubmission.findFirst.mockResolvedValue(mockSubmission);
+      mockPrismaService.timesheetSubmission.findFirst.mockResolvedValue(
+        mockSubmission,
+      );
 
       const input: ResolveConflictInput = {
         entityType: SyncEntityType.TIMESHEET_SUBMISSION,
@@ -974,7 +1091,9 @@ describe('SyncService', () => {
         strategy: ConflictResolutionStrategy.SERVER_WINS,
       };
 
-      await expect(service.resolveConflict(mockUserId, input)).rejects.toThrow(NotFoundException);
+      await expect(service.resolveConflict(mockUserId, input)).rejects.toThrow(
+        NotFoundException,
+      );
       await expect(service.resolveConflict(mockUserId, input)).rejects.toThrow(
         'TimeEntry with ID nonexistent-123 not found',
       );
@@ -987,14 +1106,18 @@ describe('SyncService', () => {
         strategy: ConflictResolutionStrategy.SERVER_WINS,
       };
 
-      await expect(service.resolveConflict('', input)).rejects.toThrow(BadRequestException);
+      await expect(service.resolveConflict('', input)).rejects.toThrow(
+        BadRequestException,
+      );
       await expect(service.resolveConflict('', input)).rejects.toThrow(
         'User ID, entity type, entity ID, and strategy are required',
       );
     });
 
     it('should throw InternalServerErrorException when Prisma query fails', async () => {
-      mockPrismaService.timeEntry.findFirst.mockRejectedValue(new Error('Database error'));
+      mockPrismaService.timeEntry.findFirst.mockRejectedValue(
+        new Error('Database error'),
+      );
 
       const input: ResolveConflictInput = {
         entityType: SyncEntityType.TIME_ENTRY,
@@ -1002,8 +1125,12 @@ describe('SyncService', () => {
         strategy: ConflictResolutionStrategy.SERVER_WINS,
       };
 
-      await expect(service.resolveConflict(mockUserId, input)).rejects.toThrow(InternalServerErrorException);
-      await expect(service.resolveConflict(mockUserId, input)).rejects.toThrow('Failed to resolve conflict');
+      await expect(service.resolveConflict(mockUserId, input)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+      await expect(service.resolveConflict(mockUserId, input)).rejects.toThrow(
+        'Failed to resolve conflict',
+      );
     });
 
     it('should use provided serverData instead of fetching from database', async () => {
@@ -1045,7 +1172,9 @@ describe('SyncService', () => {
         description: 'Client version',
       };
 
-      mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockServerTimeEntry);
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(
+        mockServerTimeEntry,
+      );
       // Simulate ownership verification failure - Prisma will return null
       mockPrismaService.timeEntry.update.mockRejectedValue(
         new Error('Record to update not found'),
@@ -1096,8 +1225,12 @@ describe('SyncService', () => {
         description: 'Valid description',
       };
 
-      mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockServerTimeEntry);
-      mockPrismaService.timeEntry.update.mockResolvedValue(mockUpdatedTimeEntry);
+      mockPrismaService.timeEntry.findFirst.mockResolvedValue(
+        mockServerTimeEntry,
+      );
+      mockPrismaService.timeEntry.update.mockResolvedValue(
+        mockUpdatedTimeEntry,
+      );
 
       const input: ResolveConflictInput = {
         entityType: SyncEntityType.TIME_ENTRY,
@@ -1154,7 +1287,9 @@ describe('SyncService', () => {
       };
 
       mockPrismaService.consultant.findUnique.mockResolvedValue(mockConsultant);
-      mockPrismaService.consultant.update.mockResolvedValue(mockUpdatedConsultant);
+      mockPrismaService.consultant.update.mockResolvedValue(
+        mockUpdatedConsultant,
+      );
 
       const input: ResolveConflictInput = {
         entityType: SyncEntityType.CONSULTANT,
@@ -1205,8 +1340,12 @@ describe('SyncService', () => {
         comments: 'Updated comments',
       };
 
-      mockPrismaService.timesheetSubmission.findFirst.mockResolvedValue(mockSubmission);
-      mockPrismaService.timesheetSubmission.update.mockResolvedValue(mockUpdatedSubmission);
+      mockPrismaService.timesheetSubmission.findFirst.mockResolvedValue(
+        mockSubmission,
+      );
+      mockPrismaService.timesheetSubmission.update.mockResolvedValue(
+        mockUpdatedSubmission,
+      );
 
       const input: ResolveConflictInput = {
         entityType: SyncEntityType.TIMESHEET_SUBMISSION,
@@ -1219,19 +1358,22 @@ describe('SyncService', () => {
 
       expect(result.success).toBe(true);
       // Verify that only allowed fields were passed to update
-      expect(mockPrismaService.timesheetSubmission.update).toHaveBeenCalledWith({
-        where: {
-          id: submissionId,
-          consultantId: mockUserId,
+      expect(mockPrismaService.timesheetSubmission.update).toHaveBeenCalledWith(
+        {
+          where: {
+            id: submissionId,
+            consultantId: mockUserId,
+          },
+          data: {
+            submittedAt: clientDataWithUnauthorizedFields.submittedAt,
+            comments: 'Updated comments',
+            // status should NOT be in data
+          },
         },
-        data: {
-          submittedAt: clientDataWithUnauthorizedFields.submittedAt,
-          comments: 'Updated comments',
-          // status should NOT be in data
-        },
-      });
+      );
       // Explicitly verify status is NOT present
-      const updateCall = mockPrismaService.timesheetSubmission.update.mock.calls[0][0];
+      const updateCall =
+        mockPrismaService.timesheetSubmission.update.mock.calls[0][0];
       expect(updateCall.data).not.toHaveProperty('status');
     });
   });
@@ -1273,9 +1415,15 @@ describe('SyncService', () => {
         .mockResolvedValueOnce(mockCreatedEntry2);
       mockTx.syncLog.create.mockResolvedValue({} as any);
 
-      mockPrismaService.$transaction.mockImplementation((callback: any) => callback(mockTx));
+      mockPrismaService.$transaction.mockImplementation((callback: any) =>
+        callback(mockTx),
+      );
 
-      const result = await service.syncTimeEntries(mockUserId, entries, mockDeviceId);
+      const result = await service.syncTimeEntries(
+        mockUserId,
+        entries,
+        mockDeviceId,
+      );
 
       expect(result.successful).toBe(2);
       expect(result.failed).toBe(0);
@@ -1311,9 +1459,15 @@ describe('SyncService', () => {
       mockTx.timeEntry.update.mockResolvedValue(mockUpdatedEntry);
       mockTx.syncLog.create.mockResolvedValue({} as any);
 
-      mockPrismaService.$transaction.mockImplementation((callback: any) => callback(mockTx));
+      mockPrismaService.$transaction.mockImplementation((callback: any) =>
+        callback(mockTx),
+      );
 
-      const result = await service.syncTimeEntries(mockUserId, entries, mockDeviceId);
+      const result = await service.syncTimeEntries(
+        mockUserId,
+        entries,
+        mockDeviceId,
+      );
 
       expect(result.successful).toBe(1);
       expect(result.failed).toBe(0);
@@ -1345,9 +1499,15 @@ describe('SyncService', () => {
       mockTx.timeEntry.delete.mockResolvedValue({} as any);
       mockTx.syncLog.create.mockResolvedValue({} as any);
 
-      mockPrismaService.$transaction.mockImplementation((callback: any) => callback(mockTx));
+      mockPrismaService.$transaction.mockImplementation((callback: any) =>
+        callback(mockTx),
+      );
 
-      const result = await service.syncTimeEntries(mockUserId, entries, mockDeviceId);
+      const result = await service.syncTimeEntries(
+        mockUserId,
+        entries,
+        mockDeviceId,
+      );
 
       expect(result.successful).toBe(1);
       expect(result.failed).toBe(0);
@@ -1381,7 +1541,11 @@ describe('SyncService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockTimeEntry);
       mockPrismaService.syncLog.create.mockResolvedValue({} as any);
 
-      const result = await service.syncTimeEntries(mockUserId, entries, mockDeviceId);
+      const result = await service.syncTimeEntries(
+        mockUserId,
+        entries,
+        mockDeviceId,
+      );
 
       expect(result.successful).toBe(1); // SERVER_WINS counts as successful
       expect(result.failed).toBe(0);
@@ -1414,7 +1578,11 @@ describe('SyncService', () => {
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockTimeEntry);
       mockPrismaService.syncLog.create.mockResolvedValue({} as any);
 
-      const result = await service.syncTimeEntries(mockUserId, entries, mockDeviceId);
+      const result = await service.syncTimeEntries(
+        mockUserId,
+        entries,
+        mockDeviceId,
+      );
 
       expect(result.successful).toBe(0);
       expect(result.failed).toBe(1);
@@ -1456,7 +1624,9 @@ describe('SyncService', () => {
         syncLog: { create: jest.fn() },
       };
 
-      mockTx1.timeEntry.create.mockRejectedValue(new Error('Validation failed'));
+      mockTx1.timeEntry.create.mockRejectedValue(
+        new Error('Validation failed'),
+      );
       mockTx2.timeEntry.create.mockResolvedValue(mockCreatedEntry);
       mockTx2.syncLog.create.mockResolvedValue({} as any);
 
@@ -1464,7 +1634,11 @@ describe('SyncService', () => {
         .mockImplementationOnce((callback: any) => callback(mockTx1))
         .mockImplementationOnce((callback: any) => callback(mockTx2));
 
-      const result = await service.syncTimeEntries(mockUserId, entries, mockDeviceId);
+      const result = await service.syncTimeEntries(
+        mockUserId,
+        entries,
+        mockDeviceId,
+      );
 
       expect(result.successful).toBe(1);
       expect(result.failed).toBe(1);
@@ -1490,7 +1664,11 @@ describe('SyncService', () => {
       mockETOService.useETO.mockResolvedValue(mockCreatedTransaction);
       mockPrismaService.syncLog.create.mockResolvedValue({} as any);
 
-      const result = await service.syncETOTransactions(mockUserId, transactions, mockDeviceId);
+      const result = await service.syncETOTransactions(
+        mockUserId,
+        transactions,
+        mockDeviceId,
+      );
 
       expect(result.successful).toBe(1);
       expect(result.failed).toBe(0);
@@ -1515,7 +1693,11 @@ describe('SyncService', () => {
 
       mockPrismaService.syncLog.create.mockResolvedValue({} as any);
 
-      const result = await service.syncETOTransactions(mockUserId, transactions, mockDeviceId);
+      const result = await service.syncETOTransactions(
+        mockUserId,
+        transactions,
+        mockDeviceId,
+      );
 
       expect(result.successful).toBe(0);
       expect(result.failed).toBe(1);
@@ -1540,10 +1722,16 @@ describe('SyncService', () => {
         createdAt: new Date('2024-04-12T09:00:00Z'), // Before lastSyncedAt - no conflict
       };
 
-      mockPrismaService.eTOTransaction.findFirst.mockResolvedValue(mockETOTransaction);
+      mockPrismaService.eTOTransaction.findFirst.mockResolvedValue(
+        mockETOTransaction,
+      );
       mockPrismaService.syncLog.create.mockResolvedValue({} as any);
 
-      const result = await service.syncETOTransactions(mockUserId, transactions, mockDeviceId);
+      const result = await service.syncETOTransactions(
+        mockUserId,
+        transactions,
+        mockDeviceId,
+      );
 
       expect(result.successful).toBe(0);
       expect(result.failed).toBe(1);
@@ -1561,7 +1749,10 @@ describe('SyncService', () => {
         },
       ];
 
-      const mockCreatedSubmission = { id: 'submission-1', consultantId: mockUserId };
+      const mockCreatedSubmission = {
+        id: 'submission-1',
+        consultantId: mockUserId,
+      };
 
       // Mock transaction to execute callback with mocked tx client
       const mockTx = {
@@ -1573,12 +1764,20 @@ describe('SyncService', () => {
       };
 
       mockTx.timesheetSubmission.findUnique.mockResolvedValue(null); // Not exists
-      mockTx.timesheetSubmission.create.mockResolvedValue(mockCreatedSubmission);
+      mockTx.timesheetSubmission.create.mockResolvedValue(
+        mockCreatedSubmission,
+      );
       mockTx.syncLog.create.mockResolvedValue({} as any);
 
-      mockPrismaService.$transaction.mockImplementation((callback: any) => callback(mockTx));
+      mockPrismaService.$transaction.mockImplementation((callback: any) =>
+        callback(mockTx),
+      );
 
-      const result = await service.syncTimesheetSubmissions(mockUserId, submissions, mockDeviceId);
+      const result = await service.syncTimesheetSubmissions(
+        mockUserId,
+        submissions,
+        mockDeviceId,
+      );
 
       expect(result.successful).toBe(1);
       expect(result.failed).toBe(0);
@@ -1603,7 +1802,10 @@ describe('SyncService', () => {
         },
       ];
 
-      const mockExistingSubmission = { id: 'submission-1', consultantId: mockUserId };
+      const mockExistingSubmission = {
+        id: 'submission-1',
+        consultantId: mockUserId,
+      };
 
       // Mock transaction to execute callback with mocked tx client
       const mockTx = {
@@ -1614,11 +1816,19 @@ describe('SyncService', () => {
         syncLog: { create: jest.fn() },
       };
 
-      mockTx.timesheetSubmission.findUnique.mockResolvedValue(mockExistingSubmission);
+      mockTx.timesheetSubmission.findUnique.mockResolvedValue(
+        mockExistingSubmission,
+      );
 
-      mockPrismaService.$transaction.mockImplementation((callback: any) => callback(mockTx));
+      mockPrismaService.$transaction.mockImplementation((callback: any) =>
+        callback(mockTx),
+      );
 
-      const result = await service.syncTimesheetSubmissions(mockUserId, submissions, mockDeviceId);
+      const result = await service.syncTimesheetSubmissions(
+        mockUserId,
+        submissions,
+        mockDeviceId,
+      );
 
       expect(result.successful).toBe(0);
       expect(result.failed).toBe(1);
@@ -1636,7 +1846,10 @@ describe('SyncService', () => {
         },
       ];
 
-      const mockUpdatedSubmission = { id: 'submission-1', consultantId: mockUserId };
+      const mockUpdatedSubmission = {
+        id: 'submission-1',
+        consultantId: mockUserId,
+      };
 
       // Mock transaction to execute callback with mocked tx client
       const mockTx = {
@@ -1646,12 +1859,20 @@ describe('SyncService', () => {
         syncLog: { create: jest.fn() },
       };
 
-      mockTx.timesheetSubmission.update.mockResolvedValue(mockUpdatedSubmission);
+      mockTx.timesheetSubmission.update.mockResolvedValue(
+        mockUpdatedSubmission,
+      );
       mockTx.syncLog.create.mockResolvedValue({} as any);
 
-      mockPrismaService.$transaction.mockImplementation((callback: any) => callback(mockTx));
+      mockPrismaService.$transaction.mockImplementation((callback: any) =>
+        callback(mockTx),
+      );
 
-      const result = await service.syncTimesheetSubmissions(mockUserId, submissions, mockDeviceId);
+      const result = await service.syncTimesheetSubmissions(
+        mockUserId,
+        submissions,
+        mockDeviceId,
+      );
 
       expect(result.successful).toBe(1);
       expect(result.failed).toBe(0);
@@ -1681,7 +1902,11 @@ describe('SyncService', () => {
 
       mockPrismaService.syncLog.create.mockResolvedValue({} as any);
 
-      const result = await service.syncTimesheetSubmissions(mockUserId, submissions, mockDeviceId);
+      const result = await service.syncTimesheetSubmissions(
+        mockUserId,
+        submissions,
+        mockDeviceId,
+      );
 
       expect(result.successful).toBe(0);
       expect(result.failed).toBe(1);

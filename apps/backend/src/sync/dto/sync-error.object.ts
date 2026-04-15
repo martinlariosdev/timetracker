@@ -9,12 +9,18 @@ export class SyncError {
   @Field(() => String, { description: 'ID of the entity that failed to sync' })
   entityId: string;
 
-  @Field(() => String, { description: 'Type of entity (TimeEntry, ETOTransaction, etc.)' })
+  @Field(() => String, {
+    description: 'Type of entity (TimeEntry, ETOTransaction, etc.)',
+  })
   entityType: string;
 
-  @Field(() => String, { description: 'Operation that was attempted (CREATE, UPDATE, DELETE)' })
+  @Field(() => String, {
+    description: 'Operation that was attempted (CREATE, UPDATE, DELETE)',
+  })
   operation: string;
 
-  @Field(() => String, { description: 'Error message describing what went wrong' })
+  @Field(() => String, {
+    description: 'Error message describing what went wrong',
+  })
   error: string;
 }

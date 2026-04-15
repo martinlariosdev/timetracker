@@ -15,13 +15,19 @@ export const updateTimeEntrySchema = createTimeEntrySchema.partial();
  */
 @InputType({ description: 'Input for updating an existing time entry' })
 export class UpdateTimeEntryInput extends createZodDto(updateTimeEntrySchema) {
-  @Field({ nullable: true, description: 'Date of the time entry in YYYY-MM-DD format' })
+  @Field({
+    nullable: true,
+    description: 'Date of the time entry in YYYY-MM-DD format',
+  })
   date?: string;
 
   @Field(() => Float, { nullable: true, description: 'Total hours worked' })
   totalHours?: number;
 
-  @Field({ nullable: true, description: 'Project or task number (e.g., PROJ-123)' })
+  @Field({
+    nullable: true,
+    description: 'Project or task number (e.g., PROJ-123)',
+  })
   projectTaskNumber?: string;
 
   @Field({ nullable: true, description: 'Name of the client' })
@@ -33,12 +39,21 @@ export class UpdateTimeEntryInput extends createZodDto(updateTimeEntrySchema) {
   @Field({ nullable: true, description: 'First clock-in time in HH:mm format' })
   inTime1?: string;
 
-  @Field({ nullable: true, description: 'First clock-out time in HH:mm format' })
+  @Field({
+    nullable: true,
+    description: 'First clock-out time in HH:mm format',
+  })
   outTime1?: string;
 
-  @Field({ nullable: true, description: 'Second clock-in time in HH:mm format for split shifts' })
+  @Field({
+    nullable: true,
+    description: 'Second clock-in time in HH:mm format for split shifts',
+  })
   inTime2?: string;
 
-  @Field({ nullable: true, description: 'Second clock-out time in HH:mm format for split shifts' })
+  @Field({
+    nullable: true,
+    description: 'Second clock-out time in HH:mm format for split shifts',
+  })
   outTime2?: string;
 }

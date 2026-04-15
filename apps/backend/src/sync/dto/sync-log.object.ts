@@ -34,7 +34,9 @@ registerEnumType(SyncOperationType, {
  * Represents a sync operation log record
  * Corresponds to the SyncLog Prisma model
  */
-@ObjectType({ description: 'Sync operation log record for tracking offline sync operations' })
+@ObjectType({
+  description: 'Sync operation log record for tracking offline sync operations',
+})
 export class SyncLogObjectType {
   @Field(() => ID, { description: 'Unique identifier for the sync log' })
   id: string;
@@ -42,13 +44,17 @@ export class SyncLogObjectType {
   @Field(() => ID, { description: 'ID of the user who performed the sync' })
   userId: string;
 
-  @Field(() => String, { description: 'Device identifier that performed the sync' })
+  @Field(() => String, {
+    description: 'Device identifier that performed the sync',
+  })
   deviceId: string;
 
   @Field(() => SyncEntityType, { description: 'Type of entity being synced' })
   entityType: SyncEntityType;
 
-  @Field(() => SyncOperationType, { description: 'Type of operation performed' })
+  @Field(() => SyncOperationType, {
+    description: 'Type of operation performed',
+  })
   operation: SyncOperationType;
 
   @Field(() => ID, { description: 'ID of the entity that was synced' })
@@ -57,9 +63,14 @@ export class SyncLogObjectType {
   @Field(() => Date, { description: 'Timestamp when the sync occurred' })
   syncedAt: Date;
 
-  @Field(() => Boolean, { description: 'Whether the sync operation was successful' })
+  @Field(() => Boolean, {
+    description: 'Whether the sync operation was successful',
+  })
   success: boolean;
 
-  @Field(() => String, { nullable: true, description: 'Error message if sync failed' })
+  @Field(() => String, {
+    nullable: true,
+    description: 'Error message if sync failed',
+  })
   error?: string | null;
 }

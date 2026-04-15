@@ -3,4 +3,8 @@ export { CreateTimeEntryInput } from './create-time-entry.input';
 export { UpdateTimeEntryInput } from './update-time-entry.input';
 export { TimeEntryFiltersInput } from './time-entry-filters.input';
 export { TimesheetSubmissionType } from './submission.type';
-export { SubmitTimesheetInput, ApproveTimesheetInput, RejectTimesheetInput } from './submission.input';
+export {
+  SubmitTimesheetInput,
+  ApproveTimesheetInput,
+  RejectTimesheetInput,
+} from './submission.input';

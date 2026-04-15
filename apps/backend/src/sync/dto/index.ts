@@ -1,4 +1,8 @@
-export { SyncLogObjectType, SyncEntityType, SyncOperationType } from './sync-log.object';
+export {
+  SyncLogObjectType,
+  SyncEntityType,
+  SyncOperationType,
+} from './sync-log.object';
 export { CreateSyncLogInput } from './create-sync-log.input';
 export { SyncFilterInput } from './sync-filter.input';
 export { ConflictInfo } from './conflict-info.object';

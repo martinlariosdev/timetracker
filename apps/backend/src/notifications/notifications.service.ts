@@ -110,9 +110,7 @@ export class NotificationsService {
         return false;
       }
 
-      this.logger.log(
-        `Notification sent to ${consultant.name}: "${title}"`,
-      );
+      this.logger.log(`Notification sent to ${consultant.name}: "${title}"`);
       return true;
     } catch (error) {
       this.logger.error(

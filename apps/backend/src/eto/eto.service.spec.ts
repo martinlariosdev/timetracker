@@ -68,10 +68,11 @@ describe('ETOService', () => {
     it('should throw NotFoundException if consultant not found', async () => {
       mockPrismaService.consultant.findUnique.mockResolvedValue(null);
 
-      await expect(service.getBalance('invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.getBalance('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
-
 
   describe('getTransactions', () => {
     it('should return ETO transactions with limit and offset', async () => {
@@ -89,7 +90,9 @@ describe('ETOService', () => {
       ];
 
       mockPrismaService.consultant.findUnique.mockResolvedValue(mockConsultant);
-      mockPrismaService.eTOTransaction.findMany.mockResolvedValue(mockTransactions);
+      mockPrismaService.eTOTransaction.findMany.mockResolvedValue(
+        mockTransactions,
+      );
 
       const result = await service.getTransactions(mockConsultant.id, 10, 5);
 
@@ -123,7 +126,9 @@ describe('ETOService', () => {
     it('should throw NotFoundException if consultant not found', async () => {
       mockPrismaService.consultant.findUnique.mockResolvedValue(null);
 
-      await expect(service.getTransactions('invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.getTransactions('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -295,7 +300,9 @@ describe('ETOService', () => {
         description: 'Invalid',
       };
 
-      await expect(service.adjustETO(input)).rejects.toThrow('Hours must be positive');
+      await expect(service.adjustETO(input)).rejects.toThrow(
+        'Hours must be positive',
+      );
     });
 
     it('should throw BadRequestException if adjustment would result in negative balance', async () => {

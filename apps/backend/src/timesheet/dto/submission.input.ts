@@ -29,6 +29,8 @@ export class RejectTimesheetInput {
   @Field(() => ID, { description: 'ID of the submission to reject' })
   submissionId: string;
 
-  @Field({ description: 'Required comments explaining why the timesheet was rejected' })
+  @Field({
+    description: 'Required comments explaining why the timesheet was rejected',
+  })
   comments: string;
 }

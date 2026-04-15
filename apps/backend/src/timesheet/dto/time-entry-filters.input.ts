@@ -12,7 +12,10 @@ export class TimeEntryFiltersInput {
   @Field(() => ID, { nullable: true, description: 'Filter by pay period ID' })
   payPeriodId?: string;
 
-  @Field({ nullable: true, description: 'Filter entries from this date onwards' })
+  @Field({
+    nullable: true,
+    description: 'Filter entries from this date onwards',
+  })
   startDate?: Date;
 
   @Field({ nullable: true, description: 'Filter entries up to this date' })

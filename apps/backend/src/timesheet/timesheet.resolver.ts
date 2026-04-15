@@ -29,7 +29,9 @@ export class TimesheetResolver {
    * @param user - Current authenticated user
    * @returns Array of time entries
    */
-  @Query(() => [TimeEntryType], { description: 'Get all time entries for the current user' })
+  @Query(() => [TimeEntryType], {
+    description: 'Get all time entries for the current user',
+  })
   async timeEntries(
     @Args('filters', { nullable: true }) filters: TimeEntryFiltersInput,
     @CurrentUser() user: Consultant,
@@ -50,10 +52,7 @@ export class TimesheetResolver {
    * @throws ForbiddenException if entry doesn't belong to user
    */
   @Query(() => TimeEntryType, { description: 'Get a single time entry by ID' })
-  async timeEntry(
-    @Args('id') id: string,
-    @CurrentUser() user: Consultant,
-  ) {
+  async timeEntry(@Args('id') id: string, @CurrentUser() user: Consultant) {
     const entry = await this.timesheetService.findOne(id);
 
     // Check authorization
@@ -92,7 +91,9 @@ export class TimesheetResolver {
    * @returns Updated time entry
    * @throws ForbiddenException if entry doesn't belong to user
    */
-  @Mutation(() => TimeEntryType, { description: 'Update an existing time entry' })
+  @Mutation(() => TimeEntryType, {
+    description: 'Update an existing time entry',
+  })
   async updateTimeEntry(
     @Args('id') id: string,
     @Args('input') input: UpdateTimeEntryInput,

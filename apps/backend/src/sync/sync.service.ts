@@ -1,4 +1,10 @@
-import { Injectable, Logger, BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { TimesheetService } from '../timesheet/timesheet.service';
@@ -47,9 +53,18 @@ export class SyncService {
    * @param data - Sync operation details (device, entity, operation, etc.)
    * @returns Created sync log entry
    */
-  async createSyncLog(userId: string, data: CreateSyncLogInput): Promise<SyncLogObjectType> {
+  async createSyncLog(
+    userId: string,
+    data: CreateSyncLogInput,
+  ): Promise<SyncLogObjectType> {
     // Validate required fields
-    if (!userId || !data.deviceId || !data.entityType || !data.operation || !data.entityId) {
+    if (
+      !userId ||
+      !data.deviceId ||
+      !data.entityType ||
+      !data.operation ||
+      !data.entityId
+    ) {
       throw new BadRequestException('Missing required fields for sync log');
     }
 
@@ -137,7 +152,10 @@ export class SyncService {
    * @param deviceId - Optional device ID filter
    * @returns Array of failed sync logs ordered by syncedAt desc
    */
-  async getFailedSyncLogs(userId: string, deviceId?: string): Promise<SyncLogObjectType[]> {
+  async getFailedSyncLogs(
+    userId: string,
+    deviceId?: string,
+  ): Promise<SyncLogObjectType[]> {
     // Validate required fields
     if (!userId) {
       throw new BadRequestException('User ID is required');
@@ -159,13 +177,17 @@ export class SyncService {
         take: DEFAULT_SYNC_LOG_LIMIT,
       });
 
-      this.logger.log(`Found ${syncLogs.length} failed sync logs for user ${userId}`);
+      this.logger.log(
+        `Found ${syncLogs.length} failed sync logs for user ${userId}`,
+      );
 
       return syncLogs as SyncLogObjectType[];
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       this.logger.error(`Failed to get failed sync logs: ${message}`);
-      throw new InternalServerErrorException('Failed to retrieve failed sync logs');
+      throw new InternalServerErrorException(
+        'Failed to retrieve failed sync logs',
+      );
     }
   }
 
@@ -184,7 +206,9 @@ export class SyncService {
   ): Promise<SyncLogObjectType[]> {
     // Validate required fields
     if (!userId || !entityType || !entityId) {
-      throw new BadRequestException('User ID, entity type, and entity ID are required');
+      throw new BadRequestException(
+        'User ID, entity type, and entity ID are required',
+      );
     }
 
     try {
@@ -202,7 +226,9 @@ export class SyncService {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       this.logger.error(`Failed to get sync logs by entity: ${message}`);
-      throw new InternalServerErrorException('Failed to retrieve sync logs for entity');
+      throw new InternalServerErrorException(
+        'Failed to retrieve sync logs for entity',
+      );
     }
   }
 
@@ -223,15 +249,23 @@ export class SyncService {
   ): Promise<ConflictInfo> {
     // Validate required fields
     if (!userId || !entityType || !entityId || !lastSyncedAt) {
-      throw new BadRequestException('All fields are required for conflict detection');
+      throw new BadRequestException(
+        'All fields are required for conflict detection',
+      );
     }
 
     try {
       // Fetch the entity from the database based on type
-      const serverEntity = await this.getEntityByType(userId, entityType, entityId);
+      const serverEntity = await this.getEntityByType(
+        userId,
+        entityType,
+        entityId,
+      );
 
       if (!serverEntity) {
-        throw new NotFoundException(`${entityType} with ID ${entityId} not found`);
+        throw new NotFoundException(
+          `${entityType} with ID ${entityId} not found`,
+        );
       }
 
       // Check if entity was modified after client's last sync
@@ -268,7 +302,10 @@ export class SyncService {
         conflictDetails: `Server data was modified after client's last sync (server: ${serverTimestamp?.toISOString()}, client: ${lastSyncedAt.toISOString()})`,
       };
     } catch (err) {
-      if (err instanceof NotFoundException || err instanceof BadRequestException) {
+      if (
+        err instanceof NotFoundException ||
+        err instanceof BadRequestException
+      ) {
         throw err;
       }
       const message = err instanceof Error ? err.message : String(err);
@@ -287,19 +324,26 @@ export class SyncService {
     userId: string,
     resolution: ResolveConflictInput,
   ): Promise<ResolvedConflict> {
-    const { entityType, entityId, strategy, clientData, serverData } = resolution;
+    const { entityType, entityId, strategy, clientData, serverData } =
+      resolution;
 
     // Validate required fields
     if (!userId || !entityType || !entityId || !strategy) {
-      throw new BadRequestException('User ID, entity type, entity ID, and strategy are required');
+      throw new BadRequestException(
+        'User ID, entity type, entity ID, and strategy are required',
+      );
     }
 
     try {
       // Fetch server data if not provided
-      const serverEntity = serverData || await this.getEntityByType(userId, entityType, entityId);
+      const serverEntity =
+        serverData ||
+        (await this.getEntityByType(userId, entityType, entityId));
 
       if (!serverEntity) {
-        throw new NotFoundException(`${entityType} with ID ${entityId} not found`);
+        throw new NotFoundException(
+          `${entityType} with ID ${entityId} not found`,
+        );
       }
 
       let finalData: Record<string, any>;
@@ -316,10 +360,17 @@ export class SyncService {
 
         case ConflictResolutionStrategy.CLIENT_WINS:
           if (!clientData) {
-            throw new BadRequestException('Client data is required for CLIENT_WINS strategy');
+            throw new BadRequestException(
+              'Client data is required for CLIENT_WINS strategy',
+            );
           }
           // Update the entity with client data
-          finalData = await this.updateEntityByType(userId, entityType, entityId, clientData);
+          finalData = await this.updateEntityByType(
+            userId,
+            entityType,
+            entityId,
+            clientData,
+          );
           message = 'Client data applied, server changes overwritten';
           this.logger.log(
             `Conflict resolved with CLIENT_WINS for ${entityType} ${entityId} by user ${userId}`,
@@ -332,14 +383,17 @@ export class SyncService {
             serverVersion: serverEntity,
             clientVersion: clientData || null,
           };
-          message = 'Manual merge required - both versions returned for client handling';
+          message =
+            'Manual merge required - both versions returned for client handling';
           this.logger.log(
             `Conflict flagged for MANUAL_MERGE for ${entityType} ${entityId} by user ${userId}`,
           );
           break;
 
         default:
-          throw new BadRequestException(`Unknown conflict resolution strategy: ${strategy}`);
+          throw new BadRequestException(
+            `Unknown conflict resolution strategy: ${strategy}`,
+          );
       }
 
       return {
@@ -642,8 +696,11 @@ export class SyncService {
         await this.syncSingleTimeEntry(userId, entry, deviceId, result);
       } catch (error) {
         // Handle unexpected errors
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        this.logger.error(`Unexpected error syncing time entry: ${errorMessage}`);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `Unexpected error syncing time entry: ${errorMessage}`,
+        );
         result.failed++;
         result.errors.push({
           entityId: entry.id || 'unknown',
@@ -743,8 +800,12 @@ export class SyncService {
               description: createData.description,
               inTime1: this.parseTimeToDateTime(dateStr, createData.inTime1),
               outTime1: this.parseTimeToDateTime(dateStr, createData.outTime1),
-              inTime2: createData.inTime2 ? this.parseTimeToDateTime(dateStr, createData.inTime2) : null,
-              outTime2: createData.outTime2 ? this.parseTimeToDateTime(dateStr, createData.outTime2) : null,
+              inTime2: createData.inTime2
+                ? this.parseTimeToDateTime(dateStr, createData.inTime2)
+                : null,
+              outTime2: createData.outTime2
+                ? this.parseTimeToDateTime(dateStr, createData.outTime2)
+                : null,
               totalHours,
               synced: true,
             },
@@ -787,7 +848,8 @@ export class SyncService {
 
           if (conflictInfo.hasConflict) {
             // Apply resolution strategy
-            const resolution = entry.resolution || ConflictResolutionStrategy.SERVER_WINS;
+            const resolution =
+              entry.resolution || ConflictResolutionStrategy.SERVER_WINS;
 
             if (resolution === ConflictResolutionStrategy.MANUAL_MERGE) {
               // Add to conflicts list for manual resolution
@@ -806,7 +868,9 @@ export class SyncService {
 
             if (resolution === ConflictResolutionStrategy.CLIENT_WINS) {
               // Proceed with update (client wins)
-              this.logger.log(`Applying CLIENT_WINS for time entry ${entry.id}`);
+              this.logger.log(
+                `Applying CLIENT_WINS for time entry ${entry.id}`,
+              );
             } else {
               // SERVER_WINS - skip update
               result.successful++;
@@ -845,10 +909,14 @@ export class SyncService {
           prismaUpdateData.projectTaskNumber = entry.projectTaskNumber;
         }
         if (entry.inTime2 !== undefined) {
-          prismaUpdateData.inTime2 = entry.inTime2 ? this.parseTimeToDateTime(dateStr, entry.inTime2) : null;
+          prismaUpdateData.inTime2 = entry.inTime2
+            ? this.parseTimeToDateTime(dateStr, entry.inTime2)
+            : null;
         }
         if (entry.outTime2 !== undefined) {
-          prismaUpdateData.outTime2 = entry.outTime2 ? this.parseTimeToDateTime(dateStr, entry.outTime2) : null;
+          prismaUpdateData.outTime2 = entry.outTime2
+            ? this.parseTimeToDateTime(dateStr, entry.outTime2)
+            : null;
         }
 
         // Use transaction for atomicity between time entry update and sync log
@@ -882,7 +950,8 @@ export class SyncService {
 
       throw new BadRequestException(`Unknown operation: ${entry.operation}`);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       result.failed++;
       result.errors.push({
         entityId,
@@ -925,11 +994,19 @@ export class SyncService {
     // Process transactions sequentially to avoid race conditions
     for (const transaction of transactions) {
       try {
-        await this.syncSingleETOTransaction(userId, transaction, deviceId, result);
+        await this.syncSingleETOTransaction(
+          userId,
+          transaction,
+          deviceId,
+          result,
+        );
       } catch (error) {
         // Handle unexpected errors
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        this.logger.error(`Unexpected error syncing ETO transaction: ${errorMessage}`);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `Unexpected error syncing ETO transaction: ${errorMessage}`,
+        );
         result.failed++;
         result.errors.push({
           entityId: transaction.id || 'unknown',
@@ -967,7 +1044,9 @@ export class SyncService {
         }
 
         // ETO transactions should not be deleted directly - use adjustments
-        throw new BadRequestException('ETO transactions cannot be deleted. Use adjustments instead.');
+        throw new BadRequestException(
+          'ETO transactions cannot be deleted. Use adjustments instead.',
+        );
       }
 
       // Handle CREATE operation (use ETO)
@@ -990,8 +1069,11 @@ export class SyncService {
             success: true,
           });
         } catch (logError) {
-          const logErrorMessage = logError instanceof Error ? logError.message : String(logError);
-          this.logger.error(`Failed to create sync log for ETO transaction ${created.id}: ${logErrorMessage}`);
+          const logErrorMessage =
+            logError instanceof Error ? logError.message : String(logError);
+          this.logger.error(
+            `Failed to create sync log for ETO transaction ${created.id}: ${logErrorMessage}`,
+          );
           // Don't fail the operation, but note the logging issue
         }
 
@@ -1017,7 +1099,8 @@ export class SyncService {
 
           if (conflictInfo.hasConflict) {
             // Apply resolution strategy
-            const resolution = transaction.resolution || ConflictResolutionStrategy.SERVER_WINS;
+            const resolution =
+              transaction.resolution || ConflictResolutionStrategy.SERVER_WINS;
 
             if (resolution === ConflictResolutionStrategy.MANUAL_MERGE) {
               // Add to conflicts list for manual resolution
@@ -1036,7 +1119,9 @@ export class SyncService {
 
             if (resolution === ConflictResolutionStrategy.CLIENT_WINS) {
               // Proceed with update (client wins)
-              this.logger.log(`Applying CLIENT_WINS for ETO transaction ${transaction.id}`);
+              this.logger.log(
+                `Applying CLIENT_WINS for ETO transaction ${transaction.id}`,
+              );
             } else {
               // SERVER_WINS - skip update
               result.successful++;
@@ -1054,12 +1139,17 @@ export class SyncService {
         }
 
         // ETO transactions are immutable after creation - use adjustments
-        throw new BadRequestException('ETO transactions cannot be updated. Use adjustments instead.');
+        throw new BadRequestException(
+          'ETO transactions cannot be updated. Use adjustments instead.',
+        );
       }
 
-      throw new BadRequestException(`Unknown operation: ${transaction.operation}`);
+      throw new BadRequestException(
+        `Unknown operation: ${transaction.operation}`,
+      );
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       result.failed++;
       result.errors.push({
         entityId,
@@ -1102,11 +1192,19 @@ export class SyncService {
     // Process submissions sequentially to avoid race conditions
     for (const submission of submissions) {
       try {
-        await this.syncSingleTimesheetSubmission(userId, submission, deviceId, result);
+        await this.syncSingleTimesheetSubmission(
+          userId,
+          submission,
+          deviceId,
+          result,
+        );
       } catch (error) {
         // Handle unexpected errors
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        this.logger.error(`Unexpected error syncing timesheet submission: ${errorMessage}`);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `Unexpected error syncing timesheet submission: ${errorMessage}`,
+        );
         result.failed++;
         result.errors.push({
           entityId: submission.id || 'unknown',
@@ -1144,7 +1242,9 @@ export class SyncService {
         }
 
         // Timesheet submissions should not be deleted - use draft status instead
-        throw new BadRequestException('Timesheet submissions cannot be deleted. Use draft status instead.');
+        throw new BadRequestException(
+          'Timesheet submissions cannot be deleted. Use draft status instead.',
+        );
       }
 
       // Handle CREATE operation
@@ -1162,7 +1262,9 @@ export class SyncService {
           });
 
           if (existing) {
-            throw new BadRequestException(`Submission already exists for pay period ${submission.payPeriodId}`);
+            throw new BadRequestException(
+              `Submission already exists for pay period ${submission.payPeriodId}`,
+            );
           }
 
           // Create draft submission
@@ -1213,7 +1315,8 @@ export class SyncService {
 
           if (conflictInfo.hasConflict) {
             // Apply resolution strategy
-            const resolution = submission.resolution || ConflictResolutionStrategy.SERVER_WINS;
+            const resolution =
+              submission.resolution || ConflictResolutionStrategy.SERVER_WINS;
 
             if (resolution === ConflictResolutionStrategy.MANUAL_MERGE) {
               // Add to conflicts list for manual resolution
@@ -1232,7 +1335,9 @@ export class SyncService {
 
             if (resolution === ConflictResolutionStrategy.CLIENT_WINS) {
               // Proceed with update (client wins)
-              this.logger.log(`Applying CLIENT_WINS for timesheet submission ${submission.id}`);
+              this.logger.log(
+                `Applying CLIENT_WINS for timesheet submission ${submission.id}`,
+              );
             } else {
               // SERVER_WINS - skip update
               result.successful++;
@@ -1291,9 +1396,12 @@ export class SyncService {
         return;
       }
 
-      throw new BadRequestException(`Unknown operation: ${submission.operation}`);
+      throw new BadRequestException(
+        `Unknown operation: ${submission.operation}`,
+      );
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       result.failed++;
       result.errors.push({
         entityId,

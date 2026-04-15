@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UseETOInput, AdjustETOInput, ETOTransactionObjectType } from './dto';
 import { ETOTransactionType } from './dto/eto-transaction.object';
@@ -28,12 +33,13 @@ export class ETOService {
     });
 
     if (!consultant) {
-      throw new NotFoundException(`Consultant with ID ${consultantId} not found`);
+      throw new NotFoundException(
+        `Consultant with ID ${consultantId} not found`,
+      );
     }
 
     return consultant.etoBalance;
   }
-
 
   /**
    * Get ETO transactions for a consultant
@@ -42,7 +48,11 @@ export class ETOService {
    * @param offset - Number of transactions to skip
    * @returns Array of ETO transactions
    */
-  async getTransactions(consultantId: string, limit?: number, offset?: number): Promise<ETOTransactionObjectType[]> {
+  async getTransactions(
+    consultantId: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<ETOTransactionObjectType[]> {
     // Verify consultant exists and get current balance for running balance calculation
     const consultant = await this.prisma.consultant.findUnique({
       where: { id: consultantId },
@@ -50,7 +60,9 @@ export class ETOService {
     });
 
     if (!consultant) {
-      throw new NotFoundException(`Consultant with ID ${consultantId} not found`);
+      throw new NotFoundException(
+        `Consultant with ID ${consultantId} not found`,
+      );
     }
 
     const where = { consultantId };
@@ -76,7 +88,10 @@ export class ETOService {
         take: offset,
         select: { hours: true },
       });
-      const skippedHours = skippedTransactions.reduce((sum, tx) => sum + tx.hours, 0);
+      const skippedHours = skippedTransactions.reduce(
+        (sum, tx) => sum + tx.hours,
+        0,
+      );
       runningBalance = Math.round((runningBalance - skippedHours) * 100) / 100;
     }
     const withRunningBalance = transactions.map((tx) => {
@@ -100,7 +115,10 @@ export class ETOService {
    * @returns Created ETO transaction
    * @throws BadRequestException if insufficient balance
    */
-  async useETO(consultantId: string, input: UseETOInput): Promise<ETOTransactionObjectType> {
+  async useETO(
+    consultantId: string,
+    input: UseETOInput,
+  ): Promise<ETOTransactionObjectType> {
     const { hours, date, description, projectName } = input;
 
     // Validate that hours is positive
@@ -117,7 +135,9 @@ export class ETOService {
       });
 
       if (!consultant) {
-        throw new NotFoundException(`Consultant with ID ${consultantId} not found`);
+        throw new NotFoundException(
+          `Consultant with ID ${consultantId} not found`,
+        );
       }
 
       // Check sufficient balance inside transaction
@@ -150,7 +170,9 @@ export class ETOService {
         },
       });
 
-      this.logger.log(`Consultant ${consultantId} used ${hours} hours of ETO. New balance: ${consultant.etoBalance - hours}`);
+      this.logger.log(
+        `Consultant ${consultantId} used ${hours} hours of ETO. New balance: ${consultant.etoBalance - hours}`,
+      );
       return transaction as ETOTransactionObjectType;
     });
 
@@ -186,7 +208,9 @@ export class ETOService {
       });
 
       if (!consultant) {
-        throw new NotFoundException(`Consultant with ID ${consultantId} not found`);
+        throw new NotFoundException(
+          `Consultant with ID ${consultantId} not found`,
+        );
       }
 
       // Check that adjustment won't result in negative balance inside transaction
@@ -219,7 +243,9 @@ export class ETOService {
         },
       });
 
-      this.logger.log(`Consultant ${consultantId} ETO adjusted by ${actualHours} hours (${transactionType})`);
+      this.logger.log(
+        `Consultant ${consultantId} ETO adjusted by ${actualHours} hours (${transactionType})`,
+      );
       return transaction as ETOTransactionObjectType;
     });
 

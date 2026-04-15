@@ -98,7 +98,10 @@ describe('SubmissionResolver', () => {
       const result = await resolver.submitTimesheet(input, mockUser as any);
 
       expect(result).toEqual(mockSubmission);
-      expect(service.submitTimesheet).toHaveBeenCalledWith('consultant-1', 'period-1');
+      expect(service.submitTimesheet).toHaveBeenCalledWith(
+        'consultant-1',
+        'period-1',
+      );
     });
   });
 
@@ -111,10 +114,15 @@ describe('SubmissionResolver', () => {
         approvedBy: 'ext-teamlead-1',
       };
 
-      jest.spyOn(service, 'approveTimesheet').mockResolvedValue(approvedSubmission);
+      jest
+        .spyOn(service, 'approveTimesheet')
+        .mockResolvedValue(approvedSubmission);
 
       const input = { submissionId: 'submission-1', comments: 'Looks good' };
-      const result = await resolver.approveTimesheet(input, mockTeamLead as any);
+      const result = await resolver.approveTimesheet(
+        input,
+        mockTeamLead as any,
+      );
 
       expect(result).toEqual(approvedSubmission);
       expect(service.approveTimesheet).toHaveBeenCalledWith(
@@ -132,10 +140,15 @@ describe('SubmissionResolver', () => {
         approvedBy: 'ext-teamlead-1',
       };
 
-      jest.spyOn(service, 'approveTimesheet').mockResolvedValue(approvedSubmission);
+      jest
+        .spyOn(service, 'approveTimesheet')
+        .mockResolvedValue(approvedSubmission);
 
       const input = { submissionId: 'submission-1' };
-      const result = await resolver.approveTimesheet(input, mockTeamLead as any);
+      const result = await resolver.approveTimesheet(
+        input,
+        mockTeamLead as any,
+      );
 
       expect(result).toEqual(approvedSubmission);
       expect(service.approveTimesheet).toHaveBeenCalledWith(
@@ -156,7 +169,9 @@ describe('SubmissionResolver', () => {
         comments: 'Please fix hours for Jan 5',
       };
 
-      jest.spyOn(service, 'rejectTimesheet').mockResolvedValue(rejectedSubmission);
+      jest
+        .spyOn(service, 'rejectTimesheet')
+        .mockResolvedValue(rejectedSubmission);
 
       const input = {
         submissionId: 'submission-1',
@@ -177,7 +192,10 @@ describe('SubmissionResolver', () => {
     it('should return submission for the owner', async () => {
       jest.spyOn(service, 'getSubmission').mockResolvedValue(mockSubmission);
 
-      const result = await resolver.timesheetSubmission('submission-1', mockUser as any);
+      const result = await resolver.timesheetSubmission(
+        'submission-1',
+        mockUser as any,
+      );
 
       expect(result).toEqual(mockSubmission);
       expect(service.getSubmission).toHaveBeenCalledWith('submission-1');
@@ -212,12 +230,16 @@ describe('SubmissionResolver', () => {
   describe('myTimesheetSubmissions', () => {
     it('should return all submissions for the current user', async () => {
       const submissions = [mockSubmission];
-      jest.spyOn(service, 'getSubmissionsByConsultant').mockResolvedValue(submissions);
+      jest
+        .spyOn(service, 'getSubmissionsByConsultant')
+        .mockResolvedValue(submissions);
 
       const result = await resolver.myTimesheetSubmissions(mockUser as any);
 
       expect(result).toEqual(submissions);
-      expect(service.getSubmissionsByConsultant).toHaveBeenCalledWith('consultant-1');
+      expect(service.getSubmissionsByConsultant).toHaveBeenCalledWith(
+        'consultant-1',
+      );
     });
   });
 
@@ -228,10 +250,14 @@ describe('SubmissionResolver', () => {
         .spyOn(service, 'getSubmissionsForTeamLead')
         .mockResolvedValue(submissions);
 
-      const result = await resolver.pendingTimesheetSubmissions(mockTeamLead as any);
+      const result = await resolver.pendingTimesheetSubmissions(
+        mockTeamLead as any,
+      );
 
       expect(result).toEqual(submissions);
-      expect(service.getSubmissionsForTeamLead).toHaveBeenCalledWith('ext-teamlead-1');
+      expect(service.getSubmissionsForTeamLead).toHaveBeenCalledWith(
+        'ext-teamlead-1',
+      );
     });
   });
 });

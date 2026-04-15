@@ -96,7 +96,10 @@ describe('SyncResolver', () => {
       const result = await resolver.logSync(input, mockUser);
 
       expect(result).toEqual(mockSyncLog);
-      expect(mockSyncService.createSyncLog).toHaveBeenCalledWith(mockUser.id, input);
+      expect(mockSyncService.createSyncLog).toHaveBeenCalledWith(
+        mockUser.id,
+        input,
+      );
     });
 
     it('should create a failed sync log with error message', async () => {
@@ -126,7 +129,10 @@ describe('SyncResolver', () => {
       const result = await resolver.logSync(input, mockUser);
 
       expect(result).toEqual(mockSyncLog);
-      expect(mockSyncService.createSyncLog).toHaveBeenCalledWith(mockUser.id, input);
+      expect(mockSyncService.createSyncLog).toHaveBeenCalledWith(
+        mockUser.id,
+        input,
+      );
     });
   });
 
@@ -162,7 +168,10 @@ describe('SyncResolver', () => {
       const result = await resolver.syncLogs(mockUser, undefined);
 
       expect(result).toEqual(mockSyncLogs);
-      expect(mockSyncService.getSyncLogs).toHaveBeenCalledWith(mockUser.id, undefined);
+      expect(mockSyncService.getSyncLogs).toHaveBeenCalledWith(
+        mockUser.id,
+        undefined,
+      );
     });
 
     it('should return sync logs with filters', async () => {
@@ -191,7 +200,10 @@ describe('SyncResolver', () => {
       const result = await resolver.syncLogs(mockUser, filters);
 
       expect(result).toEqual(mockSyncLogs);
-      expect(mockSyncService.getSyncLogs).toHaveBeenCalledWith(mockUser.id, filters);
+      expect(mockSyncService.getSyncLogs).toHaveBeenCalledWith(
+        mockUser.id,
+        filters,
+      );
     });
 
     it('should return only failed syncs when onlyFailed filter is true', async () => {
@@ -218,7 +230,10 @@ describe('SyncResolver', () => {
       const result = await resolver.syncLogs(mockUser, filters);
 
       expect(result).toEqual(mockFailedSyncLogs);
-      expect(mockSyncService.getSyncLogs).toHaveBeenCalledWith(mockUser.id, filters);
+      expect(mockSyncService.getSyncLogs).toHaveBeenCalledWith(
+        mockUser.id,
+        filters,
+      );
     });
   });
 
@@ -254,7 +269,9 @@ describe('SyncResolver', () => {
       const result = await resolver.failedSyncs(mockUser);
 
       expect(result).toEqual(mockFailedSyncLogs);
-      expect(mockSyncService.getFailedSyncLogs).toHaveBeenCalledWith(mockUser.id);
+      expect(mockSyncService.getFailedSyncLogs).toHaveBeenCalledWith(
+        mockUser.id,
+      );
     });
 
     it('should return empty array if no failed syncs exist', async () => {
@@ -263,7 +280,9 @@ describe('SyncResolver', () => {
       const result = await resolver.failedSyncs(mockUser);
 
       expect(result).toEqual([]);
-      expect(mockSyncService.getFailedSyncLogs).toHaveBeenCalledWith(mockUser.id);
+      expect(mockSyncService.getFailedSyncLogs).toHaveBeenCalledWith(
+        mockUser.id,
+      );
     });
   });
 
@@ -285,12 +304,17 @@ describe('SyncResolver', () => {
         clientVersion: null,
         serverUpdatedAt: new Date('2024-04-12T11:00:00Z'),
         clientLastSyncedAt: lastSyncedAt,
-        conflictDetails: 'Server data was modified after client\'s last sync',
+        conflictDetails: "Server data was modified after client's last sync",
       };
 
       mockSyncService.detectConflict.mockResolvedValue(mockConflictInfo);
 
-      const result = await resolver.checkConflict(entityType, entityId, lastSyncedAt, mockUser);
+      const result = await resolver.checkConflict(
+        entityType,
+        entityId,
+        lastSyncedAt,
+        mockUser,
+      );
 
       expect(result).toEqual(mockConflictInfo);
       expect(mockSyncService.detectConflict).toHaveBeenCalledWith(
@@ -313,7 +337,12 @@ describe('SyncResolver', () => {
 
       mockSyncService.detectConflict.mockResolvedValue(mockConflictInfo);
 
-      const result = await resolver.checkConflict(entityType, entityId, lastSyncedAt, mockUser);
+      const result = await resolver.checkConflict(
+        entityType,
+        entityId,
+        lastSyncedAt,
+        mockUser,
+      );
 
       expect(result.hasConflict).toBe(false);
       expect(result.serverVersion).toBeNull();
@@ -340,12 +369,17 @@ describe('SyncResolver', () => {
         clientVersion: null,
         serverUpdatedAt: new Date('2024-04-12T11:00:00Z'),
         clientLastSyncedAt: lastSyncedAt,
-        conflictDetails: 'Server data was modified after client\'s last sync',
+        conflictDetails: "Server data was modified after client's last sync",
       };
 
       mockSyncService.detectConflict.mockResolvedValue(mockConflictInfo);
 
-      const result = await resolver.checkConflict(etoType, etoId, lastSyncedAt, mockUser);
+      const result = await resolver.checkConflict(
+        etoType,
+        etoId,
+        lastSyncedAt,
+        mockUser,
+      );
 
       expect(result.hasConflict).toBe(true);
       expect(mockSyncService.detectConflict).toHaveBeenCalledWith(
@@ -387,7 +421,10 @@ describe('SyncResolver', () => {
       expect(result).toEqual(mockResolvedConflict);
       expect(result.success).toBe(true);
       expect(result.strategy).toBe(ConflictResolutionStrategy.SERVER_WINS);
-      expect(mockSyncService.resolveConflict).toHaveBeenCalledWith(mockUser.id, input);
+      expect(mockSyncService.resolveConflict).toHaveBeenCalledWith(
+        mockUser.id,
+        input,
+      );
     });
 
     it('should resolve conflict with CLIENT_WINS strategy', async () => {
@@ -420,7 +457,10 @@ describe('SyncResolver', () => {
       expect(result).toEqual(mockResolvedConflict);
       expect(result.success).toBe(true);
       expect(result.strategy).toBe(ConflictResolutionStrategy.CLIENT_WINS);
-      expect(mockSyncService.resolveConflict).toHaveBeenCalledWith(mockUser.id, input);
+      expect(mockSyncService.resolveConflict).toHaveBeenCalledWith(
+        mockUser.id,
+        input,
+      );
     });
 
     it('should resolve conflict with MANUAL_MERGE strategy', async () => {
@@ -454,7 +494,8 @@ describe('SyncResolver', () => {
           clientVersion: clientData,
         },
         strategy: ConflictResolutionStrategy.MANUAL_MERGE,
-        message: 'Manual merge required - both versions returned for client handling',
+        message:
+          'Manual merge required - both versions returned for client handling',
       };
 
       mockSyncService.resolveConflict.mockResolvedValue(mockResolvedConflict);
@@ -466,7 +507,10 @@ describe('SyncResolver', () => {
       expect(result.strategy).toBe(ConflictResolutionStrategy.MANUAL_MERGE);
       expect(result.finalData).toHaveProperty('serverVersion');
       expect(result.finalData).toHaveProperty('clientVersion');
-      expect(mockSyncService.resolveConflict).toHaveBeenCalledWith(mockUser.id, input);
+      expect(mockSyncService.resolveConflict).toHaveBeenCalledWith(
+        mockUser.id,
+        input,
+      );
     });
 
     it('should resolve conflict for ETO transaction', async () => {
@@ -497,7 +541,10 @@ describe('SyncResolver', () => {
 
       expect(result.success).toBe(true);
       expect(result.finalData).toHaveProperty('id', etoId);
-      expect(mockSyncService.resolveConflict).toHaveBeenCalledWith(mockUser.id, input);
+      expect(mockSyncService.resolveConflict).toHaveBeenCalledWith(
+        mockUser.id,
+        input,
+      );
     });
 
     it('should resolve conflict for Timesheet Submission', async () => {
@@ -527,7 +574,10 @@ describe('SyncResolver', () => {
 
       expect(result.success).toBe(true);
       expect(result.finalData).toHaveProperty('status', 'submitted');
-      expect(mockSyncService.resolveConflict).toHaveBeenCalledWith(mockUser.id, input);
+      expect(mockSyncService.resolveConflict).toHaveBeenCalledWith(
+        mockUser.id,
+        input,
+      );
     });
   });
 
@@ -563,12 +613,20 @@ describe('SyncResolver', () => {
 
       mockSyncService.syncTimeEntries.mockResolvedValue(mockResult);
 
-      const result = await resolver.syncTimeEntries(entries, mockDeviceId, mockUser);
+      const result = await resolver.syncTimeEntries(
+        entries,
+        mockDeviceId,
+        mockUser,
+      );
 
       expect(result).toEqual(mockResult);
       expect(result.successful).toBe(2);
       expect(result.failed).toBe(0);
-      expect(mockSyncService.syncTimeEntries).toHaveBeenCalledWith(mockUser.id, entries, mockDeviceId);
+      expect(mockSyncService.syncTimeEntries).toHaveBeenCalledWith(
+        mockUser.id,
+        entries,
+        mockDeviceId,
+      );
     });
 
     it('should handle partial failures in batch sync', async () => {
@@ -609,12 +667,20 @@ describe('SyncResolver', () => {
 
       mockSyncService.syncTimeEntries.mockResolvedValue(mockResult);
 
-      const result = await resolver.syncTimeEntries(entries, mockDeviceId, mockUser);
+      const result = await resolver.syncTimeEntries(
+        entries,
+        mockDeviceId,
+        mockUser,
+      );
 
       expect(result.successful).toBe(1);
       expect(result.failed).toBe(1);
       expect(result.errors).toHaveLength(1);
-      expect(mockSyncService.syncTimeEntries).toHaveBeenCalledWith(mockUser.id, entries, mockDeviceId);
+      expect(mockSyncService.syncTimeEntries).toHaveBeenCalledWith(
+        mockUser.id,
+        entries,
+        mockDeviceId,
+      );
     });
 
     it('should handle conflicts in batch sync', async () => {
@@ -643,7 +709,8 @@ describe('SyncResolver', () => {
             clientVersion: null,
             serverUpdatedAt: new Date('2024-04-12T11:00:00Z'),
             clientLastSyncedAt: new Date('2024-04-12T10:00:00Z'),
-            conflictDetails: 'Server data was modified after client\'s last sync',
+            conflictDetails:
+              "Server data was modified after client's last sync",
           },
         ],
         errors: [],
@@ -651,13 +718,21 @@ describe('SyncResolver', () => {
 
       mockSyncService.syncTimeEntries.mockResolvedValue(mockResult);
 
-      const result = await resolver.syncTimeEntries(entries, mockDeviceId, mockUser);
+      const result = await resolver.syncTimeEntries(
+        entries,
+        mockDeviceId,
+        mockUser,
+      );
 
       expect(result.successful).toBe(0);
       expect(result.failed).toBe(1);
       expect(result.conflicts).toHaveLength(1);
       expect(result.conflicts[0].hasConflict).toBe(true);
-      expect(mockSyncService.syncTimeEntries).toHaveBeenCalledWith(mockUser.id, entries, mockDeviceId);
+      expect(mockSyncService.syncTimeEntries).toHaveBeenCalledWith(
+        mockUser.id,
+        entries,
+        mockDeviceId,
+      );
     });
   });
 
@@ -683,7 +758,11 @@ describe('SyncResolver', () => {
 
       mockSyncService.syncETOTransactions.mockResolvedValue(mockResult);
 
-      const result = await resolver.syncETOTransactions(transactions, mockDeviceId, mockUser);
+      const result = await resolver.syncETOTransactions(
+        transactions,
+        mockDeviceId,
+        mockUser,
+      );
 
       expect(result).toEqual(mockResult);
       expect(result.successful).toBe(1);
@@ -720,7 +799,11 @@ describe('SyncResolver', () => {
 
       mockSyncService.syncETOTransactions.mockResolvedValue(mockResult);
 
-      const result = await resolver.syncETOTransactions(transactions, mockDeviceId, mockUser);
+      const result = await resolver.syncETOTransactions(
+        transactions,
+        mockDeviceId,
+        mockUser,
+      );
 
       expect(result.successful).toBe(0);
       expect(result.failed).toBe(1);
@@ -753,7 +836,11 @@ describe('SyncResolver', () => {
 
       mockSyncService.syncTimesheetSubmissions.mockResolvedValue(mockResult);
 
-      const result = await resolver.syncTimesheetSubmissions(submissions, mockDeviceId, mockUser);
+      const result = await resolver.syncTimesheetSubmissions(
+        submissions,
+        mockDeviceId,
+        mockUser,
+      );
 
       expect(result).toEqual(mockResult);
       expect(result.successful).toBe(1);
@@ -789,7 +876,11 @@ describe('SyncResolver', () => {
 
       mockSyncService.syncTimesheetSubmissions.mockResolvedValue(mockResult);
 
-      const result = await resolver.syncTimesheetSubmissions(submissions, mockDeviceId, mockUser);
+      const result = await resolver.syncTimesheetSubmissions(
+        submissions,
+        mockDeviceId,
+        mockUser,
+      );
 
       expect(result.successful).toBe(0);
       expect(result.failed).toBe(1);

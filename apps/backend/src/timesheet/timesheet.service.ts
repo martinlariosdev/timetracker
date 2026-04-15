@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { createTimeEntrySchema, patchTimeEntrySchema } from '@timetrack/shared';
@@ -26,14 +31,16 @@ export class TimesheetService {
     try {
       // Calculate pay period from date
       const payPeriodId = await this.calculatePayPeriodId(data.date);
-      this.logger.debug(`Calculated pay period ${payPeriodId} for date ${data.date}`);
+      this.logger.debug(
+        `Calculated pay period ${payPeriodId} for date ${data.date}`,
+      );
 
       // Determine totalHours and time pairs
       let totalHours: number;
       let inTime1: string;
       let outTime1: string;
-      let inTime2: string | null = data.inTime2 || null;
-      let outTime2: string | null = data.outTime2 || null;
+      const inTime2: string | null = data.inTime2 || null;
+      const outTime2: string | null = data.outTime2 || null;
 
       if (data.inTime1 && data.outTime1) {
         // Time pairs provided - calculate from them
@@ -118,7 +125,9 @@ export class TimesheetService {
         data: prismaData,
       });
 
-      this.logger.log(`Created time entry ${timeEntry.id} for consultant ${data.consultantId}`);
+      this.logger.log(
+        `Created time entry ${timeEntry.id} for consultant ${data.consultantId}`,
+      );
       return timeEntry;
     } catch (error) {
       if (error instanceof ZodError) {
@@ -170,7 +179,9 @@ export class TimesheetService {
       },
     });
 
-    this.logger.log(`Found ${entries.length} time entries with filters: ${JSON.stringify(filters)}`);
+    this.logger.log(
+      `Found ${entries.length} time entries with filters: ${JSON.stringify(filters)}`,
+    );
     return entries;
   }
 
@@ -238,7 +249,8 @@ export class TimesheetService {
 
       // Build Prisma update data
       const prismaData: Partial<Prisma.TimeEntryUpdateInput> = {};
-      const dateStr = data.date || existingEntry.date.toISOString().split('T')[0];
+      const dateStr =
+        data.date || existingEntry.date.toISOString().split('T')[0];
 
       if (data.date !== undefined) {
         prismaData.date = new Date(data.date);
@@ -265,14 +277,18 @@ export class TimesheetService {
 
       if (timeFieldsChanged) {
         // Get final time values (new or existing)
-        const finalInTime1 = data.inTime1 || this.extractTimeString(existingEntry.inTime1) || '';
-        const finalOutTime1 = data.outTime1 || this.extractTimeString(existingEntry.outTime1) || '';
-        const finalInTime2 = data.inTime2 !== undefined
-          ? data.inTime2
-          : this.extractTimeString(existingEntry.inTime2);
-        const finalOutTime2 = data.outTime2 !== undefined
-          ? data.outTime2
-          : this.extractTimeString(existingEntry.outTime2);
+        const finalInTime1 =
+          data.inTime1 || this.extractTimeString(existingEntry.inTime1) || '';
+        const finalOutTime1 =
+          data.outTime1 || this.extractTimeString(existingEntry.outTime1) || '';
+        const finalInTime2 =
+          data.inTime2 !== undefined
+            ? data.inTime2
+            : this.extractTimeString(existingEntry.inTime2);
+        const finalOutTime2 =
+          data.outTime2 !== undefined
+            ? data.outTime2
+            : this.extractTimeString(existingEntry.outTime2);
 
         // Validate that required time fields are present
         if (!finalInTime1 || !finalOutTime1) {
@@ -295,13 +311,20 @@ export class TimesheetService {
           prismaData.inTime1 = this.parseTimeToDateTime(dateStr, data.inTime1);
         }
         if (data.outTime1 !== undefined) {
-          prismaData.outTime1 = this.parseTimeToDateTime(dateStr, data.outTime1);
+          prismaData.outTime1 = this.parseTimeToDateTime(
+            dateStr,
+            data.outTime1,
+          );
         }
         if (data.inTime2 !== undefined) {
-          prismaData.inTime2 = data.inTime2 ? this.parseTimeToDateTime(dateStr, data.inTime2) : null;
+          prismaData.inTime2 = data.inTime2
+            ? this.parseTimeToDateTime(dateStr, data.inTime2)
+            : null;
         }
         if (data.outTime2 !== undefined) {
-          prismaData.outTime2 = data.outTime2 ? this.parseTimeToDateTime(dateStr, data.outTime2) : null;
+          prismaData.outTime2 = data.outTime2
+            ? this.parseTimeToDateTime(dateStr, data.outTime2)
+            : null;
         }
 
         // Recalculate total hours from time pairs
@@ -313,7 +336,10 @@ export class TimesheetService {
         );
 
         // If user also provided totalHours, log if mismatch
-        if (data.totalHours !== undefined && Math.abs(data.totalHours - (prismaData.totalHours as number)) > 0.01) {
+        if (
+          data.totalHours !== undefined &&
+          Math.abs(data.totalHours - prismaData.totalHours) > 0.01
+        ) {
           this.logger.warn(
             `Provided totalHours (${data.totalHours}) doesn't match calculated (${prismaData.totalHours}). Using calculated.`,
           );
@@ -376,7 +402,7 @@ export class TimesheetService {
 
     if (!payPeriod) {
       throw new BadRequestException(
-        `No pay period found for date ${dateStr}. Please ensure pay periods are configured.`
+        `No pay period found for date ${dateStr}. Please ensure pay periods are configured.`,
       );
     }
 
@@ -448,7 +474,7 @@ export class TimesheetService {
     let hash = 0;
     for (let i = 0; i < objectId.length; i++) {
       const char = objectId.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return Math.abs(hash);
@@ -463,7 +489,9 @@ export class TimesheetService {
     });
 
     if (!consultant) {
-      throw new BadRequestException(`Consultant with ID ${consultantId} not found`);
+      throw new BadRequestException(
+        `Consultant with ID ${consultantId} not found`,
+      );
     }
   }
 
@@ -476,7 +504,9 @@ export class TimesheetService {
     });
 
     if (!payPeriod) {
-      throw new BadRequestException(`Pay period with ID ${payPeriodId} not found`);
+      throw new BadRequestException(
+        `Pay period with ID ${payPeriodId} not found`,
+      );
     }
   }
 
@@ -517,13 +547,29 @@ export class TimesheetService {
 
       // Check overlap with first time block
       if (existingInTime1 && existingOutTime1) {
-        if (this.timesOverlap(inTime1, outTime1, existingInTime1, existingOutTime1)) {
+        if (
+          this.timesOverlap(
+            inTime1,
+            outTime1,
+            existingInTime1,
+            existingOutTime1,
+          )
+        ) {
           throw new BadRequestException(
             `Time entry overlaps with existing entry: ${existingInTime1}-${existingOutTime1}`,
           );
         }
 
-        if (inTime2 && outTime2 && this.timesOverlap(inTime2, outTime2, existingInTime1, existingOutTime1)) {
+        if (
+          inTime2 &&
+          outTime2 &&
+          this.timesOverlap(
+            inTime2,
+            outTime2,
+            existingInTime1,
+            existingOutTime1,
+          )
+        ) {
           throw new BadRequestException(
             `Time entry overlaps with existing entry: ${existingInTime1}-${existingOutTime1}`,
           );
@@ -532,13 +578,29 @@ export class TimesheetService {
 
       // Check overlap with second time block
       if (existingInTime2 && existingOutTime2) {
-        if (this.timesOverlap(inTime1, outTime1, existingInTime2, existingOutTime2)) {
+        if (
+          this.timesOverlap(
+            inTime1,
+            outTime1,
+            existingInTime2,
+            existingOutTime2,
+          )
+        ) {
           throw new BadRequestException(
             `Time entry overlaps with existing entry: ${existingInTime2}-${existingOutTime2}`,
           );
         }
 
-        if (inTime2 && outTime2 && this.timesOverlap(inTime2, outTime2, existingInTime2, existingOutTime2)) {
+        if (
+          inTime2 &&
+          outTime2 &&
+          this.timesOverlap(
+            inTime2,
+            outTime2,
+            existingInTime2,
+            existingOutTime2,
+          )
+        ) {
           throw new BadRequestException(
             `Time entry overlaps with existing entry: ${existingInTime2}-${existingOutTime2}`,
           );
