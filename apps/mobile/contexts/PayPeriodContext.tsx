@@ -153,3 +153,60 @@ export function usePayPeriodContext(): PayPeriodContextState {
   }
   return context;
 }
+
+/**
+ * Hook to get current pay period
+ */
+export function useCurrentPayPeriod(): PayPeriod | null {
+  const { currentPayPeriod } = usePayPeriodContext();
+  return currentPayPeriod;
+}
+
+/**
+ * Hook to get pay period for a specific date
+ */
+export function usePayPeriodForDate(date: Date): PayPeriod | null {
+  const { payPeriods } = usePayPeriodContext();
+
+  return React.useMemo(() => {
+    const dateTime = date.getTime();
+
+    return payPeriods.find(period => {
+      const start = new Date(period.startDate).getTime();
+      const end = new Date(period.endDate).getTime();
+      return dateTime >= start && dateTime <= end;
+    }) || null;
+  }, [payPeriods, date]);
+}
+
+/**
+ * Hook to get all pay periods for a week
+ * Returns unique periods (handles weeks spanning multiple periods)
+ */
+export function usePayPeriodsForWeek(dates: Date[]): PayPeriod[] {
+  const { payPeriods } = usePayPeriodContext();
+
+  return React.useMemo(() => {
+    const periodIds = new Set<string>();
+    const result: PayPeriod[] = [];
+
+    dates.forEach(date => {
+      const period = payPeriods.find(p => {
+        const start = new Date(p.startDate).getTime();
+        const end = new Date(p.endDate).getTime();
+        const dateTime = date.getTime();
+        return dateTime >= start && dateTime <= end;
+      });
+
+      if (period && !periodIds.has(period.id)) {
+        periodIds.add(period.id);
+        result.push(period);
+      }
+    });
+
+    // Sort by startDate
+    return result.sort((a, b) =>
+      new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+    );
+  }, [payPeriods, dates]);
+}
