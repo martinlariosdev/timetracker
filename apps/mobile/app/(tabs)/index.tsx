@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -27,6 +27,7 @@ import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
 import { WEEK_TIME_ENTRIES_QUERY, TIMESHEET_SUBMISSION_QUERY } from '@/lib/graphql/queries';
 import { SUBMIT_TIMESHEET_MUTATION, DELETE_TIME_ENTRY_MUTATION } from '@/lib/graphql/mutations';
 import { ErrorView } from '@/components/ErrorView';
+import { PayPeriodSelector } from '@/components/PayPeriodSelector';
 import { DayCardSkeletonList } from '@/components/skeletons/DayCardSkeleton';
 
 // --- Types ---
@@ -757,6 +758,17 @@ export default function TimesheetListScreen() {
   const payPeriod = usePayPeriodForDate(weekStart);
   const payPeriodId = payPeriod?.id || null;
 
+  const [selectedPayPeriodId, setSelectedPayPeriodId] = useState<string | null>(
+    payPeriod?.id || null
+  );
+
+  // Update when pay period loads
+  useEffect(() => {
+    if (payPeriod && !selectedPayPeriodId) {
+      setSelectedPayPeriodId(payPeriod.id);
+    }
+  }, [payPeriod, selectedPayPeriodId]);
+
   // Check if we have a valid pay period
   const hasValidPayPeriodId = useMemo(() => {
     return payPeriodId !== null && /^[0-9a-fA-F]{24}$/.test(payPeriodId);
@@ -1072,6 +1084,17 @@ export default function TimesheetListScreen() {
           ))}
         </View>
       </LinearGradient>
+
+      {/* === Pay Period Selector === */}
+      <View className="px-4 py-2" style={{ backgroundColor: colors.surface }}>
+        <PayPeriodSelector
+          selectedPeriodId={selectedPayPeriodId}
+          onSelectPeriod={(period) => {
+            setSelectedPayPeriodId(period.id);
+            // TODO: Update week view to show entries for selected period
+          }}
+        />
+      </View>
 
       {/* === Week Date Header === */}
       <View
