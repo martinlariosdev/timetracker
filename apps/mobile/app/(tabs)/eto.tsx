@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
 import { ME_QUERY, ETO_TRANSACTIONS_QUERY } from '@/lib/graphql/queries';
+import { useTheme } from '@/contexts/ThemeContext';
 import { ErrorView } from '@/components/ErrorView';
 import { DayCardSkeletonList } from '@/components/skeletons/DayCardSkeleton';
 import ETOBalanceDetailModal from '@/components/ETOBalanceDetailModal';
@@ -119,10 +120,12 @@ function TopBar({
   onMorePress: () => void;
   topInset: number;
 }) {
+  const { colors } = useTheme();
+
   return (
     <View
-      className="bg-white shadow-level-1"
-      style={{ paddingTop: topInset }}
+      className="shadow-level-1"
+      style={{ paddingTop: topInset, backgroundColor: colors.surface }}
     >
       <View
         className="flex-row items-center justify-between px-4"
@@ -130,7 +133,8 @@ function TopBar({
       >
         <View style={{ width: 44, height: 44 }} />
         <Text
-          className="text-h3 font-semibold text-gray-800"
+          className="text-h3 font-semibold"
+          style={{ color: colors.text }}
           accessibilityRole="header"
         >
           ETO
@@ -142,7 +146,7 @@ function TopBar({
           accessibilityLabel="More options"
           accessibilityRole="button"
         >
-          <Ionicons name="ellipsis-vertical" size={24} color="#4B5563" />
+          <Ionicons name="ellipsis-vertical" size={24} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
     </View>
@@ -158,25 +162,27 @@ function BalanceCard({
   recentChange: number | null;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
   const isPositiveChange = recentChange != null && recentChange >= 0;
 
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.9}
-      className="bg-white shadow-level-2 mx-md mt-md"
+      className="shadow-level-2 mx-md mt-md"
       style={{
         borderRadius: 20,
         borderWidth: 2,
         borderColor: '#2563EB',
         padding: 28,
+        backgroundColor: colors.surface,
       }}
       accessibilityLabel={`ETO Balance: ${balance.toFixed(2)} hours.${recentChange != null ? ` ${isPositiveChange ? 'Plus' : 'Minus'} ${Math.abs(recentChange).toFixed(2)} accrued this period.` : ''} Tap for details.`}
       accessibilityRole="button"
     >
       <View className="flex-row items-center" style={{ gap: 8 }}>
-        <Ionicons name="time-sharp" size={24} color="#1F2937" />
-        <Text className="text-body text-gray-600">ETO Balance</Text>
+        <Ionicons name="time-sharp" size={24} color={colors.text} />
+        <Text className="text-body" style={{ color: colors.textSecondary }}>ETO Balance</Text>
       </View>
 
       <Text
@@ -199,7 +205,7 @@ function BalanceCard({
             size={14}
             color={isPositiveChange ? '#10B981' : '#EF4444'}
           />
-          <Text className="text-body-small text-gray-600">
+          <Text className="text-body-small" style={{ color: colors.textSecondary }}>
             {isPositiveChange ? '+' : ''}{recentChange.toFixed(2)} accrued this period
           </Text>
         </View>
@@ -215,6 +221,8 @@ function QuickActions({
   onUseETO: () => void;
   onStats: () => void;
 }) {
+  const { colors } = useTheme();
+
   return (
     <View
       className="flex-row mx-md"
@@ -244,14 +252,14 @@ function QuickActions({
           flex: 3,
           height: 64,
           borderRadius: 16,
-          backgroundColor: '#FFFFFF',
+          backgroundColor: colors.surface,
           borderWidth: 2,
-          borderColor: '#E5E7EB',
+          borderColor: colors.border,
         }}
         accessibilityLabel="View ETO statistics"
         accessibilityRole="button"
       >
-        <Ionicons name="stats-chart-outline" size={24} color="#1F2937" />
+        <Ionicons name="stats-chart-outline" size={24} color={colors.text} />
       </TouchableOpacity>
     </View>
   );
@@ -262,12 +270,14 @@ function SectionHeader({
 }: {
   onViewAll: () => void;
 }) {
+  const { colors } = useTheme();
+
   return (
     <View
       className="flex-row items-center justify-between"
       style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 12 }}
     >
-      <Text className="text-h4 font-bold text-gray-800">Recent Activity</Text>
+      <Text className="text-h4 font-bold" style={{ color: colors.text }}>Recent Activity</Text>
       <TouchableOpacity
         onPress={onViewAll}
         accessibilityLabel="View all transactions"
@@ -288,6 +298,7 @@ function TransactionCard({
   transaction: ETOTransaction;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
   const isPositive = transaction.hours >= 0;
   const amountColor = isPositive ? '#10B981' : '#EF4444';
   const formattedDate = formatTransactionDate(transaction.date);
@@ -299,40 +310,41 @@ function TransactionCard({
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.95}
-      className="bg-white shadow-level-1"
+      className="shadow-level-1"
       style={{
         borderRadius: 16,
         padding: 20,
         marginHorizontal: 16,
         marginBottom: 16,
         borderWidth: 1,
-        borderColor: '#E5E7EB',
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
       }}
       accessibilityLabel={`${transaction.transactionType}, ${formattedDate}, ${isPositive ? 'plus' : 'minus'} ${Math.abs(transaction.hours).toFixed(2)} hours`}
       accessibilityRole="button"
     >
       {/* Card Header */}
       <View className="flex-row items-center" style={{ gap: 8, marginBottom: 12 }}>
-        <Ionicons name="calendar-outline" size={20} color="#1F2937" />
-        <Text className="text-body font-semibold text-gray-800">
+        <Ionicons name="calendar-outline" size={20} color={colors.text} />
+        <Text className="text-body font-semibold" style={{ color: colors.text }}>
           {formattedDate}
         </Text>
       </View>
 
       {/* Transaction Type */}
       <Text
-        className="text-body font-semibold text-gray-800"
+        className="text-body font-semibold"
         numberOfLines={1}
-        style={{ marginBottom: 4 }}
+        style={{ marginBottom: 4, color: colors.text }}
       >
         {transaction.transactionType}
       </Text>
 
       {/* Period/Description */}
       <Text
-        className="text-caption text-gray-600"
+        className="text-caption"
         numberOfLines={1}
-        style={{ marginBottom: 16 }}
+        style={{ marginBottom: 16, color: colors.textSecondary }}
       >
         {periodText}
       </Text>
@@ -342,7 +354,7 @@ function TransactionCard({
         className="flex-row items-center justify-between"
         style={{
           borderTopWidth: 1,
-          borderTopColor: '#E5E7EB',
+          borderTopColor: colors.border,
           paddingTop: 16,
         }}
       >
@@ -367,6 +379,7 @@ function TransactionCard({
 export default function ETOScreen() {
   const insets = useSafeAreaInsets();
   const { logout } = useAuth();
+  const { colors } = useTheme();
 
   // --- Modal State ---
   const [balanceDetailVisible, setBalanceDetailVisible] = useState(false);
@@ -480,7 +493,7 @@ export default function ETOScreen() {
   // --- Render ---
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <StatusBar style="dark" />
 
       {/* Top Bar */}

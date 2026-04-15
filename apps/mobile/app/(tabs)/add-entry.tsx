@@ -28,6 +28,7 @@ import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
 import { usePreferences } from '@/contexts/PreferencesContext';
 import { usePayPeriodForDate } from '@/contexts/PayPeriodContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { DateSelectorCard } from '@/components/add-entry/DateSelectorCard';
 import { WeekStripCard } from '@/components/add-entry/WeekStripCard';
 import { ClientCard } from '@/components/add-entry/ClientCard';
@@ -69,6 +70,7 @@ export default function AddEntryScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ date?: string; id?: string }>();
   const { weekStartDay } = usePreferences();
+  const { colors } = useTheme();
 
   const isEditMode = !!params.id;
 
@@ -414,16 +416,17 @@ export default function AddEntryScreen() {
   // --- Render ---
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <StatusBar style="dark" />
 
       {/* Modal Header */}
       <View
-        className="bg-white shadow-level-1"
+        className="shadow-level-1"
         style={{
           paddingTop: insets.top,
           borderBottomWidth: 1,
-          borderBottomColor: '#E5E7EB',
+          borderBottomColor: colors.border,
+          backgroundColor: colors.surface,
         }}
       >
         <View
@@ -498,22 +501,24 @@ export default function AddEntryScreen() {
         {isExpanded && <View>
           {/* Description Field */}
           <View className="mx-md mt-3">
-            <Text className="text-body-small text-gray-700 mb-2">
+            <Text className="text-body-small mb-2" style={{ color: colors.text }}>
               Description *
             </Text>
             <TextInput
-              className="bg-white text-body text-gray-800"
+              className="text-body"
               style={{
                 minHeight: 96,
                 maxHeight: 160,
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: errors.description ? '#EF4444' : '#D1D5DB',
+                borderColor: errors.description ? '#EF4444' : colors.border,
                 padding: 12,
                 opacity: isLocked ? 0.6 : 1,
+                backgroundColor: colors.surface,
+                color: colors.text,
               }}
               placeholder="What did you work on?"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.textSecondary}
               value={description}
               onChangeText={(text) => {
                 setDescription(text);
@@ -540,21 +545,23 @@ export default function AddEntryScreen() {
 
           {/* Project/Task Field */}
           <View className="mx-md mt-3">
-            <Text className="text-body-small text-gray-700 mb-2">
+            <Text className="text-body-small mb-2" style={{ color: colors.text }}>
               Project/Task #
             </Text>
             <TextInput
-              className="bg-white text-body text-gray-800"
+              className="text-body"
               style={{
                 height: 48,
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: '#D1D5DB',
+                borderColor: colors.border,
                 paddingHorizontal: 12,
                 opacity: isLocked ? 0.6 : 1,
+                backgroundColor: colors.surface,
+                color: colors.text,
               }}
               placeholder="e.g., PR #239"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={colors.textSecondary}
               value={projectTask}
               onChangeText={setProjectTask}
               editable={!isLocked}
