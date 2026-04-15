@@ -14,7 +14,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator, Alert } from 'react-native';
-import { useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
 import { MOCK_LOGIN_MUTATION } from '../lib/graphql/mutations';
 import { Storage } from '../lib/storage';
 import { MOCK_USERS, type MockUser } from '../scripts/setup-mock-auth';

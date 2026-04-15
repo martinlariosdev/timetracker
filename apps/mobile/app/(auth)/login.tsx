@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { BiometricService } from '@/lib/auth/biometric-service';
 import { MockLoginButtonWithSelector } from '@/components/MockLoginButton';
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 
 const FEATURE_PILLS = [
   { icon: 'clock' as const, label: 'Quick Entry' },
@@ -19,6 +19,7 @@ const FEATURE_PILLS = [
 
 export default function LoginScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { login, isLoading, error, biometricEnabled, authenticateWithBiometric } = useAuth();
   const [reduceMotion, setReduceMotion] = useState(false);
   const [biometricLabel, setBiometricLabel] = useState('Biometric');
@@ -167,7 +168,7 @@ export default function LoginScreen() {
               accessible
               accessibilityLabel="TimeTrack application icon"
             >
-              <Feather name="clock" size={48} color="#FFFFFF" />
+              <Feather name="clock" size={48} color="#FFFFFF" style={{ paddingHorizontal: 10 }} />
             </LinearGradient>
 
             {/* Welcome heading */}
@@ -190,7 +191,7 @@ export default function LoginScreen() {
               accessibilityRole="button"
               accessibilityLabel="Sign in with Okta"
               accessibilityState={{ disabled: isLoading }}
-              className="w-full rounded-[14px] overflow-hidden"
+              className="w-[80%] rounded-[14px] overflow-hidden"
               style={({ pressed }) => ({
                 transform: [{ scale: pressed && !isLoading ? 0.97 : 1 }],
                 opacity: isLoading ? 0.5 : 1,
@@ -200,7 +201,7 @@ export default function LoginScreen() {
                 colors={isLoading ? ['#9CA3AF', '#6B7280'] : ['#2563EB', '#1E40AF']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                className="h-[58px] flex-row items-center justify-center gap-3"
+                className="items-center justify-center gap-3"
                 style={{
                   shadowColor: '#2563EB',
                   shadowOffset: { width: 0, height: 4 },
@@ -209,14 +210,16 @@ export default function LoginScreen() {
                   elevation: 8,
                 }}
               >
-                {isLoading ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <Feather name="shield" size={24} color="#FFFFFF" />
-                )}
-                <Text className="text-body-large font-semibold text-white">
-                  {isLoading ? 'Signing in...' : 'Sign in with Okta'}
-                </Text>
+                <View className="flex-row items-center justify-center gap-3 my-2">
+                  {isLoading ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <Feather name="shield" size={24} color="#FFFFFF" />
+                  )}
+                  <Text className="text-body-large font-semibold text-white">
+                    {isLoading ? 'Signing in...' : 'Sign in with Okta'}
+                  </Text>
+                </View>
               </LinearGradient>
             </Pressable>
 
