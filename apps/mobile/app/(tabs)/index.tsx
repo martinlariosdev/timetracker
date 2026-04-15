@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/contexts/ThemeContext';
 import { usePreferences } from '@/contexts/PreferencesContext';
+import { usePayPeriodForDate, useCurrentPayPeriod } from '@/contexts/PayPeriodContext';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
 import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
 import { WEEK_TIME_ENTRIES_QUERY, TIMESHEET_SUBMISSION_QUERY } from '@/lib/graphql/queries';
@@ -752,15 +753,13 @@ export default function TimesheetListScreen() {
     },
   );
 
-  // Mock pay period ID (TODO: derive from actual pay period when backend is connected)
-  const payPeriodId = useMemo(() => {
-    return `pp-${formatDateParam(weekStart)}`;
-  }, [weekStart]);
+  // Get pay period for the week start date
+  const payPeriod = usePayPeriodForDate(weekStart);
+  const payPeriodId = payPeriod?.id || null;
 
-  // Check if we have a valid (real) payPeriodId from backend
+  // Check if we have a valid pay period
   const hasValidPayPeriodId = useMemo(() => {
-    // Real payPeriodIds are MongoDB ObjectIDs (24 hex chars), not "pp-..." strings
-    return payPeriodId && !payPeriodId.startsWith('pp-') && /^[0-9a-fA-F]{24}$/.test(payPeriodId);
+    return payPeriodId !== null && /^[0-9a-fA-F]{24}$/.test(payPeriodId);
   }, [payPeriodId]);
 
   // Submission status query
