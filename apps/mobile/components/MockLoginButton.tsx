@@ -83,19 +83,17 @@ export function MockLoginButton({ onSuccess, user }: MockLoginButtonProps) {
       // Refresh auth state to pick up new tokens
       await refreshAuth();
 
+      console.log('[Mock Login] ✅ Auth refreshed, redirecting...');
+
+      // Call onSuccess callback to redirect immediately
+      if (onSuccess) {
+        onSuccess();
+      }
+
+      // Show success alert without blocking navigation
       Alert.alert(
         '✅ Mock Login Success',
-        `Logged in as ${data.mockLogin.user.name}`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              if (onSuccess) {
-                onSuccess();
-              }
-            },
-          },
-        ]
+        `Logged in as ${data.mockLogin.user.name}`
       );
     } catch (error) {
       console.error('[Mock Login] Error:', error);
@@ -193,19 +191,17 @@ export function MockLoginButtonWithSelector({ onSuccess }: MockLoginButtonProps)
       // Refresh auth state to pick up new tokens
       await refreshAuth();
 
+      console.log('[Mock Login] ✅ Auth refreshed, redirecting...');
+
+      // Call onSuccess callback to redirect immediately
+      if (onSuccess) {
+        onSuccess();
+      }
+
+      // Show success alert without blocking navigation
       Alert.alert(
         '✅ Mock Login Success',
-        `Logged in as ${data.mockLogin.user.name}`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              if (onSuccess) {
-                onSuccess();
-              }
-            },
-          },
-        ]
+        `Logged in as ${data.mockLogin.user.name}`
       );
     } catch (error) {
       console.error('[Mock Login] Error:', error);
