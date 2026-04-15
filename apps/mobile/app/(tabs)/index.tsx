@@ -757,6 +757,12 @@ export default function TimesheetListScreen() {
     return `pp-${formatDateParam(weekStart)}`;
   }, [weekStart]);
 
+  // Check if we have a valid (real) payPeriodId from backend
+  const hasValidPayPeriodId = useMemo(() => {
+    // Real payPeriodIds are MongoDB ObjectIDs (24 hex chars), not "pp-..." strings
+    return payPeriodId && !payPeriodId.startsWith('pp-') && /^[0-9a-fA-F]{24}$/.test(payPeriodId);
+  }, [payPeriodId]);
+
   // Submission status query
   // TEMP DISABLED: Mobile calculates string payPeriodId but backend expects ObjectID
   // Need to query pay periods from backend first to get actual IDs
@@ -909,6 +915,16 @@ export default function TimesheetListScreen() {
   }, []);
 
   const handleConfirmSubmit = useCallback(async () => {
+    // Safety check: prevent submission if payPeriodId is invalid
+    if (!hasValidPayPeriodId) {
+      Alert.alert(
+        'Submission Not Available',
+        'Timesheet submission requires a valid pay period from the backend. This feature will be enabled once pay period support is implemented.',
+      );
+      setShowConfirmModal(false);
+      return;
+    }
+
     try {
       await submitTimesheet({
         variables: { payPeriodId },
@@ -930,7 +946,7 @@ export default function TimesheetListScreen() {
         ],
       );
     }
-  }, [submitTimesheet, payPeriodId, refetchSubmission, handleSubmitPress]);
+  }, [submitTimesheet, payPeriodId, refetchSubmission, handleSubmitPress, hasValidPayPeriodId]);
 
   const handleCancelSubmit = useCallback(() => {
     setShowConfirmModal(false);
@@ -1171,7 +1187,9 @@ export default function TimesheetListScreen() {
         >
           <View className="flex-row items-center justify-between mb-2">
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-              {submission?.status === 'draft' || !submission
+              {!hasValidPayPeriodId
+                ? 'Submission disabled (no pay period)'
+                : submission?.status === 'draft' || !submission
                 ? 'Not submitted'
                 : ''}
             </Text>
@@ -1181,27 +1199,27 @@ export default function TimesheetListScreen() {
           </View>
           <TouchableOpacity
             onPress={handleSubmitPress}
-            disabled={thisWeekHours === 0}
+            disabled={thisWeekHours === 0 || !hasValidPayPeriodId}
             activeOpacity={0.8}
             className="flex-row items-center justify-center rounded-xl"
             style={{
               height: 52,
-              backgroundColor: thisWeekHours === 0 ? '#D1D5DB' : '#2563EB',
+              backgroundColor: (thisWeekHours === 0 || !hasValidPayPeriodId) ? '#D1D5DB' : '#2563EB',
             }}
             accessibilityLabel="Submit timesheet for approval"
             accessibilityRole="button"
-            accessibilityState={{ disabled: thisWeekHours === 0 }}
+            accessibilityState={{ disabled: thisWeekHours === 0 || !hasValidPayPeriodId }}
           >
             <Ionicons
               name="send"
               size={18}
-              color={thisWeekHours === 0 ? '#9CA3AF' : '#FFFFFF'}
+              color={(thisWeekHours === 0 || !hasValidPayPeriodId) ? '#9CA3AF' : '#FFFFFF'}
             />
             <Text
               className="font-semibold ml-2"
               style={{
                 fontSize: 16,
-                color: thisWeekHours === 0 ? '#9CA3AF' : '#FFFFFF',
+                color: (thisWeekHours === 0 || !hasValidPayPeriodId) ? '#9CA3AF' : '#FFFFFF',
               }}
             >
               Submit Timesheet
