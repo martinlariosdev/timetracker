@@ -1,4 +1,4 @@
-import { Resolver, Query, Args } from '@nestjs/graphql';
+import { Resolver, Query, Args, Int } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { PayPeriodType } from './dto/pay-period.type';
 import { PayPeriodService } from './pay-period.service';
@@ -46,7 +46,7 @@ export class PayPeriodResolver {
     description: 'Get recent pay periods (for browsing history)',
   })
   async payPeriods(
-    @Args('limit', { type: () => Number, nullable: true }) limit?: number,
+    @Args('limit', { type: () => Int, nullable: true }) limit?: number,
   ): Promise<PayPeriodType[]> {
     const periods = await this.payPeriodService.getPayPeriods(limit);
     return periods.map((p) => this.toPayPeriodType(p));
