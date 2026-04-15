@@ -26,7 +26,7 @@ describe('PayPeriodResolver', () => {
   });
 
   describe('currentPayPeriod', () => {
-    it('should return current pay period from service', async () => {
+    it('should return current pay period from service with deadlineDate', async () => {
       const mockPeriod = {
         id: '507f1f77bcf86cd799439011',
         startDate: new Date('2026-04-01'),
@@ -47,7 +47,7 @@ describe('PayPeriodResolver', () => {
   });
 
   describe('payPeriodForDate', () => {
-    it('should return pay period for given date', async () => {
+    it('should return pay period for given date and convert null to undefined', async () => {
       const date = new Date('2026-04-10');
       const mockPeriod = {
         id: '507f1f77bcf86cd799439011',
@@ -63,13 +63,16 @@ describe('PayPeriodResolver', () => {
 
       const result = await resolver.payPeriodForDate(date);
 
-      expect(result).toEqual(mockPeriod);
+      expect(result).toEqual({
+        ...mockPeriod,
+        deadlineDate: undefined,
+      });
       expect(service.getPayPeriodForDate).toHaveBeenCalledWith(date);
     });
   });
 
   describe('payPeriods', () => {
-    it('should return list of pay periods', async () => {
+    it('should return list of pay periods and convert null to undefined', async () => {
       const mockPeriods = [
         {
           id: '507f1f77bcf86cd799439012',
@@ -86,7 +89,12 @@ describe('PayPeriodResolver', () => {
 
       const result = await resolver.payPeriods();
 
-      expect(result).toEqual(mockPeriods);
+      expect(result).toEqual([
+        {
+          ...mockPeriods[0],
+          deadlineDate: undefined,
+        },
+      ]);
       expect(service.getPayPeriods).toHaveBeenCalledWith(undefined);
     });
 

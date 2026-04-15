@@ -14,6 +14,7 @@ import { SyncModule } from './sync/sync.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RemindersModule } from './reminders/reminders.module';
 import { ClientsModule } from './clients/clients.module';
+import { PayPeriodModule } from './pay-period/pay-period.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ClientsModule } from './clients/clients.module';
     NotificationsModule,
     RemindersModule,
     ClientsModule,
+    PayPeriodModule,
   ],
   controllers: [AppController],
   providers: [AppService, HealthResolver],

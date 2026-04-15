@@ -3,6 +3,7 @@ import { UseGuards } from '@nestjs/common';
 import { PayPeriodType } from './dto/pay-period.type';
 import { PayPeriodService } from './pay-period.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PayPeriod } from '@prisma/client';
 
 /**
  * PayPeriodResolver
@@ -13,11 +14,22 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class PayPeriodResolver {
   constructor(private payPeriodService: PayPeriodService) {}
 
+  /**
+   * Transforms Prisma PayPeriod to PayPeriodType (handles null -> undefined)
+   */
+  private toPayPeriodType(period: PayPeriod): PayPeriodType {
+    return {
+      ...period,
+      deadlineDate: period.deadlineDate ?? undefined,
+    };
+  }
+
   @Query(() => PayPeriodType, {
     description: 'Get the current pay period (marked isCurrent: true)',
   })
   async currentPayPeriod(): Promise<PayPeriodType> {
-    return this.payPeriodService.getCurrentPayPeriod();
+    const period = await this.payPeriodService.getCurrentPayPeriod();
+    return this.toPayPeriodType(period);
   }
 
   @Query(() => PayPeriodType, {
@@ -26,7 +38,8 @@ export class PayPeriodResolver {
   async payPeriodForDate(
     @Args('date', { type: () => Date }) date: Date,
   ): Promise<PayPeriodType> {
-    return this.payPeriodService.getPayPeriodForDate(date);
+    const period = await this.payPeriodService.getPayPeriodForDate(date);
+    return this.toPayPeriodType(period);
   }
 
   @Query(() => [PayPeriodType], {
@@ -35,6 +48,7 @@ export class PayPeriodResolver {
   async payPeriods(
     @Args('limit', { type: () => Number, nullable: true }) limit?: number,
   ): Promise<PayPeriodType[]> {
-    return this.payPeriodService.getPayPeriods(limit);
+    const periods = await this.payPeriodService.getPayPeriods(limit);
+    return periods.map((p) => this.toPayPeriodType(p));
   }
 }
