@@ -27,6 +27,7 @@ import { ClientSelectorModal } from '@/components/ClientSelectorModal';
 import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
 import { usePreferences } from '@/contexts/PreferencesContext';
+import { usePayPeriodForDate } from '@/contexts/PayPeriodContext';
 import { DateSelectorCard } from '@/components/add-entry/DateSelectorCard';
 import { WeekStripCard } from '@/components/add-entry/WeekStripCard';
 import { ClientCard } from '@/components/add-entry/ClientCard';
@@ -38,7 +39,7 @@ import {
   CREATE_TIME_ENTRY_MUTATION,
   UPDATE_TIME_ENTRY_MUTATION,
 } from '@/lib/graphql/mutations';
-import { TIME_ENTRY_QUERY, TIME_ENTRIES_QUERY } from '@/lib/graphql/queries';
+import { TIME_ENTRY_QUERY, TIME_ENTRIES_QUERY, TIMESHEET_SUBMISSION_QUERY } from '@/lib/graphql/queries';
 import { TimeEntryPairData, FormErrors } from '@/types/add-entry';
 import {
   DAY_NAMES,
@@ -166,6 +167,24 @@ export default function AddEntryScreen() {
     variables: { id: params.id },
     skip: !params.id,
   });
+
+  // Get pay period for this entry's date
+  const entryDate = isEditMode && existingEntryData?.timeEntry
+    ? parseDate(existingEntryData.timeEntry.date)
+    : selectedDate;
+  const entryPayPeriod = usePayPeriodForDate(entryDate);
+
+  // Check if this period has been submitted
+  const { data: submissionData } = useAuthenticatedQuery(
+    TIMESHEET_SUBMISSION_QUERY,
+    {
+      variables: { payPeriodId: entryPayPeriod?.id },
+      skip: !entryPayPeriod?.id,
+    },
+  );
+
+  const submission = submissionData?.timesheetSubmissionByPayPeriod;
+  const isLocked = submission && submission.status !== 'draft';
 
   // Pre-fill form when editing
   useEffect(() => {
@@ -430,6 +449,21 @@ export default function AddEntryScreen() {
         </View>
       </View>
 
+      {/* Locked Period Banner */}
+      {isLocked && (
+        <View className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <View className="flex-row items-center">
+            <Ionicons name="lock-closed" size={20} color="#F59E0B" />
+            <Text className="text-sm font-semibold text-yellow-800 ml-2">
+              View Only - Timesheet {submission.status === 'submitted' ? 'Submitted' : 'Approved'}
+            </Text>
+          </View>
+          <Text className="text-xs text-yellow-700 mt-1">
+            This entry cannot be edited because the timesheet has been submitted for approval.
+          </Text>
+        </View>
+      )}
+
       {/* Scrollable Content */}
       <ScrollView
         className="flex-1"
@@ -476,6 +510,7 @@ export default function AddEntryScreen() {
                 borderWidth: 1,
                 borderColor: errors.description ? '#EF4444' : '#D1D5DB',
                 padding: 12,
+                opacity: isLocked ? 0.6 : 1,
               }}
               placeholder="What did you work on?"
               placeholderTextColor="#9CA3AF"
@@ -486,6 +521,7 @@ export default function AddEntryScreen() {
                   setErrors((prev) => ({ ...prev, description: undefined }));
                 }
               }}
+              editable={!isLocked}
               multiline
               textAlignVertical="top"
               maxLength={500}
@@ -515,11 +551,13 @@ export default function AddEntryScreen() {
                 borderWidth: 1,
                 borderColor: '#D1D5DB',
                 paddingHorizontal: 12,
+                opacity: isLocked ? 0.6 : 1,
               }}
               placeholder="e.g., PR #239"
               placeholderTextColor="#9CA3AF"
               value={projectTask}
               onChangeText={setProjectTask}
+              editable={!isLocked}
               accessibilityLabel="Project or task number"
               accessibilityHint="Optional field"
             />
@@ -623,41 +661,45 @@ export default function AddEntryScreen() {
           </Text>
         )}
 
-        {/* Save Button */}
-        <TouchableOpacity
-          onPress={handleSave}
-          disabled={isSaving}
-          activeOpacity={0.8}
-          className="mx-md mt-md flex-row items-center justify-center shadow-level-2"
-          style={{
-            height: 56,
-            borderRadius: 12,
-            backgroundColor: isSaving ? '#D1D5DB' : '#10B981',
-          }}
-          accessibilityLabel={saveButtonLabel}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: isSaving }}
-        >
-          {isSaving ? (
-            <>
-              <ActivityIndicator size="small" color="#FFFFFF" />
-              <Text className="text-button text-white ml-2">Saving...</Text>
-            </>
-          ) : (
-            <>
-              <Ionicons name="checkmark" size={24} color="#FFFFFF" />
-              <Text className="text-button text-white ml-2">
-                {saveButtonLabel}
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
+        {/* Save Button (hidden when locked) */}
+        {!isLocked && (
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={isSaving}
+            activeOpacity={0.8}
+            className="mx-md mt-md flex-row items-center justify-center shadow-level-2"
+            style={{
+              height: 56,
+              borderRadius: 12,
+              backgroundColor: isSaving ? '#D1D5DB' : '#10B981',
+            }}
+            accessibilityLabel={saveButtonLabel}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: isSaving }}
+          >
+            {isSaving ? (
+              <>
+                <ActivityIndicator size="small" color="#FFFFFF" />
+                <Text className="text-button text-white ml-2">Saving...</Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="checkmark" size={24} color="#FFFFFF" />
+                <Text className="text-button text-white ml-2">
+                  {saveButtonLabel}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
 
-        {/* Expand/Collapse Toggle */}
-        <ExpandToggle
-          isExpanded={isExpanded}
-          onToggle={() => setIsExpanded((prev) => !prev)}
-        />
+        {/* Expand/Collapse Toggle (hidden when locked) */}
+        {!isLocked && (
+          <ExpandToggle
+            isExpanded={isExpanded}
+            onToggle={() => setIsExpanded((prev) => !prev)}
+          />
+        )}
       </ScrollView>
       {datePicker.modal}
       <ClientSelectorModal

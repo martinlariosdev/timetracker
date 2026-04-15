@@ -249,12 +249,36 @@ type Mutation {
   useETO(input: UseETOInput!): ETOTransactionObjectType!
 }
 
+"""Pay period for timesheet submissions"""
+type PayPeriodType {
+  """Submission deadline for this pay period"""
+  deadlineDate: DateTime
+
+  """Human-readable display text (e.g., "April 1-15, 2026")"""
+  displayText: String!
+
+  """End date of the pay period"""
+  endDate: DateTime!
+
+  """Unique identifier for the pay period"""
+  id: ID!
+
+  """Whether this is the current active pay period"""
+  isCurrent: Boolean!
+
+  """Start date of the pay period"""
+  startDate: DateTime!
+}
+
 type Query {
   """Check if an entity has conflicts before syncing"""
   checkConflict(entityId: String!, entityType: SyncEntityType!, lastSyncedAt: DateTime!): ConflictInfo!
 
   """Get all active clients"""
   clients: [ClientType!]!
+
+  """Get the current pay period (marked isCurrent: true)"""
+  currentPayPeriod: PayPeriodType!
 
   """Get current ETO balance for a consultant"""
   etoBalance(consultantId: ID!): Float!
@@ -271,6 +295,12 @@ type Query {
 
   """Get all timesheet submissions for the current user"""
   myTimesheetSubmissions: [TimesheetSubmissionType!]!
+
+  """Get the pay period that contains a specific date"""
+  payPeriodForDate(date: DateTime!): PayPeriodType!
+
+  """Get recent pay periods (for browsing history)"""
+  payPeriods(limit: Float): [PayPeriodType!]!
 
   """Get timesheet submissions pending review (team leads only)"""
   pendingTimesheetSubmissions: [TimesheetSubmissionType!]!

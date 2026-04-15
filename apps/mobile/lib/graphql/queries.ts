@@ -213,3 +213,51 @@ export const PENDING_SYNC_QUERY = gql`
     }
   }
 `;
+
+/**
+ * Fetch recent pay periods for caching
+ */
+export const FETCH_PAY_PERIODS_QUERY = gql`
+  query FetchPayPeriods($limit: Int) {
+    payPeriods(limit: $limit) {
+      id
+      startDate
+      endDate
+      displayText
+      isCurrent
+      deadlineDate
+    }
+  }
+`;
+
+/**
+ * Get the current pay period (marked isCurrent: true)
+ */
+export const CURRENT_PAY_PERIOD_QUERY = gql`
+  query CurrentPayPeriod {
+    currentPayPeriod {
+      id
+      startDate
+      endDate
+      displayText
+      isCurrent
+      deadlineDate
+    }
+  }
+`;
+
+/**
+ * Get pay period containing a specific date
+ */
+export const PAY_PERIOD_FOR_DATE_QUERY = gql`
+  query PayPeriodForDate($date: DateTime!) {
+    payPeriodForDate(date: $date) {
+      id
+      startDate
+      endDate
+      displayText
+      isCurrent
+      deadlineDate
+    }
+  }
+`;

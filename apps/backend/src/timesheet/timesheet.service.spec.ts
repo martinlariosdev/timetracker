@@ -22,6 +22,7 @@ describe('TimesheetService', () => {
     },
     payPeriod: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
     },
   };
 
@@ -107,6 +108,7 @@ describe('TimesheetService', () => {
     it('should create a time entry with valid data', async () => {
       mockPrismaService.consultant.findUnique.mockResolvedValue(mockConsultant);
       mockPrismaService.payPeriod.findUnique.mockResolvedValue(mockPayPeriod);
+      mockPrismaService.payPeriod.findFirst.mockResolvedValue(mockPayPeriod);
       mockPrismaService.timeEntry.findMany.mockResolvedValue([]);
       mockPrismaService.timeEntry.create.mockResolvedValue(mockCreatedEntry);
 
@@ -140,6 +142,7 @@ describe('TimesheetService', () => {
 
       mockPrismaService.consultant.findUnique.mockResolvedValue(mockConsultant);
       mockPrismaService.payPeriod.findUnique.mockResolvedValue(mockPayPeriod);
+      mockPrismaService.payPeriod.findFirst.mockResolvedValue(mockPayPeriod);
       mockPrismaService.timeEntry.findMany.mockResolvedValue([]);
       mockPrismaService.timeEntry.create.mockResolvedValue({
         ...mockCreatedEntry,
@@ -160,7 +163,9 @@ describe('TimesheetService', () => {
     it('should throw BadRequestException when consultant not found', async () => {
       mockPrismaService.consultant.findUnique.mockResolvedValue(null);
 
-      await expect(service.create(validCreateInput)).rejects.toThrow(BadRequestException);
+      await expect(service.create(validCreateInput)).rejects.toThrow(
+        BadRequestException,
+      );
       await expect(service.create(validCreateInput)).rejects.toThrow(
         `Consultant with ID ${validCreateInput.consultantId} not found`,
       );
@@ -170,7 +175,9 @@ describe('TimesheetService', () => {
       mockPrismaService.consultant.findUnique.mockResolvedValue(mockConsultant);
       mockPrismaService.payPeriod.findUnique.mockResolvedValue(null);
 
-      await expect(service.create(validCreateInput)).rejects.toThrow(BadRequestException);
+      await expect(service.create(validCreateInput)).rejects.toThrow(
+        BadRequestException,
+      );
       await expect(service.create(validCreateInput)).rejects.toThrow(
         `Pay period with ID ${validCreateInput.payPeriodId} not found`,
       );
@@ -182,7 +189,9 @@ describe('TimesheetService', () => {
         date: '15-01-2024', // Wrong format
       };
 
-      await expect(service.create(invalidInput)).rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidInput)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException with invalid time format', async () => {
@@ -191,7 +200,9 @@ describe('TimesheetService', () => {
         inTime1: '9:00', // Missing leading zero
       };
 
-      await expect(service.create(invalidInput)).rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidInput)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException when outTime1 is before inTime1', async () => {
@@ -201,7 +212,9 @@ describe('TimesheetService', () => {
         outTime1: '09:00', // Before inTime1
       };
 
-      await expect(service.create(invalidInput)).rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidInput)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException when time blocks overlap', async () => {
@@ -213,7 +226,9 @@ describe('TimesheetService', () => {
         outTime2: '17:00',
       };
 
-      await expect(service.create(overlappingInput)).rejects.toThrow(BadRequestException);
+      await expect(service.create(overlappingInput)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException when overlapping with existing entry', async () => {
@@ -226,10 +241,15 @@ describe('TimesheetService', () => {
 
       mockPrismaService.consultant.findUnique.mockResolvedValue(mockConsultant);
       mockPrismaService.payPeriod.findUnique.mockResolvedValue(mockPayPeriod);
+      mockPrismaService.payPeriod.findFirst.mockResolvedValue(mockPayPeriod);
       mockPrismaService.timeEntry.findMany.mockResolvedValue([existingEntry]);
 
-      await expect(service.create(validCreateInput)).rejects.toThrow(BadRequestException);
-      await expect(service.create(validCreateInput)).rejects.toThrow(/overlaps with existing entry/);
+      await expect(service.create(validCreateInput)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.create(validCreateInput)).rejects.toThrow(
+        /overlaps with existing entry/,
+      );
     });
 
     it('should throw BadRequestException when clientName is missing', async () => {
@@ -238,7 +258,9 @@ describe('TimesheetService', () => {
         clientName: '',
       };
 
-      await expect(service.create(invalidInput)).rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidInput)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException when description is missing', async () => {
@@ -247,7 +269,9 @@ describe('TimesheetService', () => {
         description: '',
       };
 
-      await expect(service.create(invalidInput)).rejects.toThrow(BadRequestException);
+      await expect(service.create(invalidInput)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -293,7 +317,9 @@ describe('TimesheetService', () => {
     it('should filter by consultantId', async () => {
       mockPrismaService.timeEntry.findMany.mockResolvedValue(mockEntries);
 
-      const result = await service.findAll({ consultantId: '507f1f77bcf86cd799439011' });
+      const result = await service.findAll({
+        consultantId: '507f1f77bcf86cd799439011',
+      });
 
       expect(result).toEqual(mockEntries);
       expect(mockPrismaService.timeEntry.findMany).toHaveBeenCalledWith({
@@ -309,7 +335,9 @@ describe('TimesheetService', () => {
     it('should filter by payPeriodId', async () => {
       mockPrismaService.timeEntry.findMany.mockResolvedValue(mockEntries);
 
-      const result = await service.findAll({ payPeriodId: '507f1f77bcf86cd799439012' });
+      const result = await service.findAll({
+        payPeriodId: '507f1f77bcf86cd799439012',
+      });
 
       expect(result).toEqual(mockEntries);
       expect(mockPrismaService.timeEntry.findMany).toHaveBeenCalledWith({
@@ -425,7 +453,9 @@ describe('TimesheetService', () => {
     it('should throw NotFoundException when entry not found', async () => {
       mockPrismaService.timeEntry.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('nonexistent-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('nonexistent-id')).rejects.toThrow(
+        NotFoundException,
+      );
       await expect(service.findOne('nonexistent-id')).rejects.toThrow(
         'TimeEntry with ID nonexistent-id not found',
       );
@@ -467,7 +497,10 @@ describe('TimesheetService', () => {
         description: 'Updated description',
       });
 
-      const result = await service.update('507f1f77bcf86cd799439013', updateInput);
+      const result = await service.update(
+        '507f1f77bcf86cd799439013',
+        updateInput,
+      );
 
       expect(result.clientName).toBe('New Client Corp');
       expect(result.description).toBe('Updated description');
@@ -490,6 +523,7 @@ describe('TimesheetService', () => {
       mockPrismaService.timeEntry.findUnique.mockResolvedValue(existingEntry);
       mockPrismaService.consultant.findUnique.mockResolvedValue(mockConsultant);
       mockPrismaService.payPeriod.findUnique.mockResolvedValue(mockPayPeriod);
+      mockPrismaService.payPeriod.findFirst.mockResolvedValue(mockPayPeriod);
       mockPrismaService.timeEntry.findMany.mockResolvedValue([]);
       mockPrismaService.timeEntry.update.mockResolvedValue({
         ...existingEntry,
@@ -498,7 +532,10 @@ describe('TimesheetService', () => {
         totalHours: 9,
       });
 
-      const result = await service.update('507f1f77bcf86cd799439013', timeUpdateInput);
+      const result = await service.update(
+        '507f1f77bcf86cd799439013',
+        timeUpdateInput,
+      );
 
       expect(mockPrismaService.timeEntry.update).toHaveBeenCalledWith({
         where: { id: '507f1f77bcf86cd799439013' },
@@ -511,7 +548,9 @@ describe('TimesheetService', () => {
     it('should throw NotFoundException when entry not found', async () => {
       mockPrismaService.timeEntry.findUnique.mockResolvedValue(null);
 
-      await expect(service.update('nonexistent-id', updateInput)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.update('nonexistent-id', updateInput),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException with invalid update data', async () => {
@@ -522,9 +561,9 @@ describe('TimesheetService', () => {
 
       mockPrismaService.timeEntry.findUnique.mockResolvedValue(existingEntry);
 
-      await expect(service.update('507f1f77bcf86cd799439013', invalidUpdate)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.update('507f1f77bcf86cd799439013', invalidUpdate),
+      ).rejects.toThrow(BadRequestException);
     });
 
     // Note: Overlap detection for updates is covered by the create tests
@@ -567,29 +606,51 @@ describe('TimesheetService', () => {
     it('should throw NotFoundException when entry not found', async () => {
       mockPrismaService.timeEntry.findUnique.mockResolvedValue(null);
 
-      await expect(service.delete('nonexistent-id')).rejects.toThrow(NotFoundException);
+      await expect(service.delete('nonexistent-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('calculateTotalHours', () => {
     it('should calculate hours correctly for single time block', () => {
       // We need to access private method through any for testing
-      const totalHours = (service as any).calculateTotalHours('09:00', '12:00', null, null);
+      const totalHours = (service as any).calculateTotalHours(
+        '09:00',
+        '12:00',
+        null,
+        null,
+      );
       expect(totalHours).toBe(3);
     });
 
     it('should calculate hours correctly for two time blocks', () => {
-      const totalHours = (service as any).calculateTotalHours('09:00', '12:00', '13:00', '17:00');
+      const totalHours = (service as any).calculateTotalHours(
+        '09:00',
+        '12:00',
+        '13:00',
+        '17:00',
+      );
       expect(totalHours).toBe(7); // 3 + 4
     });
 
     it('should handle fractional hours', () => {
-      const totalHours = (service as any).calculateTotalHours('09:00', '09:30', null, null);
+      const totalHours = (service as any).calculateTotalHours(
+        '09:00',
+        '09:30',
+        null,
+        null,
+      );
       expect(totalHours).toBe(0.5);
     });
 
     it('should calculate full day correctly', () => {
-      const totalHours = (service as any).calculateTotalHours('08:00', '17:00', null, null);
+      const totalHours = (service as any).calculateTotalHours(
+        '08:00',
+        '17:00',
+        null,
+        null,
+      );
       expect(totalHours).toBe(9);
     });
   });

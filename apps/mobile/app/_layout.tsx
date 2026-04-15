@@ -4,6 +4,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { ApolloProvider } from '../lib/apollo-provider';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { PreferencesProvider } from '../contexts/PreferencesContext';
+import { PayPeriodProvider } from '../contexts/PayPeriodContext';
 import { useNotifications } from '../hooks/useNotifications';
 import { useAuth } from '../hooks/useAuth';
 import '../global.css';
@@ -60,7 +61,9 @@ export default function RootLayout() {
     <ApolloProvider>
       <ThemeProvider>
         <PreferencesProvider>
-          <NavigationGuard />
+          <PayPeriodProvider>
+            <NavigationGuard />
+          </PayPeriodProvider>
         </PreferencesProvider>
       </ThemeProvider>
     </ApolloProvider>
