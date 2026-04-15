@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useDatePicker } from '@/components/DatePicker';
 import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
-import { CREATE_ETO_REQUEST_MUTATION } from '@/lib/graphql/mutations';
+import { USE_ETO_MUTATION } from '@/lib/graphql/mutations';
 
 interface UseETOModalProps {
   visible: boolean;
@@ -62,10 +62,10 @@ export default function UseETOModal({
     minimumDate: new Date(),
   });
 
-  const [createETORequest, { loading: isSubmitting }] = useAuthenticatedMutation(
-    CREATE_ETO_REQUEST_MUTATION,
+  const [useETO, { loading: isSubmitting }] = useAuthenticatedMutation(
+    USE_ETO_MUTATION,
     {
-      refetchQueries: ['Me', 'EtoRequests'],
+      refetchQueries: ['Me', 'ETOTransactions'],
     },
   );
 
@@ -82,25 +82,25 @@ export default function UseETOModal({
 
     try {
       const dateStr = formatDateParam(selectedDate);
-      await createETORequest({
+      await useETO({
         variables: {
           input: {
-            startDate: dateStr,
-            endDate: dateStr,
+            date: dateStr,
             hours,
-            reason: reason.trim() || undefined,
+            description: reason.trim() || undefined,
+            projectName: undefined,
           },
         },
       });
-      Alert.alert('ETO Requested', `${hours.toFixed(2)} hours of ETO have been requested.`);
+      Alert.alert('ETO Applied', `${hours.toFixed(2)} hours of ETO have been used.`);
       setHoursText('8.00');
       setReason('');
       setSelectedDate(new Date());
       onSuccess();
     } catch (err) {
-      Alert.alert('Request Failed', 'Could not submit ETO request. Please try again.');
+      Alert.alert('Request Failed', 'Could not apply ETO. Please try again.');
     }
-  }, [isValid, selectedDate, hours, reason, createETORequest, onSuccess]);
+  }, [isValid, selectedDate, hours, reason, useETO, onSuccess]);
 
   const handleClose = useCallback(() => {
     setHoursText('8.00');

@@ -134,66 +134,106 @@ export const SUBMIT_TIMESHEET_MUTATION = gql`
 `;
 
 /**
- * Create a new ETO request - requires authentication
+ * Use ETO hours (take time off) - requires authentication
  */
-export const CREATE_ETO_REQUEST_MUTATION = gql`
-  mutation CreateEtoRequest($input: CreateETORequestInput!) {
-    createEtoRequest(input: $input) {
+export const USE_ETO_MUTATION = gql`
+  mutation UseETO($input: UseETOInput!) {
+    useETO(input: $input) {
       id
       consultantId
-      requestDate
-      startDate
-      endDate
+      date
+      description
       hours
-      reason
-      status
-      reviewedBy
-      reviewedAt
-      comments
-      syncStatus
-      lastModified
+      transactionType
+      synced
       createdAt
-      updatedAt
     }
   }
 `;
 
 /**
- * Update an existing ETO request - requires authentication
+ * Adjust ETO balance (accrual or admin adjustment) - requires authentication
  */
-export const UPDATE_ETO_REQUEST_MUTATION = gql`
-  mutation UpdateEtoRequest($id: String!, $input: UpdateETORequestInput!) {
-    updateEtoRequest(id: $id, input: $input) {
+export const ADJUST_ETO_MUTATION = gql`
+  mutation AdjustETO($input: AdjustETOInput!) {
+    adjustETO(input: $input) {
       id
       consultantId
-      requestDate
-      startDate
-      endDate
+      date
+      description
       hours
-      reason
-      status
-      reviewedBy
-      reviewedAt
-      comments
-      syncStatus
-      lastModified
+      transactionType
+      synced
       createdAt
-      updatedAt
     }
   }
 `;
 
-/**
- * Cancel an ETO request - requires authentication
- */
-export const CANCEL_ETO_REQUEST_MUTATION = gql`
-  mutation CancelEtoRequest($id: String!) {
-    cancelEtoRequest(id: $id) {
-      id
-      status
-    }
-  }
-`;
+// ===========================
+// DEPRECATED - Backend does not support ETO request workflow
+// These mutations remain for reference but should not be used
+// ===========================
+// /**
+//  * Create a new ETO request - requires authentication
+//  */
+// export const CREATE_ETO_REQUEST_MUTATION = gql`
+//   mutation CreateEtoRequest($input: CreateETORequestInput!) {
+//     createEtoRequest(input: $input) {
+//       id
+//       consultantId
+//       requestDate
+//       startDate
+//       endDate
+//       hours
+//       reason
+//       status
+//       reviewedBy
+//       reviewedAt
+//       comments
+//       syncStatus
+//       lastModified
+//       createdAt
+//       updatedAt
+//     }
+//   }
+// `;
+
+// /**
+//  * Update an existing ETO request - requires authentication
+//  */
+// export const UPDATE_ETO_REQUEST_MUTATION = gql`
+//   mutation UpdateEtoRequest($id: String!, $input: UpdateETORequestInput!) {
+//     updateEtoRequest(id: $id, input: $input) {
+//       id
+//       consultantId
+//       requestDate
+//       startDate
+//       endDate
+//       hours
+//       reason
+//       status
+//       reviewedBy
+//       reviewedAt
+//       comments
+//       syncStatus
+//       lastModified
+//       createdAt
+//       updatedAt
+//     }
+//   }
+// `;
+
+// /**
+//  * Cancel an ETO request - requires authentication
+//  */
+// export const CANCEL_ETO_REQUEST_MUTATION = gql`
+//   mutation CancelEtoRequest($id: String!) {
+//     cancelEtoRequest(id: $id) {
+//       id
+//       status
+//     }
+//   }
+// `;
 
 /**
  * Sync pending changes to backend - requires authentication
