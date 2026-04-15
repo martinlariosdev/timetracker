@@ -10,11 +10,17 @@ import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { setContext } from '@apollo/client/link/context';
 import type { GraphQLFormattedError } from 'graphql';
 import { Storage } from './storage';
+import Constants from 'expo-constants';
 
 // GraphQL endpoint configuration
+// In development, use EXPO_PUBLIC_API_URL from .env if available
 const GRAPHQL_ENDPOINT = __DEV__
-  ? 'http://localhost:3000/graphql' // Development - local backend
+  ? (process.env.EXPO_PUBLIC_API_URL ||
+     Constants.expoConfig?.extra?.apiUrl ||
+     'http://localhost:3000/graphql') // Fallback for development
   : 'https://api.timetrack.com/graphql'; // Production endpoint (TODO: update)
+
+console.log('[Apollo Client] Using GraphQL endpoint:', GRAPHQL_ENDPOINT);
 
 /**
  * Get JWT token from storage
