@@ -21,7 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/contexts/ThemeContext';
 import { usePreferences } from '@/contexts/PreferencesContext';
-import { usePayPeriodForDate, useCurrentPayPeriod } from '@/contexts/PayPeriodContext';
+import { usePayPeriodForDate, useCurrentPayPeriod, usePayPeriodContext } from '@/contexts/PayPeriodContext';
 import { useAuthenticatedQuery } from '@/hooks/useAuthenticatedQuery';
 import { useAuthenticatedMutation } from '@/hooks/useAuthenticatedMutation';
 import { WEEK_TIME_ENTRIES_QUERY, TIMESHEET_SUBMISSION_QUERY } from '@/lib/graphql/queries';
@@ -774,15 +774,13 @@ export default function TimesheetListScreen() {
     return payPeriodId !== null && /^[0-9a-fA-F]{24}$/.test(payPeriodId);
   }, [payPeriodId]);
 
-  // Submission status query
-  // TEMP DISABLED: Mobile calculates string payPeriodId but backend expects ObjectID
-  // Need to query pay periods from backend first to get actual IDs
+  // Submission status query - uses real pay period IDs from context
   const {
     data: submissionData,
     refetch: refetchSubmission,
   } = useAuthenticatedQuery(TIMESHEET_SUBMISSION_QUERY, {
-    variables: { payPeriodId },
-    skip: true, // Skip until we have real pay period IDs from backend
+    variables: { payPeriodId: selectedPayPeriodId },
+    skip: !selectedPayPeriodId || !hasValidPayPeriodId,
   });
 
   const submission: TimesheetSubmission | null = useMemo(() => {
@@ -790,6 +788,20 @@ export default function TimesheetListScreen() {
   }, [submissionData]);
 
   const isSubmitted = submission !== null && submission.status !== 'draft';
+
+  // Get current pay period from context for comparison
+  const currentPayPeriod = useCurrentPayPeriod();
+
+  // Check if viewing current period
+  const isViewingCurrentPeriod = selectedPayPeriodId === currentPayPeriod?.id;
+
+  // Check if current period is submitted
+  const currentPeriodSubmission = useMemo(() => {
+    if (!submissionData?.timesheetSubmissionByPayPeriod) return null;
+    return submissionData.timesheetSubmissionByPayPeriod;
+  }, [submissionData]);
+
+  const isCurrentPeriodSubmitted = currentPeriodSubmission?.status !== 'draft' && currentPeriodSubmission !== null;
 
   // Submit mutation
   const [submitTimesheet, { loading: isSubmitting }] = useAuthenticatedMutation(
@@ -860,16 +872,35 @@ export default function TimesheetListScreen() {
     [thisWeekHours],
   );
 
+  // Submit button text and disabled state
+  const submitButtonText = useMemo(() => {
+    if (!isViewingCurrentPeriod) {
+      return 'Select current period to submit';
+    }
+    if (isCurrentPeriodSubmitted && currentPeriodSubmission?.submittedAt) {
+      return `Submitted on ${new Date(currentPeriodSubmission.submittedAt).toLocaleDateString()}`;
+    }
+    if (thisWeekHours === 0) {
+      return 'No hours to submit';
+    }
+    return 'Submit Timesheet';
+  }, [isViewingCurrentPeriod, isCurrentPeriodSubmitted, currentPeriodSubmission, thisWeekHours]);
+
+  const isSubmitDisabled = !isViewingCurrentPeriod || isCurrentPeriodSubmitted || thisWeekHours === 0 || !hasValidPayPeriodId;
+
   // Handlers
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      // Only refetch time entries - submission query is disabled until we have real pay period IDs
-      await refetch();
+      // Refetch time entries and submission status
+      await Promise.all([
+        refetch(),
+        hasValidPayPeriodId && selectedPayPeriodId ? refetchSubmission() : Promise.resolve(),
+      ]);
     } finally {
       setRefreshing(false);
     }
-  }, [refetch]);
+  }, [refetch, refetchSubmission, hasValidPayPeriodId, selectedPayPeriodId]);
 
   const handleAddEntry = useCallback(
     (date: string) => {
@@ -1211,6 +1242,8 @@ export default function TimesheetListScreen() {
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>
               {!hasValidPayPeriodId
                 ? 'Submission disabled (no pay period)'
+                : !isViewingCurrentPeriod
+                ? 'Viewing past period'
                 : submission?.status === 'draft' || !submission
                 ? 'Not submitted'
                 : ''}
@@ -1221,30 +1254,30 @@ export default function TimesheetListScreen() {
           </View>
           <TouchableOpacity
             onPress={handleSubmitPress}
-            disabled={thisWeekHours === 0 || !hasValidPayPeriodId}
+            disabled={isSubmitDisabled}
             activeOpacity={0.8}
             className="flex-row items-center justify-center rounded-xl"
             style={{
               height: 52,
-              backgroundColor: (thisWeekHours === 0 || !hasValidPayPeriodId) ? '#D1D5DB' : '#2563EB',
+              backgroundColor: isSubmitDisabled ? '#D1D5DB' : '#2563EB',
             }}
             accessibilityLabel="Submit timesheet for approval"
             accessibilityRole="button"
-            accessibilityState={{ disabled: thisWeekHours === 0 || !hasValidPayPeriodId }}
+            accessibilityState={{ disabled: isSubmitDisabled }}
           >
             <Ionicons
               name="send"
               size={18}
-              color={(thisWeekHours === 0 || !hasValidPayPeriodId) ? '#9CA3AF' : '#FFFFFF'}
+              color={isSubmitDisabled ? '#9CA3AF' : '#FFFFFF'}
             />
             <Text
               className="font-semibold ml-2"
               style={{
                 fontSize: 16,
-                color: (thisWeekHours === 0 || !hasValidPayPeriodId) ? '#9CA3AF' : '#FFFFFF',
+                color: isSubmitDisabled ? '#9CA3AF' : '#FFFFFF',
               }}
             >
-              Submit Timesheet
+              {submitButtonText}
             </Text>
           </TouchableOpacity>
         </View>
