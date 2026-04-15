@@ -9,7 +9,16 @@ export function formatDateParam(date: Date): string {
 }
 
 export function parseDate(dateStr: string): Date {
-  const [y, m, d] = dateStr.split('-').map(Number);
+  // Handle both "YYYY-MM-DD" and ISO format "YYYY-MM-DDTHH:mm:ss.sssZ"
+  const dateOnly = dateStr.split('T')[0]; // Extract date part if ISO format
+  const [y, m, d] = dateOnly.split('-').map(Number);
+
+  // Validate that we got valid numbers
+  if (isNaN(y) || isNaN(m) || isNaN(d)) {
+    console.error('[parseDate] Invalid date string:', dateStr);
+    return new Date(); // Return today as fallback
+  }
+
   return new Date(y, m - 1, d);
 }
 
