@@ -15,6 +15,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { setupMockAuth, MOCK_USERS, type MockUser } from '../scripts/setup-mock-auth';
+import { useAuth } from '../hooks/useAuth';
 
 interface MockLoginButtonProps {
   onSuccess?: () => void;
@@ -23,6 +24,7 @@ interface MockLoginButtonProps {
 
 export function MockLoginButton({ onSuccess, user }: MockLoginButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const { refreshAuth } = useAuth();
 
   // Only show in development mode
   if (!__DEV__) {
@@ -34,6 +36,9 @@ export function MockLoginButton({ onSuccess, user }: MockLoginButtonProps) {
       setIsLoading(true);
       await setupMockAuth(user || MOCK_USERS.john);
 
+      // Refresh auth state to pick up new tokens
+      await refreshAuth();
+
       Alert.alert(
         '✅ Mock Login Success',
         `Logged in as ${(user || MOCK_USERS.john).name}`,
@@ -43,12 +48,6 @@ export function MockLoginButton({ onSuccess, user }: MockLoginButtonProps) {
             onPress: () => {
               if (onSuccess) {
                 onSuccess();
-              } else {
-                // Force reload to pick up auth state
-                setTimeout(() => {
-                  // The useAuth hook will detect the stored tokens and update state
-                  console.log('Mock login complete - auth state will update automatically');
-                }, 100);
               }
             },
           },
@@ -92,6 +91,7 @@ export function MockLoginButton({ onSuccess, user }: MockLoginButtonProps) {
 export function MockLoginButtonWithSelector({ onSuccess }: MockLoginButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<keyof typeof MOCK_USERS>('john');
+  const { refreshAuth } = useAuth();
 
   // Only show in development mode
   if (!__DEV__) {
@@ -103,6 +103,9 @@ export function MockLoginButtonWithSelector({ onSuccess }: MockLoginButtonProps)
       setIsLoading(true);
       const user = MOCK_USERS[userKey];
       await setupMockAuth(user);
+
+      // Refresh auth state to pick up new tokens
+      await refreshAuth();
 
       Alert.alert(
         '✅ Mock Login Success',
