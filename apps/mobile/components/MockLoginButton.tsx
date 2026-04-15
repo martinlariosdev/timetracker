@@ -14,7 +14,10 @@
 
 import React, { useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator, Alert } from 'react-native';
-import { setupMockAuth, MOCK_USERS, type MockUser } from '../scripts/setup-mock-auth';
+import { useMutation } from '@apollo/client';
+import { MOCK_LOGIN_MUTATION } from '../lib/graphql/mutations';
+import { Storage } from '../lib/storage';
+import { MOCK_USERS, type MockUser } from '../scripts/setup-mock-auth';
 import { useAuth } from '../hooks/useAuth';
 
 interface MockLoginButtonProps {
@@ -25,6 +28,7 @@ interface MockLoginButtonProps {
 export function MockLoginButton({ onSuccess, user }: MockLoginButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { refreshAuth } = useAuth();
+  const [mockLogin] = useMutation(MOCK_LOGIN_MUTATION);
 
   // Only show in development mode
   if (!__DEV__) {
@@ -34,14 +38,54 @@ export function MockLoginButton({ onSuccess, user }: MockLoginButtonProps) {
   const handleMockLogin = async () => {
     try {
       setIsLoading(true);
-      await setupMockAuth(user || MOCK_USERS.john);
+      const mockUser = user || MOCK_USERS.john;
+
+      console.log('[Mock Login] Calling backend mockLogin mutation for:', mockUser.email);
+
+      // Call backend mockLogin mutation to get real JWT token
+      const { data } = await mockLogin({
+        variables: {
+          input: {
+            email: mockUser.email,
+          },
+        },
+      });
+
+      if (!data?.mockLogin) {
+        throw new Error('No response from mockLogin mutation');
+      }
+
+      // Parse expiresIn (e.g., "7d" -> milliseconds)
+      const parseExpiresIn = (expiresIn: string): number => {
+        if (expiresIn.endsWith('d')) {
+          return parseInt(expiresIn) * 24 * 60 * 60 * 1000;
+        }
+        if (expiresIn.endsWith('h')) {
+          return parseInt(expiresIn) * 60 * 60 * 1000;
+        }
+        return parseInt(expiresIn) * 1000; // seconds
+      };
+
+      const expiresInMs = parseExpiresIn(data.mockLogin.expiresIn);
+      const jwtExpiresAt = Date.now() + expiresInMs;
+
+      // Store real JWT token from backend
+      await Storage.setItem('auth_tokens', {
+        jwtToken: data.mockLogin.accessToken,
+        jwtExpiresAt,
+        oktaIdToken: 'mock-okta-id-token',
+        oktaRefreshToken: 'mock-okta-refresh-token',
+        user: data.mockLogin.user,
+      });
+
+      console.log('[Mock Login] ✅ Token stored');
 
       // Refresh auth state to pick up new tokens
       await refreshAuth();
 
       Alert.alert(
         '✅ Mock Login Success',
-        `Logged in as ${(user || MOCK_USERS.john).name}`,
+        `Logged in as ${data.mockLogin.user.name}`,
         [
           {
             text: 'OK',
@@ -54,8 +98,8 @@ export function MockLoginButton({ onSuccess, user }: MockLoginButtonProps) {
         ]
       );
     } catch (error) {
-      Alert.alert('Error', 'Failed to setup mock authentication');
-      console.error('Mock login error:', error);
+      console.error('[Mock Login] Error:', error);
+      Alert.alert('Error', 'Failed to setup mock authentication. Check console for details.');
     } finally {
       setIsLoading(false);
     }
@@ -92,6 +136,7 @@ export function MockLoginButtonWithSelector({ onSuccess }: MockLoginButtonProps)
   const [isLoading, setIsLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<keyof typeof MOCK_USERS>('john');
   const { refreshAuth } = useAuth();
+  const [mockLogin] = useMutation(MOCK_LOGIN_MUTATION);
 
   // Only show in development mode
   if (!__DEV__) {
@@ -102,14 +147,55 @@ export function MockLoginButtonWithSelector({ onSuccess }: MockLoginButtonProps)
     try {
       setIsLoading(true);
       const user = MOCK_USERS[userKey];
-      await setupMockAuth(user);
+
+      console.log('[Mock Login] Calling backend mockLogin mutation for:', user.email);
+
+      // Call backend mockLogin mutation to get real JWT token
+      const { data } = await mockLogin({
+        variables: {
+          input: {
+            email: user.email,
+          },
+        },
+      });
+
+      console.log('[Mock Login] Response:', data);
+
+      if (!data?.mockLogin) {
+        throw new Error('No response from mockLogin mutation');
+      }
+
+      // Parse expiresIn (e.g., "7d" -> milliseconds)
+      const parseExpiresIn = (expiresIn: string): number => {
+        if (expiresIn.endsWith('d')) {
+          return parseInt(expiresIn) * 24 * 60 * 60 * 1000;
+        }
+        if (expiresIn.endsWith('h')) {
+          return parseInt(expiresIn) * 60 * 60 * 1000;
+        }
+        return parseInt(expiresIn) * 1000; // seconds
+      };
+
+      const expiresInMs = parseExpiresIn(data.mockLogin.expiresIn);
+      const jwtExpiresAt = Date.now() + expiresInMs;
+
+      // Store real JWT token from backend
+      await Storage.setItem('auth_tokens', {
+        jwtToken: data.mockLogin.accessToken,
+        jwtExpiresAt,
+        oktaIdToken: 'mock-okta-id-token',
+        oktaRefreshToken: 'mock-okta-refresh-token',
+        user: data.mockLogin.user,
+      });
+
+      console.log('[Mock Login] ✅ Token stored, expires at:', new Date(jwtExpiresAt).toISOString());
 
       // Refresh auth state to pick up new tokens
       await refreshAuth();
 
       Alert.alert(
         '✅ Mock Login Success',
-        `Logged in as ${user.name}`,
+        `Logged in as ${data.mockLogin.user.name}`,
         [
           {
             text: 'OK',
@@ -122,8 +208,8 @@ export function MockLoginButtonWithSelector({ onSuccess }: MockLoginButtonProps)
         ]
       );
     } catch (error) {
-      Alert.alert('Error', 'Failed to setup mock authentication');
-      console.error('Mock login error:', error);
+      console.error('[Mock Login] Error:', error);
+      Alert.alert('Error', 'Failed to setup mock authentication. Check console for details.');
     } finally {
       setIsLoading(false);
     }

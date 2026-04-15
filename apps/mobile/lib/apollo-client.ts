@@ -33,19 +33,28 @@ const getAuthToken = async (): Promise<string | null> => {
       jwtExpiresAt: number;
     }>('auth_tokens');
 
+    console.log('[Apollo Auth] Checking token...', {
+      hasToken: !!stored?.jwtToken,
+      expiresAt: stored?.jwtExpiresAt ? new Date(stored.jwtExpiresAt).toISOString() : 'N/A',
+      now: new Date().toISOString(),
+    });
+
     if (!stored || !stored.jwtToken) {
+      console.warn('[Apollo Auth] No token found in storage');
       return null;
     }
 
     // Check if token is expired
     const now = Date.now();
     if (now >= stored.jwtExpiresAt) {
+      console.warn('[Apollo Auth] Token is expired');
       return null;
     }
 
+    console.log('[Apollo Auth] ✅ Valid token found, length:', stored.jwtToken.length);
     return stored.jwtToken;
   } catch (error) {
-    console.error('Error getting auth token:', error);
+    console.error('[Apollo Auth] Error getting auth token:', error);
     return null;
   }
 };

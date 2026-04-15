@@ -27,6 +27,27 @@ export const LOGIN_MUTATION = gql`
 `;
 
 /**
+ * Mock login for development - public, no authentication required
+ */
+export const MOCK_LOGIN_MUTATION = gql`
+  mutation MockLogin($input: MockLoginInput!) {
+    mockLogin(input: $input) {
+      accessToken
+      expiresIn
+      user {
+        id
+        externalId
+        name
+        email
+        etoBalance
+        workingHoursPerPeriod
+        paymentType
+      }
+    }
+  }
+`;
+
+/**
  * Refresh JWT token - requires authentication
  */
 export const REFRESH_TOKEN_MUTATION = gql`
