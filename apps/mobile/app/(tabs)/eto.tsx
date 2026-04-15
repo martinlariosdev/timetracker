@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Platform,
+  Alert,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -460,9 +461,55 @@ export default function ETOScreen() {
     }
   }, [refetchMe, refetchTransactions]);
 
-  const handleMorePress = useCallback(() => {
-    // TODO: Show action sheet with more options
+  const handleStats = useCallback(() => {
+    setStatsVisible(true);
   }, []);
+
+  const handleMorePress = useCallback(() => {
+    Alert.alert(
+      'ETO Options',
+      'Choose an action',
+      [
+        {
+          text: 'Refresh Data',
+          onPress: handleRefresh,
+        },
+        {
+          text: 'View Statistics',
+          onPress: handleStats,
+        },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Log Out',
+              'Are you sure you want to log out?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Log Out',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      await logout();
+                    } catch (error) {
+                      console.error('Logout error:', error);
+                    }
+                  },
+                },
+              ]
+            );
+          },
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ],
+      { cancelable: true }
+    );
+  }, [handleRefresh, handleStats, logout]);
 
   const handleBalancePress = useCallback(() => {
     setBalanceDetailVisible(true);
@@ -470,10 +517,6 @@ export default function ETOScreen() {
 
   const handleUseETO = useCallback(() => {
     setUseETOVisible(true);
-  }, []);
-
-  const handleStats = useCallback(() => {
-    setStatsVisible(true);
   }, []);
 
   const handleViewAll = useCallback(() => {
