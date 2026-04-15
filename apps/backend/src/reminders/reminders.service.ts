@@ -35,7 +35,9 @@ export class RemindersService {
    */
   @Cron('0 9 20 * *')
   async sendSecondPeriodReminders() {
-    this.logger.log('Running second period timesheet reminders (20th of month)');
+    this.logger.log(
+      'Running second period timesheet reminders (20th of month)',
+    );
     await this.sendTimesheetReminders('22nd');
   }
 
@@ -101,7 +103,8 @@ export class RemindersService {
       // Filter consultants who need reminders
       const consultantsNeedingReminders = consultants.filter((consultant) => {
         // Check notification preferences - respect opt-out
-        const prefs = consultant.notificationPreferences as NotificationPreferences | null;
+        const prefs =
+          consultant.notificationPreferences as NotificationPreferences | null;
         if (prefs && prefs.timesheetReminders === false) {
           this.logger.debug(
             `Consultant ${consultant.name} has opted out of timesheet reminders`,

@@ -123,10 +123,18 @@ describe('SubmissionService', () => {
 
   describe('submitTimesheet', () => {
     it('should successfully submit a timesheet with valid entries', async () => {
-      jest.spyOn(prisma.payPeriod, 'findUnique').mockResolvedValue(mockPayPeriod);
-      jest.spyOn(prisma.timesheetSubmission, 'findUnique').mockResolvedValue(null);
-      jest.spyOn(prisma.timeEntry, 'findMany').mockResolvedValue(mockTimeEntries);
-      jest.spyOn(prisma.timesheetSubmission, 'upsert').mockResolvedValue(mockSubmission);
+      jest
+        .spyOn(prisma.payPeriod, 'findUnique')
+        .mockResolvedValue(mockPayPeriod);
+      jest
+        .spyOn(prisma.timesheetSubmission, 'findUnique')
+        .mockResolvedValue(null);
+      jest
+        .spyOn(prisma.timeEntry, 'findMany')
+        .mockResolvedValue(mockTimeEntries);
+      jest
+        .spyOn(prisma.timesheetSubmission, 'upsert')
+        .mockResolvedValue(mockSubmission);
 
       const result = await service.submitTimesheet('consultant-1', 'period-1');
 
@@ -158,7 +166,9 @@ describe('SubmissionService', () => {
     });
 
     it('should throw BadRequestException if already submitted', async () => {
-      jest.spyOn(prisma.payPeriod, 'findUnique').mockResolvedValue(mockPayPeriod);
+      jest
+        .spyOn(prisma.payPeriod, 'findUnique')
+        .mockResolvedValue(mockPayPeriod);
       jest.spyOn(prisma.timesheetSubmission, 'findUnique').mockResolvedValue({
         ...mockSubmission,
         status: 'submitted',
@@ -170,8 +180,12 @@ describe('SubmissionService', () => {
     });
 
     it('should throw BadRequestException if no time entries exist', async () => {
-      jest.spyOn(prisma.payPeriod, 'findUnique').mockResolvedValue(mockPayPeriod);
-      jest.spyOn(prisma.timesheetSubmission, 'findUnique').mockResolvedValue(null);
+      jest
+        .spyOn(prisma.payPeriod, 'findUnique')
+        .mockResolvedValue(mockPayPeriod);
+      jest
+        .spyOn(prisma.timesheetSubmission, 'findUnique')
+        .mockResolvedValue(null);
       jest.spyOn(prisma.timeEntry, 'findMany').mockResolvedValue([]);
 
       await expect(
@@ -185,9 +199,15 @@ describe('SubmissionService', () => {
     it('should throw BadRequestException if minimum hours not met', async () => {
       const insufficientEntries = [mockTimeEntries[0]]; // Only 8 hours
 
-      jest.spyOn(prisma.payPeriod, 'findUnique').mockResolvedValue(mockPayPeriod);
-      jest.spyOn(prisma.timesheetSubmission, 'findUnique').mockResolvedValue(null);
-      jest.spyOn(prisma.timeEntry, 'findMany').mockResolvedValue(insufficientEntries);
+      jest
+        .spyOn(prisma.payPeriod, 'findUnique')
+        .mockResolvedValue(mockPayPeriod);
+      jest
+        .spyOn(prisma.timesheetSubmission, 'findUnique')
+        .mockResolvedValue(null);
+      jest
+        .spyOn(prisma.timeEntry, 'findMany')
+        .mockResolvedValue(insufficientEntries);
 
       await expect(
         service.submitTimesheet('consultant-1', 'period-1'),
@@ -200,7 +220,9 @@ describe('SubmissionService', () => {
 
   describe('approveTimesheet', () => {
     it('should successfully approve a submitted timesheet', async () => {
-      jest.spyOn(prisma.timesheetSubmission, 'findUnique').mockResolvedValue(mockSubmission);
+      jest
+        .spyOn(prisma.timesheetSubmission, 'findUnique')
+        .mockResolvedValue(mockSubmission);
       jest.spyOn(prisma.timesheetSubmission, 'update').mockResolvedValue({
         ...mockSubmission,
         status: 'approved',
@@ -208,7 +230,10 @@ describe('SubmissionService', () => {
         approvedBy: 'ext-teamlead-1',
       });
 
-      const result = await service.approveTimesheet('submission-1', 'ext-teamlead-1');
+      const result = await service.approveTimesheet(
+        'submission-1',
+        'ext-teamlead-1',
+      );
 
       expect(result.status).toBe('approved');
       expect(result.approvedBy).toBe('ext-teamlead-1');
@@ -222,7 +247,9 @@ describe('SubmissionService', () => {
     });
 
     it('should throw NotFoundException if submission does not exist', async () => {
-      jest.spyOn(prisma.timesheetSubmission, 'findUnique').mockResolvedValue(null);
+      jest
+        .spyOn(prisma.timesheetSubmission, 'findUnique')
+        .mockResolvedValue(null);
 
       await expect(
         service.approveTimesheet('submission-1', 'ext-teamlead-1'),
@@ -244,7 +271,9 @@ describe('SubmissionService', () => {
     });
 
     it('should throw BadRequestException if user is not the team lead', async () => {
-      jest.spyOn(prisma.timesheetSubmission, 'findUnique').mockResolvedValue(mockSubmission);
+      jest
+        .spyOn(prisma.timesheetSubmission, 'findUnique')
+        .mockResolvedValue(mockSubmission);
 
       await expect(
         service.approveTimesheet('submission-1', 'wrong-teamlead-id'),
@@ -257,7 +286,9 @@ describe('SubmissionService', () => {
 
   describe('rejectTimesheet', () => {
     it('should successfully reject a submitted timesheet with comments', async () => {
-      jest.spyOn(prisma.timesheetSubmission, 'findUnique').mockResolvedValue(mockSubmission);
+      jest
+        .spyOn(prisma.timesheetSubmission, 'findUnique')
+        .mockResolvedValue(mockSubmission);
       jest.spyOn(prisma.timesheetSubmission, 'update').mockResolvedValue({
         ...mockSubmission,
         status: 'rejected',
@@ -295,7 +326,9 @@ describe('SubmissionService', () => {
     });
 
     it('should throw NotFoundException if submission does not exist', async () => {
-      jest.spyOn(prisma.timesheetSubmission, 'findUnique').mockResolvedValue(null);
+      jest
+        .spyOn(prisma.timesheetSubmission, 'findUnique')
+        .mockResolvedValue(null);
 
       await expect(
         service.rejectTimesheet('submission-1', 'ext-teamlead-1', 'Invalid'),
@@ -314,7 +347,9 @@ describe('SubmissionService', () => {
     });
 
     it('should throw BadRequestException if user is not the team lead', async () => {
-      jest.spyOn(prisma.timesheetSubmission, 'findUnique').mockResolvedValue(mockSubmission);
+      jest
+        .spyOn(prisma.timesheetSubmission, 'findUnique')
+        .mockResolvedValue(mockSubmission);
 
       await expect(
         service.rejectTimesheet('submission-1', 'wrong-teamlead-id', 'Invalid'),
@@ -327,7 +362,9 @@ describe('SubmissionService', () => {
 
   describe('getSubmission', () => {
     it('should return a submission by ID', async () => {
-      jest.spyOn(prisma.timesheetSubmission, 'findUnique').mockResolvedValue(mockSubmission);
+      jest
+        .spyOn(prisma.timesheetSubmission, 'findUnique')
+        .mockResolvedValue(mockSubmission);
 
       const result = await service.getSubmission('submission-1');
 
@@ -342,7 +379,9 @@ describe('SubmissionService', () => {
     });
 
     it('should throw NotFoundException if submission does not exist', async () => {
-      jest.spyOn(prisma.timesheetSubmission, 'findUnique').mockResolvedValue(null);
+      jest
+        .spyOn(prisma.timesheetSubmission, 'findUnique')
+        .mockResolvedValue(null);
 
       await expect(service.getSubmission('submission-1')).rejects.toThrow(
         NotFoundException,
@@ -353,7 +392,9 @@ describe('SubmissionService', () => {
   describe('getSubmissionsByConsultant', () => {
     it('should return all submissions for a consultant', async () => {
       const submissions = [mockSubmission];
-      jest.spyOn(prisma.timesheetSubmission, 'findMany').mockResolvedValue(submissions);
+      jest
+        .spyOn(prisma.timesheetSubmission, 'findMany')
+        .mockResolvedValue(submissions);
 
       const result = await service.getSubmissionsByConsultant('consultant-1');
 
@@ -373,7 +414,9 @@ describe('SubmissionService', () => {
   describe('getSubmissionsForTeamLead', () => {
     it('should return pending submissions for a team lead', async () => {
       const submissions = [mockSubmission];
-      jest.spyOn(prisma.timesheetSubmission, 'findMany').mockResolvedValue(submissions);
+      jest
+        .spyOn(prisma.timesheetSubmission, 'findMany')
+        .mockResolvedValue(submissions);
 
       const result = await service.getSubmissionsForTeamLead('ext-teamlead-1');
 

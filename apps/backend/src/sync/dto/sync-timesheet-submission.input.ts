@@ -8,13 +8,18 @@ import { ConflictResolutionStrategy } from './conflict-resolution-strategy.enum'
  */
 @InputType({ description: 'Input for syncing a single timesheet submission' })
 export class SyncTimesheetSubmissionInput {
-  @Field(() => ID, { nullable: true, description: 'ID of existing submission (null for CREATE)' })
+  @Field(() => ID, {
+    nullable: true,
+    description: 'ID of existing submission (null for CREATE)',
+  })
   id?: string;
 
   @Field(() => ID, { description: 'Pay period ID for this submission' })
   payPeriodId: string;
 
-  @Field({ description: 'Submission status (draft, submitted, approved, rejected)' })
+  @Field({
+    description: 'Submission status (draft, submitted, approved, rejected)',
+  })
   status: string;
 
   @Field({ nullable: true, description: 'When the timesheet was submitted' })
@@ -23,16 +28,21 @@ export class SyncTimesheetSubmissionInput {
   @Field({ nullable: true, description: 'Comments for the submission' })
   comments?: string;
 
-  @Field(() => SyncOperation, { description: 'Operation to perform (CREATE, UPDATE, DELETE)' })
+  @Field(() => SyncOperation, {
+    description: 'Operation to perform (CREATE, UPDATE, DELETE)',
+  })
   operation: SyncOperation;
 
-  @Field({ nullable: true, description: 'Client last synced timestamp for conflict detection' })
+  @Field({
+    nullable: true,
+    description: 'Client last synced timestamp for conflict detection',
+  })
   lastSyncedAt?: Date;
 
   @Field(() => ConflictResolutionStrategy, {
     nullable: true,
     defaultValue: ConflictResolutionStrategy.SERVER_WINS,
-    description: 'Conflict resolution strategy if conflict detected'
+    description: 'Conflict resolution strategy if conflict detected',
   })
   resolution?: ConflictResolutionStrategy;
 }

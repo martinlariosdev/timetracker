@@ -10,12 +10,22 @@ export class SyncFilterInput {
   @Field({ nullable: true, description: 'Filter by device identifier' })
   deviceId?: string;
 
-  @Field(() => SyncEntityType, { nullable: true, description: 'Filter by entity type' })
+  @Field(() => SyncEntityType, {
+    nullable: true,
+    description: 'Filter by entity type',
+  })
   entityType?: SyncEntityType;
 
-  @Field(() => SyncOperationType, { nullable: true, description: 'Filter by operation type' })
+  @Field(() => SyncOperationType, {
+    nullable: true,
+    description: 'Filter by operation type',
+  })
   operation?: SyncOperationType;
 
-  @Field({ nullable: true, defaultValue: false, description: 'Only return failed syncs' })
+  @Field({
+    nullable: true,
+    defaultValue: false,
+    description: 'Only return failed syncs',
+  })
   onlyFailed?: boolean;
 }

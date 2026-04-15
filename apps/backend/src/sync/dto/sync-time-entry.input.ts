@@ -8,7 +8,10 @@ import { ConflictResolutionStrategy } from './conflict-resolution-strategy.enum'
  */
 @InputType({ description: 'Input for syncing a single time entry' })
 export class SyncTimeEntryInput {
-  @Field(() => ID, { nullable: true, description: 'ID of existing entry (null for CREATE)' })
+  @Field(() => ID, {
+    nullable: true,
+    description: 'ID of existing entry (null for CREATE)',
+  })
   id?: string;
 
   @Field({ description: 'Date in YYYY-MM-DD format' })
@@ -38,19 +41,27 @@ export class SyncTimeEntryInput {
   @Field({ description: 'Total hours (calculated client-side)' })
   totalHours: number;
 
-  @Field(() => SyncOperation, { description: 'Operation to perform (CREATE, UPDATE, DELETE)' })
+  @Field(() => SyncOperation, {
+    description: 'Operation to perform (CREATE, UPDATE, DELETE)',
+  })
   operation: SyncOperation;
 
-  @Field({ nullable: true, description: 'Client last synced timestamp for conflict detection' })
+  @Field({
+    nullable: true,
+    description: 'Client last synced timestamp for conflict detection',
+  })
   lastSyncedAt?: Date;
 
   @Field(() => ConflictResolutionStrategy, {
     nullable: true,
     defaultValue: ConflictResolutionStrategy.SERVER_WINS,
-    description: 'Conflict resolution strategy if conflict detected'
+    description: 'Conflict resolution strategy if conflict detected',
   })
   resolution?: ConflictResolutionStrategy;
 
-  @Field(() => ID, { nullable: true, description: 'Pay period ID (will use current if not provided)' })
+  @Field(() => ID, {
+    nullable: true,
+    description: 'Pay period ID (will use current if not provided)',
+  })
   payPeriodId?: string;
 }

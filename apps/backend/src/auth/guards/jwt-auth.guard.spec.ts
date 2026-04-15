@@ -143,7 +143,12 @@ describe('JwtAuthGuard', () => {
       (reflector.getAllAndOverride as jest.Mock).mockReturnValue(false);
 
       // Mock the parent canActivate to return false
-      jest.spyOn(Object.getPrototypeOf(Object.getPrototypeOf(guard)), 'canActivate').mockResolvedValue(false);
+      jest
+        .spyOn(
+          Object.getPrototypeOf(Object.getPrototypeOf(guard)),
+          'canActivate',
+        )
+        .mockResolvedValue(false);
 
       const result = await guard.canActivate(context);
 
@@ -186,7 +191,12 @@ describe('JwtAuthGuard', () => {
       (reflector.getAllAndOverride as jest.Mock).mockReturnValue(false);
 
       // Mock parent canActivate
-      jest.spyOn(Object.getPrototypeOf(Object.getPrototypeOf(guard)), 'canActivate').mockResolvedValue(true);
+      jest
+        .spyOn(
+          Object.getPrototypeOf(Object.getPrototypeOf(guard)),
+          'canActivate',
+        )
+        .mockResolvedValue(true);
 
       await guard.canActivate(context);
 

@@ -14,9 +14,13 @@ export class SyncResult {
   @Field(() => Int, { description: 'Number of items that failed to sync' })
   failed: number;
 
-  @Field(() => [ConflictInfo], { description: 'List of conflicts detected during sync' })
+  @Field(() => [ConflictInfo], {
+    description: 'List of conflicts detected during sync',
+  })
   conflicts: ConflictInfo[];
 
-  @Field(() => [SyncError], { description: 'List of errors that occurred during sync' })
+  @Field(() => [SyncError], {
+    description: 'List of errors that occurred during sync',
+  })
   errors: SyncError[];
 }

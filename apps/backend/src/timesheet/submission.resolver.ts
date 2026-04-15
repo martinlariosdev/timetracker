@@ -29,7 +29,9 @@ export class SubmissionResolver {
    * @param user - Current authenticated user
    * @returns Created submission record
    */
-  @Mutation(() => TimesheetSubmissionType, { description: 'Submit a timesheet for approval' })
+  @Mutation(() => TimesheetSubmissionType, {
+    description: 'Submit a timesheet for approval',
+  })
   async submitTimesheet(
     @Args('input') input: SubmitTimesheetInput,
     @CurrentUser() user: Consultant,
@@ -44,7 +46,9 @@ export class SubmissionResolver {
    * @param user - Current authenticated user (must be a team lead)
    * @returns Updated submission record
    */
-  @Mutation(() => TimesheetSubmissionType, { description: 'Approve a timesheet submission (team leads only)' })
+  @Mutation(() => TimesheetSubmissionType, {
+    description: 'Approve a timesheet submission (team leads only)',
+  })
   async approveTimesheet(
     @Args('input') input: ApproveTimesheetInput,
     @CurrentUser() user: Consultant,
@@ -65,7 +69,9 @@ export class SubmissionResolver {
    * @param user - Current authenticated user (must be a team lead)
    * @returns Updated submission record
    */
-  @Mutation(() => TimesheetSubmissionType, { description: 'Reject a timesheet submission (team leads only)' })
+  @Mutation(() => TimesheetSubmissionType, {
+    description: 'Reject a timesheet submission (team leads only)',
+  })
   async rejectTimesheet(
     @Args('input') input: RejectTimesheetInput,
     @CurrentUser() user: Consultant,
@@ -85,7 +91,9 @@ export class SubmissionResolver {
    * @param user - Current authenticated user
    * @returns Submission record
    */
-  @Query(() => TimesheetSubmissionType, { description: 'Get a timesheet submission by ID' })
+  @Query(() => TimesheetSubmissionType, {
+    description: 'Get a timesheet submission by ID',
+  })
   async timesheetSubmission(
     @Args('id') id: string,
     @CurrentUser() user: Consultant,
@@ -112,12 +120,18 @@ export class SubmissionResolver {
    * @param user - Current authenticated user
    * @returns Submission record or null if not found
    */
-  @Query(() => TimesheetSubmissionType, { nullable: true, description: 'Get a timesheet submission by pay period ID' })
+  @Query(() => TimesheetSubmissionType, {
+    nullable: true,
+    description: 'Get a timesheet submission by pay period ID',
+  })
   async timesheetSubmissionByPayPeriod(
     @Args('payPeriodId') payPeriodId: string,
     @CurrentUser() user: Consultant,
   ) {
-    return this.submissionService.getSubmissionByPayPeriod(user.id, payPeriodId);
+    return this.submissionService.getSubmissionByPayPeriod(
+      user.id,
+      payPeriodId,
+    );
   }
 
   /**
@@ -125,7 +139,9 @@ export class SubmissionResolver {
    * @param user - Current authenticated user
    * @returns Array of submissions
    */
-  @Query(() => [TimesheetSubmissionType], { description: 'Get all timesheet submissions for the current user' })
+  @Query(() => [TimesheetSubmissionType], {
+    description: 'Get all timesheet submissions for the current user',
+  })
   async myTimesheetSubmissions(@CurrentUser() user: Consultant) {
     return this.submissionService.getSubmissionsByConsultant(user.id);
   }
@@ -136,7 +152,9 @@ export class SubmissionResolver {
    * @param user - Current authenticated user (team lead)
    * @returns Array of submissions pending review
    */
-  @Query(() => [TimesheetSubmissionType], { description: 'Get timesheet submissions pending review (team leads only)' })
+  @Query(() => [TimesheetSubmissionType], {
+    description: 'Get timesheet submissions pending review (team leads only)',
+  })
   async pendingTimesheetSubmissions(@CurrentUser() user: Consultant) {
     // Use externalId as the team lead identifier
     return this.submissionService.getSubmissionsForTeamLead(user.externalId);

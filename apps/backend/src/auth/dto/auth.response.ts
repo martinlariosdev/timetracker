@@ -18,13 +18,21 @@ export class UserType {
   @Field(() => String, { description: 'Consultant email' })
   email: string;
 
-  @Field(() => Float, { description: 'Current ETO (Extended Time Off) balance in hours' })
+  @Field(() => Float, {
+    description: 'Current ETO (Extended Time Off) balance in hours',
+  })
   etoBalance: number;
 
-  @Field(() => Float, { nullable: true, description: 'Standard working hours per pay period' })
+  @Field(() => Float, {
+    nullable: true,
+    description: 'Standard working hours per pay period',
+  })
   workingHoursPerPeriod?: number;
 
-  @Field(() => String, { nullable: true, description: 'Payment type (e.g., contract, hourly)' })
+  @Field(() => String, {
+    nullable: true,
+    description: 'Payment type (e.g., contract, hourly)',
+  })
   paymentType?: string;
 }
 

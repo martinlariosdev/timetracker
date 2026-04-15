@@ -5,7 +5,9 @@ import { ETOTransactionType } from './eto-transaction.object';
  * GraphQL Object Type for ETO Balance information
  * Represents the current ETO balance and recent transaction history
  */
-@ObjectType({ description: 'ETO balance and recent transaction history for a consultant' })
+@ObjectType({
+  description: 'ETO balance and recent transaction history for a consultant',
+})
 export class ETOBalanceType {
   @Field(() => Float, { description: 'Current ETO balance in hours' })
   balance: number;

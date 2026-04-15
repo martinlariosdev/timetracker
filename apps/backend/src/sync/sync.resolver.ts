@@ -36,7 +36,9 @@ export class SyncResolver {
    * @param user - Current authenticated user
    * @returns Created sync log entry
    */
-  @Mutation(() => SyncLogObjectType, { description: 'Record a sync operation from a mobile device' })
+  @Mutation(() => SyncLogObjectType, {
+    description: 'Record a sync operation from a mobile device',
+  })
   async logSync(
     @Args('input') input: CreateSyncLogInput,
     @CurrentUser() user: Consultant,
@@ -51,7 +53,9 @@ export class SyncResolver {
    * @param user - Current authenticated user
    * @returns Array of sync logs ordered by syncedAt desc
    */
-  @Query(() => [SyncLogObjectType], { description: 'Get sync logs for current user with optional filters' })
+  @Query(() => [SyncLogObjectType], {
+    description: 'Get sync logs for current user with optional filters',
+  })
   async syncLogs(
     @CurrentUser() user: Consultant,
     @Args('filters', { nullable: true }) filters?: SyncFilterInput,
@@ -65,7 +69,9 @@ export class SyncResolver {
    * @param user - Current authenticated user
    * @returns Array of failed sync logs ordered by syncedAt desc
    */
-  @Query(() => [SyncLogObjectType], { description: 'Get failed syncs for current user/device' })
+  @Query(() => [SyncLogObjectType], {
+    description: 'Get failed syncs for current user/device',
+  })
   async failedSyncs(
     @CurrentUser() user: Consultant,
   ): Promise<SyncLogObjectType[]> {
@@ -81,14 +87,22 @@ export class SyncResolver {
    * @param user - Current authenticated user
    * @returns ConflictInfo with details if conflict detected
    */
-  @Query(() => ConflictInfo, { description: 'Check if an entity has conflicts before syncing' })
+  @Query(() => ConflictInfo, {
+    description: 'Check if an entity has conflicts before syncing',
+  })
   async checkConflict(
-    @Args('entityType', { type: () => SyncEntityType }) entityType: SyncEntityType,
+    @Args('entityType', { type: () => SyncEntityType })
+    entityType: SyncEntityType,
     @Args('entityId') entityId: string,
     @Args('lastSyncedAt') lastSyncedAt: Date,
     @CurrentUser() user: Consultant,
   ): Promise<ConflictInfo> {
-    return this.syncService.detectConflict(user.id, entityType, entityId, lastSyncedAt);
+    return this.syncService.detectConflict(
+      user.id,
+      entityType,
+      entityId,
+      lastSyncedAt,
+    );
   }
 
   /**
@@ -98,7 +112,9 @@ export class SyncResolver {
    * @param user - Current authenticated user
    * @returns ResolvedConflict with final data after resolution
    */
-  @Mutation(() => ResolvedConflict, { description: 'Resolve a detected conflict using a strategy' })
+  @Mutation(() => ResolvedConflict, {
+    description: 'Resolve a detected conflict using a strategy',
+  })
   async resolveConflict(
     @Args('input') input: ResolveConflictInput,
     @CurrentUser() user: Consultant,
@@ -114,9 +130,12 @@ export class SyncResolver {
    * @param user - Current authenticated user
    * @returns SyncResult with counts and any errors
    */
-  @Mutation(() => SyncResult, { description: 'Batch sync time entries from mobile device' })
+  @Mutation(() => SyncResult, {
+    description: 'Batch sync time entries from mobile device',
+  })
   async syncTimeEntries(
-    @Args('entries', { type: () => [SyncTimeEntryInput] }) entries: SyncTimeEntryInput[],
+    @Args('entries', { type: () => [SyncTimeEntryInput] })
+    entries: SyncTimeEntryInput[],
     @Args('deviceId') deviceId: string,
     @CurrentUser() user: Consultant,
   ): Promise<SyncResult> {
@@ -131,13 +150,20 @@ export class SyncResolver {
    * @param user - Current authenticated user
    * @returns SyncResult with counts and any errors
    */
-  @Mutation(() => SyncResult, { description: 'Batch sync ETO transactions from mobile device' })
+  @Mutation(() => SyncResult, {
+    description: 'Batch sync ETO transactions from mobile device',
+  })
   async syncETOTransactions(
-    @Args('transactions', { type: () => [SyncETOTransactionInput] }) transactions: SyncETOTransactionInput[],
+    @Args('transactions', { type: () => [SyncETOTransactionInput] })
+    transactions: SyncETOTransactionInput[],
     @Args('deviceId') deviceId: string,
     @CurrentUser() user: Consultant,
   ): Promise<SyncResult> {
-    return this.syncService.syncETOTransactions(user.id, transactions, deviceId);
+    return this.syncService.syncETOTransactions(
+      user.id,
+      transactions,
+      deviceId,
+    );
   }
 
   /**
@@ -148,12 +174,19 @@ export class SyncResolver {
    * @param user - Current authenticated user
    * @returns SyncResult with counts and any errors
    */
-  @Mutation(() => SyncResult, { description: 'Batch sync timesheet submissions from mobile device' })
+  @Mutation(() => SyncResult, {
+    description: 'Batch sync timesheet submissions from mobile device',
+  })
   async syncTimesheetSubmissions(
-    @Args('submissions', { type: () => [SyncTimesheetSubmissionInput] }) submissions: SyncTimesheetSubmissionInput[],
+    @Args('submissions', { type: () => [SyncTimesheetSubmissionInput] })
+    submissions: SyncTimesheetSubmissionInput[],
     @Args('deviceId') deviceId: string,
     @CurrentUser() user: Consultant,
   ): Promise<SyncResult> {
-    return this.syncService.syncTimesheetSubmissions(user.id, submissions, deviceId);
+    return this.syncService.syncTimesheetSubmissions(
+      user.id,
+      submissions,
+      deviceId,
+    );
   }
 }

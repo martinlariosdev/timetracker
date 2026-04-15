@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TimeEntry } from '@prisma/client';
 
@@ -29,18 +34,22 @@ export class SubmissionService {
     });
 
     if (!payPeriod) {
-      throw new NotFoundException(`Pay period with ID ${payPeriodId} not found`);
+      throw new NotFoundException(
+        `Pay period with ID ${payPeriodId} not found`,
+      );
     }
 
     // Check if already submitted
-    const existingSubmission = await this.prisma.timesheetSubmission.findUnique({
-      where: {
-        consultantId_payPeriodId: {
-          consultantId,
-          payPeriodId,
+    const existingSubmission = await this.prisma.timesheetSubmission.findUnique(
+      {
+        where: {
+          consultantId_payPeriodId: {
+            consultantId,
+            payPeriodId,
+          },
         },
       },
-    });
+    );
 
     if (existingSubmission && existingSubmission.status !== 'draft') {
       throw new BadRequestException(
@@ -60,7 +69,11 @@ export class SubmissionService {
     });
 
     // Validate time entries
-    await this.validateTimeEntries(timeEntries, payPeriod.startDate, payPeriod.endDate);
+    await this.validateTimeEntries(
+      timeEntries,
+      payPeriod.startDate,
+      payPeriod.endDate,
+    );
 
     // Create or update submission
     const submission = await this.prisma.timesheetSubmission.upsert({
@@ -82,7 +95,9 @@ export class SubmissionService {
       },
     });
 
-    this.logger.log(`Timesheet submitted: ${submission.id} by consultant ${consultantId}`);
+    this.logger.log(
+      `Timesheet submitted: ${submission.id} by consultant ${consultantId}`,
+    );
     return submission;
   }
 
@@ -94,7 +109,11 @@ export class SubmissionService {
    * @returns Updated submission record
    * @throws BadRequestException if validation fails
    */
-  async approveTimesheet(submissionId: string, teamLeadId: string, comments?: string) {
+  async approveTimesheet(
+    submissionId: string,
+    teamLeadId: string,
+    comments?: string,
+  ) {
     const submission = await this.prisma.timesheetSubmission.findUnique({
       where: { id: submissionId },
       include: {
@@ -103,7 +122,9 @@ export class SubmissionService {
     });
 
     if (!submission) {
-      throw new NotFoundException(`Submission with ID ${submissionId} not found`);
+      throw new NotFoundException(
+        `Submission with ID ${submissionId} not found`,
+      );
     }
 
     // Verify the submission is in submitted status
@@ -130,7 +151,9 @@ export class SubmissionService {
       },
     });
 
-    this.logger.log(`Timesheet approved: ${submissionId} by team lead ${teamLeadId}`);
+    this.logger.log(
+      `Timesheet approved: ${submissionId} by team lead ${teamLeadId}`,
+    );
     return updated;
   }
 
@@ -143,9 +166,15 @@ export class SubmissionService {
    * @returns Updated submission record
    * @throws BadRequestException if validation fails
    */
-  async rejectTimesheet(submissionId: string, teamLeadId: string, comments: string) {
+  async rejectTimesheet(
+    submissionId: string,
+    teamLeadId: string,
+    comments: string,
+  ) {
     if (!comments || comments.trim().length === 0) {
-      throw new BadRequestException('Comments are required when rejecting a timesheet');
+      throw new BadRequestException(
+        'Comments are required when rejecting a timesheet',
+      );
     }
 
     const submission = await this.prisma.timesheetSubmission.findUnique({
@@ -156,7 +185,9 @@ export class SubmissionService {
     });
 
     if (!submission) {
-      throw new NotFoundException(`Submission with ID ${submissionId} not found`);
+      throw new NotFoundException(
+        `Submission with ID ${submissionId} not found`,
+      );
     }
 
     // Verify the submission is in submitted status
@@ -183,7 +214,9 @@ export class SubmissionService {
       },
     });
 
-    this.logger.log(`Timesheet rejected: ${submissionId} by team lead ${teamLeadId}`);
+    this.logger.log(
+      `Timesheet rejected: ${submissionId} by team lead ${teamLeadId}`,
+    );
     return updated;
   }
 
@@ -291,7 +324,10 @@ export class SubmissionService {
     }
 
     // Calculate total hours
-    const totalHours = timeEntries.reduce((sum, entry) => sum + entry.totalHours, 0);
+    const totalHours = timeEntries.reduce(
+      (sum, entry) => sum + entry.totalHours,
+      0,
+    );
 
     // Calculate number of weeks in the period
     const periodDays = Math.ceil(
@@ -309,7 +345,7 @@ export class SubmissionService {
 
     // Check for date gaps (find dates with no entries)
     const entryDates = new Set(
-      timeEntries.map(entry => entry.date.toISOString().split('T')[0]),
+      timeEntries.map((entry) => entry.date.toISOString().split('T')[0]),
     );
 
     const missingDates: string[] = [];

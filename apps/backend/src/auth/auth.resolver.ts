@@ -1,9 +1,4 @@
-import {
-  Resolver,
-  Mutation,
-  Query,
-  Args,
-} from '@nestjs/graphql';
+import { Resolver, Mutation, Query, Args } from '@nestjs/graphql';
 import {
   UseGuards,
   Logger,
@@ -14,7 +9,13 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
-import { LoginInput, AuthResponse, UserType, TokenResponse, MockLoginInput } from './dto';
+import {
+  LoginInput,
+  AuthResponse,
+  UserType,
+  TokenResponse,
+  MockLoginInput,
+} from './dto';
 import type { Consultant } from '@prisma/client';
 
 /**
@@ -70,7 +71,8 @@ export class AuthResolver {
       const consultant = await this.authService.validateOktaUser(oktaProfile);
 
       // Generate JWT token
-      const { accessToken, expiresIn } = await this.authService.login(consultant);
+      const { accessToken, expiresIn } =
+        await this.authService.login(consultant);
 
       // Map consultant to UserType
       const user: UserType = {
@@ -94,7 +96,10 @@ export class AuthResolver {
       this.logger.error(
         `Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
-      if (error instanceof BadRequestException || error instanceof UnauthorizedException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof UnauthorizedException
+      ) {
         throw error;
       }
       throw new UnauthorizedException('Authentication failed');
@@ -122,22 +127,29 @@ export class AuthResolver {
     // Check if mock auth is enabled
     const mockAuthEnabled = process.env.ENABLE_MOCK_AUTH === 'true';
     if (!mockAuthEnabled) {
-      this.logger.warn('Mock login attempted but ENABLE_MOCK_AUTH is not set to true');
+      this.logger.warn(
+        'Mock login attempted but ENABLE_MOCK_AUTH is not set to true',
+      );
       throw new UnauthorizedException(
-        'Mock authentication is disabled. Set ENABLE_MOCK_AUTH=true in .env to enable (development only)'
+        'Mock authentication is disabled. Set ENABLE_MOCK_AUTH=true in .env to enable (development only)',
       );
     }
 
     try {
       // Find consultant by email
-      const consultant = await this.authService.findConsultantByEmail(input.email);
+      const consultant = await this.authService.findConsultantByEmail(
+        input.email,
+      );
 
       if (!consultant) {
-        throw new UnauthorizedException(`No consultant found with email: ${input.email}`);
+        throw new UnauthorizedException(
+          `No consultant found with email: ${input.email}`,
+        );
       }
 
       // Generate JWT token
-      const { accessToken, expiresIn } = await this.authService.login(consultant);
+      const { accessToken, expiresIn } =
+        await this.authService.login(consultant);
 
       // Map consultant to UserType
       const user: UserType = {

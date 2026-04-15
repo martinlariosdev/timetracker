@@ -6,15 +6,26 @@ import { ETOTransactionType } from './eto-transaction.object';
  * Used for accruals or administrative adjustments
  * This is an admin operation - admins can adjust any consultant's balance
  */
-@InputType({ description: 'Input for manually adjusting ETO balance (accrual or admin adjustment)' })
+@InputType({
+  description:
+    'Input for manually adjusting ETO balance (accrual or admin adjustment)',
+})
 export class AdjustETOInput {
-  @Field(() => ID, { description: 'ID of the consultant whose balance to adjust' })
+  @Field(() => ID, {
+    description: 'ID of the consultant whose balance to adjust',
+  })
   consultantId: string;
 
-  @Field(() => Float, { description: 'Number of hours (always positive, direction determined by transactionType)' })
+  @Field(() => Float, {
+    description:
+      'Number of hours (always positive, direction determined by transactionType)',
+  })
   hours: number;
 
-  @Field(() => ETOTransactionType, { description: 'Type of adjustment: Accrual (adds to balance) or Usage (deducts from balance)' })
+  @Field(() => ETOTransactionType, {
+    description:
+      'Type of adjustment: Accrual (adds to balance) or Usage (deducts from balance)',
+  })
   transactionType: ETOTransactionType;
 
   @Field({ description: 'Date of the adjustment' })

@@ -13,13 +13,19 @@ export class CreateSyncLogInput {
   @Field(() => SyncEntityType, { description: 'Type of entity being synced' })
   entityType: SyncEntityType;
 
-  @Field(() => SyncOperationType, { description: 'Type of operation performed' })
+  @Field(() => SyncOperationType, {
+    description: 'Type of operation performed',
+  })
   operation: SyncOperationType;
 
   @Field(() => ID, { description: 'ID of the entity that was synced' })
   entityId: string;
 
-  @Field({ nullable: true, defaultValue: true, description: 'Whether the sync operation was successful' })
+  @Field({
+    nullable: true,
+    defaultValue: true,
+    description: 'Whether the sync operation was successful',
+  })
   success?: boolean;
 
   @Field({ nullable: true, description: 'Error message if sync failed' })

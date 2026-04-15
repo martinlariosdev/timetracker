@@ -54,7 +54,10 @@ describe('ETOResolver', () => {
     it('should return ETO balance as a number', async () => {
       mockETOService.getBalance.mockResolvedValue(40.0);
 
-      const result = await resolver.etoBalance(mockConsultant.id, mockConsultant);
+      const result = await resolver.etoBalance(
+        mockConsultant.id,
+        mockConsultant,
+      );
 
       expect(result).toBe(40.0);
       expect(mockETOService.getBalance).toHaveBeenCalledWith(mockConsultant.id);
@@ -143,7 +146,10 @@ describe('ETOResolver', () => {
 
       expect(result.hours).toBe(-8);
       expect(result.transactionType).toBe('Usage');
-      expect(mockETOService.useETO).toHaveBeenCalledWith(mockConsultant.id, input);
+      expect(mockETOService.useETO).toHaveBeenCalledWith(
+        mockConsultant.id,
+        input,
+      );
     });
 
     it('should include project name when provided', async () => {
@@ -171,7 +177,10 @@ describe('ETOResolver', () => {
       const result = await resolver.useETO(input, mockConsultant);
 
       expect(result.projectName).toBe('PROJ-123');
-      expect(mockETOService.useETO).toHaveBeenCalledWith(mockConsultant.id, input);
+      expect(mockETOService.useETO).toHaveBeenCalledWith(
+        mockConsultant.id,
+        input,
+      );
     });
   });
 

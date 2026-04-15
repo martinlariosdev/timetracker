@@ -16,12 +16,17 @@ export class PayPeriodType {
   @Field(() => Date, { description: 'End date of the pay period' })
   endDate: Date;
 
-  @Field({ description: 'Human-readable display text (e.g., "April 1-15, 2026")' })
+  @Field({
+    description: 'Human-readable display text (e.g., "April 1-15, 2026")',
+  })
   displayText: string;
 
   @Field({ description: 'Whether this is the current active pay period' })
   isCurrent: boolean;
 
-  @Field(() => Date, { nullable: true, description: 'Submission deadline for this pay period' })
+  @Field(() => Date, {
+    nullable: true,
+    description: 'Submission deadline for this pay period',
+  })
   deadlineDate?: Date;
 }

@@ -14,15 +14,29 @@ import { z } from 'zod';
  * Do NOT consolidate these schemas - they serve different purposes in different contexts.
  */
 export const createTimeEntrySchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
   totalHours: z.number().positive('Total hours must be positive'),
   projectTaskNumber: z.string().optional(),
   clientName: z.string().min(1, 'Client name is required'),
   description: z.string().min(1, 'Description is required'),
-  inTime1: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format').optional(),
-  outTime1: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format').optional(),
-  inTime2: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format').optional(),
-  outTime2: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format').optional(),
+  inTime1: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format')
+    .optional(),
+  outTime1: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format')
+    .optional(),
+  inTime2: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format')
+    .optional(),
+  outTime2: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format')
+    .optional(),
 });
 
 /**
@@ -37,7 +51,10 @@ export class CreateTimeEntryInput extends createZodDto(createTimeEntrySchema) {
   @Field(() => Float, { description: 'Total hours worked' })
   totalHours: number;
 
-  @Field({ nullable: true, description: 'Project or task number (e.g., PROJ-123)' })
+  @Field({
+    nullable: true,
+    description: 'Project or task number (e.g., PROJ-123)',
+  })
   projectTaskNumber?: string;
 
   @Field({ description: 'Name of the client' })
@@ -49,12 +66,21 @@ export class CreateTimeEntryInput extends createZodDto(createTimeEntrySchema) {
   @Field({ nullable: true, description: 'First clock-in time in HH:mm format' })
   inTime1?: string;
 
-  @Field({ nullable: true, description: 'First clock-out time in HH:mm format' })
+  @Field({
+    nullable: true,
+    description: 'First clock-out time in HH:mm format',
+  })
   outTime1?: string;
 
-  @Field({ nullable: true, description: 'Second clock-in time in HH:mm format for split shifts' })
+  @Field({
+    nullable: true,
+    description: 'Second clock-in time in HH:mm format for split shifts',
+  })
   inTime2?: string;
 
-  @Field({ nullable: true, description: 'Second clock-out time in HH:mm format for split shifts' })
+  @Field({
+    nullable: true,
+    description: 'Second clock-out time in HH:mm format for split shifts',
+  })
   outTime2?: string;
 }

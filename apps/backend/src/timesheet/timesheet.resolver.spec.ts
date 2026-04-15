@@ -83,7 +83,10 @@ describe('TimesheetResolver', () => {
       const mockEntries = [mockTimeEntry];
       mockTimesheetService.findAll.mockResolvedValue(mockEntries);
 
-      const filters = { consultantId: 'other-consultant-id', payPeriodId: 'period-123' };
+      const filters = {
+        consultantId: 'other-consultant-id',
+        payPeriodId: 'period-123',
+      };
       await resolver.timeEntries(filters, mockConsultant);
 
       expect(service.findAll).toHaveBeenCalledWith({
@@ -122,15 +125,18 @@ describe('TimesheetResolver', () => {
     });
 
     it('should throw ForbiddenException when user does not own the entry', async () => {
-      const otherUserEntry = { ...mockTimeEntry, consultantId: 'other-consultant-id' };
+      const otherUserEntry = {
+        ...mockTimeEntry,
+        consultantId: 'other-consultant-id',
+      };
       mockTimesheetService.findOne.mockResolvedValue(otherUserEntry);
 
-      await expect(resolver.timeEntry('entry-123', mockConsultant)).rejects.toThrow(
-        ForbiddenException,
-      );
-      await expect(resolver.timeEntry('entry-123', mockConsultant)).rejects.toThrow(
-        'You can only view your own time entries',
-      );
+      await expect(
+        resolver.timeEntry('entry-123', mockConsultant),
+      ).rejects.toThrow(ForbiddenException);
+      await expect(
+        resolver.timeEntry('entry-123', mockConsultant),
+      ).rejects.toThrow('You can only view your own time entries');
     });
 
     it('should propagate NotFoundException from service', async () => {
@@ -138,9 +144,9 @@ describe('TimesheetResolver', () => {
         new NotFoundException('TimeEntry with ID entry-999 not found'),
       );
 
-      await expect(resolver.timeEntry('entry-999', mockConsultant)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        resolver.timeEntry('entry-999', mockConsultant),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -199,11 +205,13 @@ describe('TimesheetResolver', () => {
         outTime1: '17:00',
       };
 
-      mockTimesheetService.create.mockRejectedValue(new Error('Validation failed'));
-
-      await expect(resolver.createTimeEntry(input, mockConsultant)).rejects.toThrow(
-        'Validation failed',
+      mockTimesheetService.create.mockRejectedValue(
+        new Error('Validation failed'),
       );
+
+      await expect(
+        resolver.createTimeEntry(input, mockConsultant),
+      ).rejects.toThrow('Validation failed');
     });
   });
 
@@ -214,12 +222,19 @@ describe('TimesheetResolver', () => {
         description: 'Updated description',
       };
 
-      const updatedEntry = { ...mockTimeEntry, description: 'Updated description' };
+      const updatedEntry = {
+        ...mockTimeEntry,
+        description: 'Updated description',
+      };
 
       mockTimesheetService.findOne.mockResolvedValue(mockTimeEntry);
       mockTimesheetService.update.mockResolvedValue(updatedEntry);
 
-      const result = await resolver.updateTimeEntry('entry-123', input, mockConsultant);
+      const result = await resolver.updateTimeEntry(
+        'entry-123',
+        input,
+        mockConsultant,
+      );
 
       expect(result).toEqual(updatedEntry);
       expect(service.findOne).toHaveBeenCalledWith('entry-123');
@@ -227,7 +242,10 @@ describe('TimesheetResolver', () => {
     });
 
     it('should throw ForbiddenException when user does not own the entry', async () => {
-      const otherUserEntry = { ...mockTimeEntry, consultantId: 'other-consultant-id' };
+      const otherUserEntry = {
+        ...mockTimeEntry,
+        consultantId: 'other-consultant-id',
+      };
       const input = {
         id: 'entry-123',
         description: 'Updated description',
@@ -235,12 +253,12 @@ describe('TimesheetResolver', () => {
 
       mockTimesheetService.findOne.mockResolvedValue(otherUserEntry);
 
-      await expect(resolver.updateTimeEntry('entry-123', input, mockConsultant)).rejects.toThrow(
-        ForbiddenException,
-      );
-      await expect(resolver.updateTimeEntry('entry-123', input, mockConsultant)).rejects.toThrow(
-        'You can only update your own time entries',
-      );
+      await expect(
+        resolver.updateTimeEntry('entry-123', input, mockConsultant),
+      ).rejects.toThrow(ForbiddenException);
+      await expect(
+        resolver.updateTimeEntry('entry-123', input, mockConsultant),
+      ).rejects.toThrow('You can only update your own time entries');
 
       expect(service.update).not.toHaveBeenCalled();
     });
@@ -255,9 +273,9 @@ describe('TimesheetResolver', () => {
         new NotFoundException('TimeEntry with ID entry-999 not found'),
       );
 
-      await expect(resolver.updateTimeEntry('entry-999', input, mockConsultant)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        resolver.updateTimeEntry('entry-999', input, mockConsultant),
+      ).rejects.toThrow(NotFoundException);
 
       expect(service.update).not.toHaveBeenCalled();
     });
@@ -268,7 +286,10 @@ describe('TimesheetResolver', () => {
       mockTimesheetService.findOne.mockResolvedValue(mockTimeEntry);
       mockTimesheetService.delete.mockResolvedValue(mockTimeEntry);
 
-      const result = await resolver.deleteTimeEntry('entry-123', mockConsultant);
+      const result = await resolver.deleteTimeEntry(
+        'entry-123',
+        mockConsultant,
+      );
 
       expect(result).toBe(true);
       expect(service.findOne).toHaveBeenCalledWith('entry-123');
@@ -276,15 +297,18 @@ describe('TimesheetResolver', () => {
     });
 
     it('should throw ForbiddenException when user does not own the entry', async () => {
-      const otherUserEntry = { ...mockTimeEntry, consultantId: 'other-consultant-id' };
+      const otherUserEntry = {
+        ...mockTimeEntry,
+        consultantId: 'other-consultant-id',
+      };
       mockTimesheetService.findOne.mockResolvedValue(otherUserEntry);
 
-      await expect(resolver.deleteTimeEntry('entry-123', mockConsultant)).rejects.toThrow(
-        ForbiddenException,
-      );
-      await expect(resolver.deleteTimeEntry('entry-123', mockConsultant)).rejects.toThrow(
-        'You can only delete your own time entries',
-      );
+      await expect(
+        resolver.deleteTimeEntry('entry-123', mockConsultant),
+      ).rejects.toThrow(ForbiddenException);
+      await expect(
+        resolver.deleteTimeEntry('entry-123', mockConsultant),
+      ).rejects.toThrow('You can only delete your own time entries');
 
       expect(service.delete).not.toHaveBeenCalled();
     });
@@ -294,9 +318,9 @@ describe('TimesheetResolver', () => {
         new NotFoundException('TimeEntry with ID entry-999 not found'),
       );
 
-      await expect(resolver.deleteTimeEntry('entry-999', mockConsultant)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        resolver.deleteTimeEntry('entry-999', mockConsultant),
+      ).rejects.toThrow(NotFoundException);
 
       expect(service.delete).not.toHaveBeenCalled();
     });
