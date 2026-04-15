@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { BiometricService } from '@/lib/auth/biometric-service';
 import { MockLoginButtonWithSelector } from '@/components/MockLoginButton';
-import { useNavigation, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 const FEATURE_PILLS = [
   { icon: 'clock' as const, label: 'Quick Entry' },
@@ -19,7 +19,6 @@ const FEATURE_PILLS = [
 
 export default function LoginScreen() {
   const router = useRouter();
-  const navigation = useNavigation();
   const { login, isLoading, error, biometricEnabled, authenticateWithBiometric } = useAuth();
   const [reduceMotion, setReduceMotion] = useState(false);
   const [biometricLabel, setBiometricLabel] = useState('Biometric');
