@@ -26,4 +26,27 @@ export class PayPeriodService {
 
     return period;
   }
+
+  /**
+   * Get pay period that contains a specific date
+   * @param date Date to find pay period for
+   * @returns Pay period containing the date
+   * @throws NotFoundException if no period found
+   */
+  async getPayPeriodForDate(date: Date): Promise<PayPeriod> {
+    const period = await this.prisma.payPeriod.findFirst({
+      where: {
+        startDate: { lte: date },
+        endDate: { gte: date },
+      },
+    });
+
+    if (!period) {
+      throw new NotFoundException(
+        `No pay period found for date ${date.toISOString()}`,
+      );
+    }
+
+    return period;
+  }
 }

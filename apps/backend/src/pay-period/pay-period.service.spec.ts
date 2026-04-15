@@ -60,4 +60,78 @@ describe('PayPeriodService', () => {
       );
     });
   });
+
+  describe('getPayPeriodForDate', () => {
+    it('should return pay period containing the given date', async () => {
+      const date = new Date('2026-04-10');
+      const mockPeriod = {
+        id: '507f1f77bcf86cd799439011',
+        startDate: new Date('2026-04-01'),
+        endDate: new Date('2026-04-15'),
+        displayText: 'April 1-15, 2026',
+        isCurrent: true,
+        deadlineDate: new Date('2026-04-20'),
+        createdAt: new Date(),
+      };
+
+      mockFindFirst.mockResolvedValue(mockPeriod);
+
+      const result = await service.getPayPeriodForDate(date);
+
+      expect(result).toEqual(mockPeriod);
+      expect(mockFindFirst).toHaveBeenCalledWith({
+        where: {
+          startDate: { lte: date },
+          endDate: { gte: date },
+        },
+      });
+    });
+
+    it('should handle boundary dates (first day of period)', async () => {
+      const date = new Date('2026-04-01');
+      const mockPeriod = {
+        id: '507f1f77bcf86cd799439011',
+        startDate: new Date('2026-04-01'),
+        endDate: new Date('2026-04-15'),
+        displayText: 'April 1-15, 2026',
+        isCurrent: true,
+        deadlineDate: null,
+        createdAt: new Date(),
+      };
+
+      mockFindFirst.mockResolvedValue(mockPeriod);
+
+      const result = await service.getPayPeriodForDate(date);
+
+      expect(result).toEqual(mockPeriod);
+    });
+
+    it('should handle boundary dates (last day of period)', async () => {
+      const date = new Date('2026-04-15');
+      const mockPeriod = {
+        id: '507f1f77bcf86cd799439011',
+        startDate: new Date('2026-04-01'),
+        endDate: new Date('2026-04-15'),
+        displayText: 'April 1-15, 2026',
+        isCurrent: true,
+        deadlineDate: null,
+        createdAt: new Date(),
+      };
+
+      mockFindFirst.mockResolvedValue(mockPeriod);
+
+      const result = await service.getPayPeriodForDate(date);
+
+      expect(result).toEqual(mockPeriod);
+    });
+
+    it('should throw NotFoundException if no period found for date', async () => {
+      const date = new Date('2025-01-01');
+      mockFindFirst.mockResolvedValue(null);
+
+      await expect(service.getPayPeriodForDate(date)).rejects.toThrow(
+        new NotFoundException('No pay period found for date 2025-01-01T00:00:00.000Z'),
+      );
+    });
+  });
 });
