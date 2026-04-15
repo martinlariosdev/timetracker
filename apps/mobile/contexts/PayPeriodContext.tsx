@@ -38,7 +38,7 @@ export function PayPeriodProvider({ children }: PayPeriodProviderProps) {
       const cache: PayPeriodCache = JSON.parse(cached);
       const age = Date.now() - new Date(cache.fetchedAt).getTime();
 
-      // Return cache regardless of age if offline, otherwise respect expiry
+      // Return cache regardless of age (expiry is checked by caller)
       return cache;
     } catch (err) {
       console.error('[PayPeriodContext] Failed to load cache:', err);
@@ -119,17 +119,7 @@ export function PayPeriodProvider({ children }: PayPeriodProviderProps) {
     };
 
     initialize();
-  }, []);
-
-  // Update when query data changes
-  useEffect(() => {
-    if (data?.payPeriods) {
-      const periods = data.payPeriods as PayPeriod[];
-      updateState(periods);
-      saveCache(periods);
-      setLoading(false);
-    }
-  }, [data, updateState, saveCache]);
+  }, [loadCache, updateState, fetchPeriods]);
 
   // Update error state from query
   useEffect(() => {
