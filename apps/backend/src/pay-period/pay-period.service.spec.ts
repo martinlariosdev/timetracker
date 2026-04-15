@@ -17,6 +17,7 @@ describe('PayPeriodService', () => {
           useValue: {
             payPeriod: {
               findFirst: jest.fn(),
+              findMany: jest.fn(),
             },
           },
         },
@@ -132,6 +133,72 @@ describe('PayPeriodService', () => {
       await expect(service.getPayPeriodForDate(date)).rejects.toThrow(
         new NotFoundException('No pay period found for date 2025-01-01T00:00:00.000Z'),
       );
+    });
+  });
+
+  describe('getPayPeriods', () => {
+    it('should return pay periods sorted by startDate descending', async () => {
+      const mockPeriods = [
+        {
+          id: '507f1f77bcf86cd799439013',
+          startDate: new Date('2026-04-16'),
+          endDate: new Date('2026-04-30'),
+          displayText: 'April 16-30, 2026',
+          isCurrent: false,
+          deadlineDate: null,
+          createdAt: new Date(),
+        },
+        {
+          id: '507f1f77bcf86cd799439012',
+          startDate: new Date('2026-04-01'),
+          endDate: new Date('2026-04-15'),
+          displayText: 'April 1-15, 2026',
+          isCurrent: true,
+          deadlineDate: null,
+          createdAt: new Date(),
+        },
+      ];
+
+      jest.spyOn(prisma.payPeriod, 'findMany').mockResolvedValue(mockPeriods);
+
+      const result = await service.getPayPeriods();
+
+      expect(result).toEqual(mockPeriods);
+      expect(prisma.payPeriod.findMany).toHaveBeenCalledWith({
+        orderBy: { startDate: 'desc' },
+      });
+    });
+
+    it('should respect limit parameter', async () => {
+      const mockPeriods = [
+        {
+          id: '507f1f77bcf86cd799439012',
+          startDate: new Date('2026-04-01'),
+          endDate: new Date('2026-04-15'),
+          displayText: 'April 1-15, 2026',
+          isCurrent: true,
+          deadlineDate: null,
+          createdAt: new Date(),
+        },
+      ];
+
+      jest.spyOn(prisma.payPeriod, 'findMany').mockResolvedValue(mockPeriods);
+
+      const result = await service.getPayPeriods(10);
+
+      expect(result).toEqual(mockPeriods);
+      expect(prisma.payPeriod.findMany).toHaveBeenCalledWith({
+        orderBy: { startDate: 'desc' },
+        take: 10,
+      });
+    });
+
+    it('should handle empty database', async () => {
+      jest.spyOn(prisma.payPeriod, 'findMany').mockResolvedValue([]);
+
+      const result = await service.getPayPeriods();
+
+      expect(result).toEqual([]);
     });
   });
 });

@@ -49,4 +49,16 @@ export class PayPeriodService {
 
     return period;
   }
+
+  /**
+   * Get recent pay periods
+   * @param limit Maximum number of periods to return (optional)
+   * @returns List of pay periods sorted by startDate descending
+   */
+  async getPayPeriods(limit?: number): Promise<PayPeriod[]> {
+    return this.prisma.payPeriod.findMany({
+      orderBy: { startDate: 'desc' },
+      ...(limit && { take: limit }),
+    });
+  }
 }
