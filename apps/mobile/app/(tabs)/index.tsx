@@ -847,11 +847,12 @@ export default function TimesheetListScreen() {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([refetch(), refetchSubmission()]);
+      // Only refetch time entries - submission query is disabled until we have real pay period IDs
+      await refetch();
     } finally {
       setRefreshing(false);
     }
-  }, [refetch, refetchSubmission]);
+  }, [refetch]);
 
   const handleAddEntry = useCallback(
     (date: string) => {
