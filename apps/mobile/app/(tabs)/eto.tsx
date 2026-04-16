@@ -479,37 +479,13 @@ export default function ETOScreen() {
           onPress: handleStats,
         },
         {
-          text: 'Log Out',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              'Log Out',
-              'Are you sure you want to log out?',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Log Out',
-                  style: 'destructive',
-                  onPress: async () => {
-                    try {
-                      await logout();
-                    } catch (error) {
-                      console.error('Logout error:', error);
-                    }
-                  },
-                },
-              ]
-            );
-          },
-        },
-        {
           text: 'Cancel',
           style: 'cancel',
         },
       ],
       { cancelable: true }
     );
-  }, [handleRefresh, handleStats, logout]);
+  }, [handleRefresh, handleStats]);
 
   const handleBalancePress = useCallback(() => {
     setBalanceDetailVisible(true);
