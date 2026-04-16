@@ -300,7 +300,7 @@ type Query {
   payPeriodForDate(date: DateTime!): PayPeriodType!
 
   """Get recent pay periods (for browsing history)"""
-  payPeriods(limit: Float): [PayPeriodType!]!
+  payPeriods(limit: Int): [PayPeriodType!]!
 
   """Get timesheet submissions pending review (team leads only)"""
   pendingTimesheetSubmissions: [TimesheetSubmissionType!]!
